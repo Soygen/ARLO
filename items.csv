@@ -1,27 +1,27 @@
 name,action,recycle_for,keep_for
-Advanced Arc Powercell,Keep,2x ARC Powercell,Medical Lab: Surge Shield Recharger
-Advanced Electrical Components,Keep,"1x Electrical Components, 1x Wires",10x for Gear Bench III and Utility Station III Upgrades; 5x Expedition Stage 4
-Advanced Mechanical Components,Keep,"1x Mechanical Components, 1x Steel Spring",5x for Gunsmith III Upgrade
+Advanced Arc Powercell,"Keep 1 row, recycle excess",2x ARC Powercell,Medical Lab: Surge Shield Recharger
+Advanced Electrical Components,Keep 1 row at least,"1x Electrical Components, 1x Wires","10x for Gear Bench III and Utility Station III Upgrades; 5x Expedition Stage 4"
+Advanced Mechanical Components,Keep 2-3 rows,"1x Mechanical Components, 1x Steel Spring","5x for Gunsmith III Upgrade; high-tier gun crafting / repairs"
 Agave,Sell,,
-Agave Juice,Keep; or sell if short on space,,Quick Use for Healing
+Agave Juice,"Keep; or sell if short on space",,Quick Use for Healing
 Air Freshener,Sell,,
 Alarm Clock,Recycle,"6x Plastic Parts, 1x Processor",
 Antiseptic,Keep,10x Chemical,Crafting Heals
-Apricot,Keep until upgrades are complete; sell once done,3x Assorted Seeds,17x for Scrappy Level III and V
-ARC Alloy,Keep,,"18x for Explosives, Medical Lab, and Utility Station Level I Upgrades; 80x Expedition Stage 1"
-ARC Circuitry,Keep,2x ARC Alloy,10x for Refiner III Upgrade
+Apricot,"Keep until upgrades are complete; sell once done",3x Assorted Seeds,"17x for Scrappy Level III and V"
+ARC Alloy,Keep 1 row,,"18x for Explosives, Medical Lab, and Utility Station Level I Upgrades; 80x Expedition Stage 1"
+ARC Circuitry,Keep 1-2 stacks,2x ARC Alloy,"10x for Refiner III Upgrade; medium shield craft"
 ARC Coolant,Sell,16x Chemicals,
-ARC Flex Rubber,Recycle if short on materials; Sell otherwise if excess,16x Rubber Parts,
-ARC Motion Core,Keep,2x ARC Alloy,5x for Refiner II Upgrades; Refiner: Magnetic Accelerator
+ARC Flex Rubber,"Recycle if short on materials; Sell otherwise if excess",16x Rubber Parts,
+ARC Motion Core,Keep 1 row,2x ARC Alloy,"5x for Refiner II Upgrades; Refiner: Magnetic Accelerator"
 ARC Performance Steel,Recycle,12x Metal Parts,
-ARC Powercell,Keep,,5x for Refiner I; Medical Lab: Shield Rechargers
-ARC Synthetic Resin,Recycle if short on materials; Sell otherwise,14x Plastic Parts,
-ARC Thermo Lining,Recycle if short on materials; Sell otherwise,16x Fabric,
-Assorted Seeds,Keep,,
-Bastion Cell,Keep until upgrades are complete; sell once done,"2x ARC Alloy, 2x Advanced Mechanical Components",6x for Gear Bench III Upgrade
-Battery,Keep,2x Metal Parts,
+ARC Powercell,Keep 2-3 stacks,,"5x for Refiner I; Medical Lab: Shield Rechargers"
+ARC Synthetic Resin,"Recycle if short on materials; Sell otherwise",14x Plastic Parts,
+ARC Thermo Lining,"Recycle if short on materials; Sell otherwise",16x Fabric,
+Assorted Seeds,"Keep; can be used for trading",,
+Bastion Cell,"Keep until upgrades are complete; sell once done","2x ARC Alloy, 2x Advanced Mechanical Components",6x for Gear Bench III Upgrade
+Battery,Keep 3 stacks,2x Metal Parts,
 Bicycle Pump,Recycle,"4x Canister, 10x Metal Parts",
-Bombardier Cell,Keep until upgrades are complete; sell once done,"2x Advanced Mechanical Components, 2x ARC Alloys",6x for Refiner III Upgrades
+Bombardier Cell,"Keep until upgrades are complete; sell once done","2x Advanced Mechanical Components, 2x ARC Alloys",6x for Refiner III Upgrades
 Breathtaking Snow Globe,Sell,,
 Broken Flashlight,Recycle,"2x Battery, 6x Metal Parts",
 Broken Guidance System,Recycle,4x Processor,
@@ -30,21 +30,21 @@ Broken Taser,Recycle,"2x Battery, 2x Wires",
 Burned ARC Circuitry,Recycle,2x ARC Alloy,
 Camera Lens,Recycle,8x Plastic Parts,
 Candleberries,Keep,,All Stages of Flickering Flames (260x Total)
-Candle Holder,Keep; recycle after stage 2 is complete,8x Metal Parts,3x Flickering Flames Stage 2
+Candle Holder,"Keep; recycle after stage 2 is complete",8x Metal Parts,3x Flickering Flames Stage 2
 Canister,Keep,3x Plastics Parts,
-Cat Bed,Keep until upgrade is complete; sell once done,,1x for Scrappy Level IV Upgrades
-Chemicals,Keep,,
+Cat Bed,"Keep until upgrade is complete; sell once done",,1x for Scrappy Level IV Upgrades
+Chemicals,Keep 1.5-2 rows,,
 Coffee Pot,Sell,,
 Complex Gun Parts,Keep,2x Simple Gun Parts,
 Coolant,Sell,"5x Chemicals, 2x Oil",
 Cooling Coil,Recycle,"6x Chemicals, 2x Steel Springs",
 Cooling Fan,KEEP FOR EXPEDITION MATS; Sell after,"14x Plastic Parts, 4x Wires",5x Expedition Stage 2
-Cracked Bioscanner,Keep until upgrade is complete; sell or recycle once done,"3x Rubber Parts, 3x Battery",2x for Medical Lab II Upgrade
+Cracked Bioscanner,"Keep until upgrade is complete; sell or recycle once done","3x Rubber Parts, 3x Battery",2x for Medical Lab II Upgrade
 Crude Explosives,"Keep; If no inventory space, recycle",3x Chemicals,5x for Explosives Station II Upgrade
 Crumpled Plastic Bottle,Recycle,4x Plastic Parts,
 Damaged ARC Motion Core,Recycle,2x ARC Alloy,
 Damaged Fireball Burner,Recycle,1x ARC Alloy,
-Damaged Heat Sink,Keep until upgrade is complete; sell once done,"6x Metal Parts, 2x Wires",2x for Utility Station II Upgrade
+Damaged Heat Sink,"Keep until upgrade is complete; sell once done","6x Metal Parts, 2x Wires",2x for Utility Station II Upgrade
 Damaged Hornet Driver,Recycle,2x ARC Alloy,
 Damaged Rocketeer Driver,Sell,3x ARC Alloy,
 Damaged Tick Pod,Recycle,1x ARC Alloy,
@@ -52,141 +52,141 @@ Dartboard,Sell,,
 Deflated Football,Recycle,"9x Rubber Parts, 9x Fabric",
 Degraded ARC Rubber,Recycle,11x Rubber Parts,
 Diving Goggles,Recycle,12x Rubber Parts,
-Dog Collar,Keep until upgrade is complete; recycle once done,"8x Fabric, 1x Metal Parts",1x Scrappy for Level II Upgrade
+Dog Collar,"Keep until upgrade is complete; recycle once done","8x Fabric, 1x Metal Parts",1x Scrappy for Level II Upgrade
 Dried-Out ARC Resin,Recycle,9x Plastic Parts,
-Duct Tape,Keep,3x Fabric,10x Flickering Flames Stage 3
+Duct Tape,Keep 3-4 stacks,3x Fabric,10x Flickering Flames Stage 3
 Durable Cloth,Keep,6x Fabric,"5x for Medical Lab II Upgrade; 35x Expedition Stage 2, 5x Flickering Flames Stage 1"
-Electrical Components,Keep,"3x Plastics Parts, 3x Rubber Parts",10x Gear Bench II and Utility Station II Upgrades; 30x Expedition Stage 2
-Empty Wine Bottle,Keep; sell after stage 1 is complete,,1x Flickering Flames Stage 1
-Exodus Modules,Keep,"2x Magnet, 1x Mechanical Components",1x Expedition Stage 3
+Electrical Components,Keep,"3x Plastics Parts, 3x Rubber Parts","10x Gear Bench II and Utility Station II Upgrades; 30x Expedition Stage 2"
+Empty Wine Bottle,"Keep; sell after stage 1 is complete",,1x Flickering Flames Stage 1
+Exodus Modules,"Keep 2-3 stacks, recycle excess","2x Magnet, 2x Processor",1x Expedition Stage 3
 Expired Pasta,Keep,,
 Expired Respirator,Recycle,"8x Rubber Parts, 4x Fabric",
-Explosive Compound,Keep,2x Crude Explosives,5x for Explosives Station III Upgrade
-Fabric,Keep,,80x for Gear Bench I and Medical Lab I Upgrades
+Explosive Compound,"Keep 1 row for high-tier explosive crafting; ",2x Crude Explosives,5x for Explosives Station III Upgrade
+Fabric,Keep 1.5-2 rows,,80x for Gear Bench I and Medical Lab I Upgrades
 Faded Photograph,Sell,,
-Fertilizer,Keep for quest; Sell once done,2x Assorted Seeds,1x for Unexpected Initiative
-Film Reel,Keep for quest; Sell once done,,1x Trader Quest Item; 2x Flickering Flames Stage 3
+Fertilizer,"Keep for quest; Sell once done",2x Assorted Seeds,1x for Unexpected Initiative
+Film Reel,"Keep for quest; Sell once done",,"1x Trader Quest Item; 2x Flickering Flames Stage 3"
 Fine Wristwatch,Sell,,
-Fireball Burner,Keep until upgrade is complete; recycle once done,"1x ARC Alloy, 1x Crude Explosives",8x for Refiner II Upgrade
-Flow Controller,Recycle if short on materials; Sell otherwise,"1x Advanced Mechanical Components, 1x Sensors",
-Frequency Modulation Box,Recycle if short on materials; Sell otherwise,"1x Advanced Electrical Components, 1x Speaker Component",
-Fried Motherboard,Keep until upgrade is complete; Sell once done,"5x Plastic Parts, 2x Electrical Components",3x for Utility Station III Upgrade
+Fireball Burner,"Keep until upgrade is complete; recycle once done","1x ARC Alloy, 1x Crude Explosives",8x for Refiner II Upgrade
+Flow Controller,"Recycle if short on materials; Sell otherwise","1x Advanced Mechanical Components, 1x Sensors",
+Fossilized Lightning,"Recycle if short on materials; Sell otherwise",,
+Frequency Modulation Box,"Recycle if short on materials; Sell otherwise","1x Advanced Electrical Components, 1x Speaker Component",
+Fried Motherboard,"Keep until upgrade is complete; Sell once done","5x Plastic Parts, 2x Electrical Components",3x for Utility Station III Upgrade
 Frying Pan,Recycle,8x Metal Parts,
-Garlic Press,Recycle if short on materials; Sell otherwise,12x Metal Parts,
-Geiger Counter,Recycle if short on materials; Sell otherwise,"3x Battery, 1x Exodus Modules",
-Great Mullein,Keep,2x Assorted Seeds,
+Garlic Press,"Recycle if short on materials; Sell otherwise",12x Metal Parts,
+Geiger Counter,"Recycle if short on materials; Sell otherwise","3x Battery, 1x Exodus Modules",
+Great Mullein,"Keep 3-4 stacks, use excess",2x Assorted Seeds,
 Headphones,Sell,"7x Rubber Parts, 1x Speaker Components",
-Heavy Gun Parts,Keep,2x Simple Gun Parts,
-Hornet Driver,"Keep until upgrade is complete; recycle once done
-(Sell if excess)","2x ARC Alloy, 2x Electrical Components",5x for Gear Bench II Upgrade
+Heavy Gun Parts,Keep 1-3 rows,2x Simple Gun Parts,
+Hornet Driver,"Keep until upgrade is complete; recycle once done (Sell if excess)","2x ARC Alloy, 2x Electrical Components",5x for Gear Bench II Upgrade
 Household Cleaner,Recycle,11x Chemicals,
 Humidifier,KEEP FOR EXPEDITION MATS; Recycle after,"2x Canister, 2x Wires",5x Expedition Stage 4
 Ice Cream Scooper,Recycle,7x Metal Parts,
 Impure ARC Coolant,Recycle,12x Chemicals,
-Industrial Battery,Recycle if short on materials; Sell otherwise,"7x Chemicals, 2x Battery",3x for Gear Bench III Upgrade; 1x Flickering Flames Stage 2
-Industrial Charger,Recycle if short on materials; Sell otherwise,"5x Metal Parts, 1x Voltage Converter",
-Industrial Magnet,Recycle if short on materials; Sell otherwise,"4x Metal Parts, 2x Magnet",
-Ion Sputter,Recycle if short on materials; Sell otherwise,"4x Voltage Converter, 1x Exodus Modules",
-Laboratory Reagents,Keep until upgrade is complete; recycle once done,"16x Chemicals, 3x Crude Explosives",3x for Explosives Station III Upgrade
+Industrial Battery,"Recycle if short on materials; Sell otherwise","7x Chemicals, 2x Battery","3x for Gear Bench III Upgrade; 1x Flickering Flames Stage 2"
+Industrial Charger,"Recycle if short on materials; Sell otherwise","5x Metal Parts, 1x Voltage Converter",
+Industrial Magnet,"Recycle if short on materials; Sell otherwise","4x Metal Parts, 2x Magnet",
+Ion Sputter,"Recycle if short on materials; Sell otherwise","4x Voltage Converter, 1x Exodus Modules",
+Laboratory Reagents,"Keep until upgrade is complete; recycle once done","16x Chemicals, 3x Crude Explosives",3x for Explosives Station III Upgrade
 Lance's Mixtape,Sell,,
-Leaper Pulse Unit,KEEP FOR EXPEDITION MATS; Recycle after,"3x Arc Alloy, 2x Advanced Mechanical Components",4x for Utility Station III Upgrade; 3x Expedition Stage 4
-Lemon,Keep until upgrade is complete; sell once done,3x Assorted Seeds,5x for Scrappy Level III Upgrade
-Light Bulb,KEEP FOR EXPEDITION MATS; Sell after,,5x Expedition Stage 3; 3x Flickering Flames Stage 2
-Light Gun Parts,Keep,2x Simple Gun Parts,
-Magnet,Keep,2x Metal Parts,
-Magnetic Accelerator,"Keep for high-tier crafting; if excess, sell","1x Advanced Mechanical Components, 1x ARC Motion Core",
-Magnetron,Recycle if short on materials; Sell otherwise,"1x Magnetic Accelerator, 1x Steel Spring",
+Leaper Pulse Unit,KEEP FOR EXPEDITION MATS; Recycle after,"3x Arc Alloy, 2x Advanced Mechanical Components","4x for Utility Station III Upgrade; 3x Expedition Stage 4"
+Lemon,"Keep until upgrade is complete; sell once done",3x Assorted Seeds,5x for Scrappy Level III Upgrade
+Light Bulb,KEEP FOR EXPEDITION MATS; Sell after,,"5x Expedition Stage 3; 3x Flickering Flames Stage 2"
+Light Gun Parts,Keep 1-3 rows,2x Simple Gun Parts,
+Magnet,Keep 3 stacks,2x Metal Parts,
+Magnetic Accelerator,"Keep for high-tier crafting 6x-9x; if excess, recycle","1x Advanced Mechanical Components, 1x ARC Motion Core",
+Magnetron,"Recycle if short on materials; Sell otherwise","1x Magnetic Accelerator, 1x Steel Spring",
 Matriarch Reactor,"Keep for high-tier crafting; if excess, sell","1x Power Rod, 1x Magnetic Accelerator",
-Mechanical Components,Keep,"3x Metal Parts, 2x Rubber Parts",5x for Gunsmith II Upgrade
-Medium Gun Parts,Keep,2x Simple Gun Parts,
-Metal Brackets,Recycle if short on materials; Sell otherwise,8x Metal Parts,
-Metal Parts,Keep,,80x for Gunsmith I and Refiner I Upgrades; 150x Expedition Stage 1
-Microscope,Recycle if short on materials; Sell otherwise,"1x Advanced Mechanical Components, 3x Magnet",
-Mini Centrifuge,Recycle if short on materials; Sell otherwise,"1x Advanced Mechanical Components, 2x Canister",
-Mod Components,Keep,"1x Mechanical Components, 1x Steel Spring",
+Mechanical Components,Keep 2 rows,"3x Metal Parts, 2x Rubber Parts",5x for Gunsmith II Upgrade
+Medium Gun Parts,Keep 1-3 rows,2x Simple Gun Parts,
+Metal Brackets,"Recycle if short on materials; Sell otherwise",8x Metal Parts,
+Metal Parts,Keep 2 rows,,"80x for Gunsmith I and Refiner I Upgrades; 150x Expedition Stage 1"
+Microscope,"Recycle if short on materials; Sell otherwise","1x Advanced Mechanical Components, 3x Magnet",
+Mini Centrifuge,"Recycle if short on materials; Sell otherwise","1x Advanced Mechanical Components, 2x Canister",
+Mod Components,Keep 1 row,"1x Mechanical Components, 1x Steel Spring",
 Moss,Keep for defib; recycle after,3x Assorted Seeds,Medical Lab: Defibrillator
-Motor,Keep until upgrade is complete; sell once done,"2x Oil, 2x Mechanical Components",3x for Refiner III Upgrade
-Mushroom,Keep until upgrade is complete; sell once done,,12x for Scrappy Level V Upgrade
+Motor,"Keep until upgrade is complete; sell once done","2x Oil, 2x Mechanical Components",3x for Refiner III Upgrade
+Mushroom,"Keep until upgrade is complete; sell once done",,12x for Scrappy Level V Upgrade
 Music Album,Sell,,
 Music Box,Sell,,
 Number Plate,Recycle,3x Metal Parts,
 Oil,Keep,3x Chemicals,
-Olives,Keep until upgrade is complete; sell once done,2x Assorted Seeds,6x for Scrappy Level IV Upgrade
+Olives,"Keep until upgrade is complete; sell once done",2x Assorted Seeds,6x for Scrappy Level IV Upgrade
 Painted Box,Sell,,
-Plastic Parts,Keep,,75x for Gear Bench I and Utility Station I Upgrades; 25x Flickering FLames Stage 1
+Plastic Parts,Keep 2 rows,,"75x for Gear Bench I and Utility Station I Upgrades; 25x Flickering FLames Stage 1"
 Playing Cards,Sell,,
-Polluted Air Filter,Recycle if short on materials; Sell otherwise,"6x Fabric, 2x Oil",
+Polluted Air Filter,"Recycle if short on materials; Sell otherwise","6x Fabric, 2x Oil",
 Pop Trigger,Recycle after upgrade is done,"1x Crude Explosives, 1x ARC Alloy",5x for Explosives Station II Upgrade
-Portable TV,Recycle if short on materials; Sell otherwise,"6x Wires, 2x Battery",
+Portable TV,"Recycle if short on materials; Sell otherwise","6x Wires, 2x Battery",
 Poster of Natural Wonders,Sell,,
 Pottery,Sell,,
-Power Bank,Recycle if short on materials; Sell otherwise,"2x Battery, 2x Wires",
+Power Bank,"Recycle if short on materials; Sell otherwise","2x Battery, 2x Wires",
 Power Cable,Recycle,4x Wires,3x for Gear Bench II Upgrade
-Power Rod,"Keep for high-tier crafting; if excess, sell","1x Advanced Electrical Components, 1x ARC Circuitry",
-Prickly Pear,Keep until upgrade is complete; sell once done,,8x for Scrappy Level IV Upgrade
-Processor,Keep,"1x Wires, 1x Plastic Parts",
-Projector,Recycle if short on materials; Sell otherwise,"2x Wires, 1x Processor",
+Power Rod,"Keep 3x-6x for high-tier crafting and Dam room; if excess, sell","1x Advanced Electrical Components, 1x ARC Circuitry",
+Prickly Pear,"Keep until upgrade is complete; sell once done",,8x for Scrappy Level IV Upgrade
+Processor,Keep 1.5-2 rows,"1x Wires, 1x Plastic Parts",
+Projector,"Recycle if short on materials; Sell otherwise","2x Wires, 1x Processor",
 Queen Reactor,"Keep for high-tier crafting; if excess, sell","1x Power Rod, 1x Magnetic Accelerator",
-Radio,Recycle if short on materials; Sell otherwise,"1x Speaker Component, 1x Sensors",
-Radio Relay,Recycle if short on materials; Sell otherwise,"2x Speaker Componets, 2x Sensors",
+Radio,"Recycle if short on materials; Sell otherwise","1x Speaker Component, 1x Sensors",
+Radio Relay,"Recycle if short on materials; Sell otherwise","2x Speaker Componets, 2x Sensors",
 Recorder,Sell,10x Plastic Parts,
 Red Coral Jewelry,Sell,,
-Remote Control,Recycle if short on materials; Sell otherwise,"7x Plastic Parts, 1x Sensors",
+Remote Control,"Recycle if short on materials; Sell otherwise","7x Plastic Parts, 1x Sensors",
 Resin,Sell,,
 Ripped Safety Vest,Recycle,"1x Durable Cloth, 1x Magnet",
-Rocketeer Driver,Keep until upgrade is complete; sell once done,"3x ARC Alloy, 2x Advanced Electrical Components",3x for Explosive Station III Upgrade
+Rocketeer Driver,"Keep until upgrade is complete; sell once done","3x ARC Alloy, 2x Advanced Electrical Components",3x for Explosive Station III Upgrade
 Rocket Thruster,"Recycle if low on Metal Parts, otherwise sell","6x Metal Parts, 2x Synthesized Fuel",
 Roots,Sell,1x Assorted Seeds,
 Rope,Keep,5x Fabric,
 Rosary,Sell,,
-Rotary Encoder,Recycle if short on materials; Sell otherwise,"2x Electrical Components, 2x Processor",
-Rubber Duck,Sell; maybe keep (see note),,"There might be a quest tied to having rubber ducks, so maybe keep some"
-Rubber Pad,Recycle if short on materials; Sell otherwise,18x Rubber Parts,
-Rubber Parts,Keep,,30x for Gunsmith I Upgrade; 200x Expedition Stage 1
+Rotary Encoder,"Recycle if short on materials; Sell otherwise","2x Electrical Components, 2x Processor",
+Rubber Duck,"Sell; maybe keep (see note)",,There might be a quest tied to having rubber ducks, so maybe keep some
+Rubber Pad,"Recycle if short on materials; Sell otherwise",18x Rubber Parts,
+Rubber Parts,Keep 2 rows,,"30x for Gunsmith I Upgrade; 200x Expedition Stage 1"
 Ruined Accordion,Sell,"18x Rubber Parts, 3x Steel Spring",
 Ruined Baton,Recycle,"6x Metal Parts, 3x Rubber Parts",
 Ruined Handcuffs,Recycle,8x Metal Parts,
 Ruined Parachute,Recycle,10x Fabric,
-Ruined Riot Shield,Recycle if short on materials; Sell otherwise,"10x Plastic Parts, 6x Rubber Parts",
+Ruined Riot Shield,"Recycle if short on materials; Sell otherwise","10x Plastic Parts, 6x Rubber Parts",
 Ruined Tactical Vest,Recycle,"5x Fabric, 1x Magnet",
 Rusted Bolts,Recycle,8x Metal Parts,
-Rusted Gear,Keep until upgrade is complete; sell once done,"4x Metal Parts, 2x Mechanical Components",3x for Gunsmith III Upgrade
-Rusted Shut Medical Kit,Keep until upgrade is complete; recycle once done,"2x Syringe, 1x Antiseptic",3x for Medical Lab III Upgrade
-Rusted Tools,Keep until upgrade is complete; sell once done,"8x Metal Parts, 1x Steel Spring",3x for Gunsmith II Upgrade
+Rusted Gear,"Keep until upgrade is complete; sell once done","4x Metal Parts, 2x Mechanical Components",3x for Gunsmith III Upgrade
+Rusted Shut Medical Kit,"Keep until upgrade is complete; recycle once done","2x Syringe, 1x Antiseptic",3x for Medical Lab III Upgrade
+Rusted Tools,"Keep until upgrade is complete; sell once done","8x Metal Parts, 1x Steel Spring",3x for Gunsmith II Upgrade
 Rusty ARC Steel,Recycle,8x Metal Parts,
-Sample Cleaner,Recycle if short on materials; Sell otherwise,"2x Electrical Components, 14x Assorted Seeds",
-Sensors,Keep,"1x Wires, 1x Metal Parts",20x Expedition Stage 2
-Sentinel Firing Core,Keep until upgrade is complete; sell or recycle once done,"2x ARC Alloy, 3x Mechanical Components",4x for Gunsmith III Upgrade
+Sample Cleaner,"Recycle if short on materials; Sell otherwise","2x Electrical Components, 14x Assorted Seeds",
+Sensors,Keep 1 row,"1x Wires, 1x Metal Parts",20x Expedition Stage 2
+Sentinel Firing Core,"Keep until upgrade is complete; sell or recycle once done","2x ARC Alloy, 3x Mechanical Components",4x for Gunsmith III Upgrade
 Shredder Gyro,Recycle,"3x Mechanical Components, 3x ARC Alloy",
-Signal Amplifier,Recycle if short on materials; Sell otherwise,"2x Electrical Components, 2x Voltage Converter",
+Signal Amplifier,"Recycle if short on materials; Sell otherwise","2x Electrical Components, 2x Voltage Converter",
 Silver Teaspoon Set,Sell,,
-Simple Gun Parts,Keep,2x Metals Parts,
+Simple Gun Parts,Keep 2 rows,2x Metals Parts,
 Snitch Scanner,Keep,4x ARC Alloy,6x for Utility Station II Upgrade
 Speaker Component,Keep,"2x Plastic Parts, 3x Rubber Parts",
-Spectrometer,Recycle if short on materials; Sell otherwise,"1x Advanced Electrical Components, 1x Sensors",
-Spectrum Analyzer,Recycle if short on materials; Sell otherwise,"1x Sensors, 1x Exodus Modules",
+Spectrometer,"Recycle if short on materials; Sell otherwise","1x Advanced Electrical Components, 1x Sensors",
+Spectrum Analyzer,"Recycle if short on materials; Sell otherwise","1x Sensors, 1x Exodus Modules",
 Spotter Relay,Sell,"2x Electrical Components, 1x ARC Alloy",
-Spring Cushion,Recycle if short on materials; Sell otherwise,"2x Durable Cloth, 2x Steel Springs",
+Spring Cushion,"Recycle if short on materials; Sell otherwise","2x Durable Cloth, 2x Steel Springs",
 Statuette,Sell,,
-Steel Spring,Keep,2x Metal Parts,15x Steel Spring
-Surveyor Vault,Keep until upgrade is complete; sell or recycle once done,"2x Mechanical Components, 2x ARC Alloy",5x for Medical Lab III Upgrades
+Steel Spring,Keep 1 row,2x Metal Parts,15x Steel Spring
+Surveyor Vault,"Keep until upgrade is complete; sell or recycle once done","2x Mechanical Components, 2x ARC Alloy",5x for Medical Lab III Upgrades
 Synthesised Fuel,Keep,"1x Oil, 1x Chemicals",3x for Explosives Station II Upgrade
 Syringe,Keep,"3x Plastic Parts, 2x Chemicals",
-Tattered ARC Lining,Recycle if short on materials; Sell otherwise,12x Fabric,
+Tattered ARC Lining,"Recycle if short on materials; Sell otherwise",12x Fabric,
 Tattered Clothes,Recycle,11x Fabric,
-Telemetry Transceiver,Recycle if short on materials; Sell otherwise,"1x Advanced Electrical Components, 1x Processor",
+Telemetry Transceiver,"Recycle if short on materials; Sell otherwise","1x Advanced Electrical Components, 1x Processor",
 Thermostat,Sell,"7x Rubber Parts, 1x Sensors",
-Tick Pod,Keep until upgrade is complete; sell or recycle once done,"2x Arc Alloy, 2x Chemicals",8x for Medical Lab II Upgrade
-Toaster,Keep until upgrade is complete; recycle otherwise,"5x Plastic Parts, 3x Wires",3x for Refiner II Upgrade
+Tick Pod,"Keep until upgrade is complete; sell or recycle once done","2x Arc Alloy, 2x Chemicals",8x for Medical Lab II Upgrade
+Toaster,"Keep until upgrade is complete; recycle otherwise","5x Plastic Parts, 3x Wires",3x for Refiner II Upgrade
 Torn Blanket,Recycle,12x Fabric,
 Torn Book,Sell,,
-Turbo Pump,Recycle if short on materials; Sell otherwise,"1x Mechanical Components, 3x Oil",
-Unusable Weapon,Recycle if short on materials; Sell otherwise,"4x Metal Parts, 5x Simple Gun Parts",
+Turbo Pump,"Recycle if short on materials; Sell otherwise","1x Mechanical Components, 3x Oil",
+Unusable Weapon,"Recycle if short on materials; Sell otherwise","4x Metal Parts, 5x Simple Gun Parts",
 Vase,Sell,,
-Very Comfortable Pillow,Keep for Scrappy Level V Upgrade; sell afterwards,,3x for Scrappy Level V Upgrade
+Very Comfortable Pillow,"Keep for Scrappy Level V Upgrade; sell afterwards",,3x for Scrappy Level V Upgrade
 Volcanic Rock,Sell,,
 Voltage Converter,Keep,"1x Wires, 1x Rubber Parts",
-Wasp Driver,Keep; sell or recycle after upgrade is complete,"1x ARC Alloy, 1x Electrical Components",8x for Gunsmith II Upgrade
-Water Filter,Recycle if short on materials; Sell otherwise,"2x Rubber Parts, 3x Canister",
-Water Pump,Keep until quest is complete; recycle or sell,"4x Metal Parts, 2x Oil",1x for Unexpected Initiative
-Wires,Keep,2x Rubber Parts,30x Expedition Stage 2
+Wasp Driver,"Keep; sell or recycle after upgrade is complete","1x ARC Alloy, 1x Electrical Components",8x for Gunsmith II Upgrade
+Water Filter,"Recycle if short on materials; Sell otherwise","2x Rubber Parts, 3x Canister",
+Water Pump,"Keep until quest is complete; recycle or sell","4x Metal Parts, 2x Oil",1x for Unexpected Initiative
+Wires,Keep 1 row at least,2x Rubber Parts,30x Expedition Stage 2
