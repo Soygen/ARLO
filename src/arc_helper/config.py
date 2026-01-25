@@ -52,7 +52,7 @@ def get_dpi_scale() -> float:
         user32.ReleaseDC(0, hdc)
 
         return dpi / 96.0
-    except Exception:
+    except (AttributeError, OSError):
         return 1.0
 
 

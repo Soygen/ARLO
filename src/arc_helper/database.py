@@ -4,6 +4,7 @@ SQLite operations for item recommendations with Pydantic models.
 """
 
 import csv
+import difflib
 import sqlite3
 from pathlib import Path
 
@@ -80,6 +81,23 @@ class Database:
                 )
                 row = cursor.fetchone()
 
+            # If still no match, try fuzzy matching (handles OCR typos)
+            if not row:
+                cursor = conn.execute("SELECT name FROM items")
+                all_names = [r[0] for r in cursor.fetchall()]
+
+                # Find closest match with at least 80% similarity
+                matches = difflib.get_close_matches(
+                    clean_name, all_names, n=1, cutoff=0.8
+                )
+
+                if matches:
+                    match_name = matches[0]
+                    cursor = conn.execute(
+                        "SELECT * FROM items WHERE name = ?", (match_name,)
+                    )
+                    row = cursor.fetchone()
+
             if row:
                 return self._row_to_item(row)
             return None
@@ -90,7 +108,7 @@ class Database:
             cursor = conn.execute("SELECT COUNT(*) FROM items")
             return cursor.fetchone()[0]
 
-    def load_csv(self, csv_path: Path, clear_existing: bool = True) -> int:
+    def load_csv(self, csv_path: Path | str, *, clear_existing: bool = True) -> int:
         """
         Load items from a CSV file into the database.
 
@@ -105,7 +123,8 @@ class Database:
         """
         csv_path = Path(csv_path)
         if not csv_path.exists():
-            raise FileNotFoundError(f"CSV file not found: {csv_path}")
+            msg = f"CSV file not found: {csv_path}"
+            raise FileNotFoundError(msg)
 
         if clear_existing:
             self.clear()
@@ -140,6 +159,21 @@ class Database:
             conn.commit()
 
         return count
+
+    def log_missing_item(self, name: str) -> None:
+        """Log an unknown item to missing_items.csv for easy addition later."""
+        if not name:
+            return
+
+        missing_file = self.db_path.parent / "missing_items.csv"
+
+        try:
+            # Append to file
+            with missing_file.open("a", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow([name])
+        except Exception:  # noqa: BLE001
+            pass  # Fail silently to not interrupt the user
 
     @staticmethod
     def _row_to_item(row: sqlite3.Row) -> Item:
@@ -180,7 +214,7 @@ def get_database() -> Database:
     return Database()
 
 
-def load_csv_to_database(csv_path: Path | str, clear_existing: bool = True) -> int:
+def load_csv_to_database(csv_path: Path | str, *, clear_existing: bool = True) -> int:
     """
     Convenience function to load a CSV file into the database.
 

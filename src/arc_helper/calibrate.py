@@ -5,23 +5,14 @@ Helps configure screen regions for trigger and tooltip detection.
 
 # Enable windows DPI scaling
 import ctypes
-from contextlib import suppress
-
-try:
-    # Windows 10 1607+ (most reliable)
-    ctypes.windll.shcore.SetProcessDpiAwareness(2)  # PROCESS_PER_MONITOR_DPI_AWARE
-except Exception:  # noqa
-    with suppress(Exception):
-        # Fallback for older Windows
-        ctypes.windll.user32.SetProcessDPIAware()
-
-
 import tkinter as tk
+from contextlib import suppress
 from pathlib import Path
 from tkinter import filedialog
 from tkinter import messagebox
 from tkinter import ttk
 
+import pytesseract
 from PIL import ImageGrab
 from PIL import ImageTk
 
@@ -29,6 +20,7 @@ from arc_helper.config import APP_DIR
 from arc_helper.config import OverlaySettings
 from arc_helper.config import ScanSettings
 from arc_helper.config import Settings
+from arc_helper.config import TooltipCaptureSettings
 from arc_helper.config import TooltipRegion
 from arc_helper.config import TriggerRegion
 from arc_helper.config import TriggerRegion2
@@ -37,6 +29,14 @@ from arc_helper.config import get_settings
 from arc_helper.config import logger
 from arc_helper.database import get_database
 from arc_helper.ocr import get_ocr_engine
+
+try:
+    # Windows 10 1607+ (most reliable)
+    ctypes.windll.shcore.SetProcessDpiAwareness(2)  # PROCESS_PER_MONITOR_DPI_AWARE
+except (AttributeError, OSError):
+    with suppress(AttributeError, OSError):
+        # Fallback for older Windows
+        ctypes.windll.user32.SetProcessDPIAware()
 
 
 class RegionSelector:
@@ -91,7 +91,7 @@ class RegionSelector:
                 variable=var,
                 orient="horizontal",
                 length=200,
-                command=lambda _, v=var: self._on_change(),
+                command=lambda _: self._on_change(),
             )
             slider.grid(row=row, column=1, sticky="ew", padx=5)
 
@@ -112,7 +112,7 @@ class RegionSelector:
 
         self.overlay = tk.Toplevel()
         self.overlay.attributes("-alpha", 0.4)
-        self.overlay.overrideredirect(True)
+        self.overlay.overrideredirect(boolean=True)
         self.overlay.config(bg=self.color)
 
         self._update_overlay()
@@ -198,7 +198,7 @@ class TooltipCaptureConfig:
                 variable=var,
                 orient="horizontal",
                 length=200,
-                command=lambda _, v=var: self._on_change(),
+                command=lambda _: self._on_change(),
             )
             slider.grid(row=row, column=1, sticky="ew", padx=5)
 
@@ -218,9 +218,9 @@ class TooltipCaptureConfig:
             self.stop_tracking()
 
         self.overlay = tk.Toplevel()
-        self.overlay.attributes("-topmost", True)
+        self.overlay.attributes("-topmost", True)  # noqa: FBT003
         self.overlay.attributes("-alpha", 0.3)
-        self.overlay.overrideredirect(True)
+        self.overlay.overrideredirect(boolean=True)
         self.overlay.config(bg="green")
 
         self.is_tracking = True
@@ -295,7 +295,7 @@ class TooltipCaptureConfig:
         except tk.TclError:
             return None
 
-        screen_width, _ = get_screen_resolution()
+        _screen_width, _ = get_screen_resolution()
 
         # TODO: tooltip flipping on right side of screen, to be implemented properly
         # Check if cursor is in right 30% of screen
@@ -338,7 +338,7 @@ class CalibrationTool:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Arc Raiders Helper - Calibration")
-        self.root.attributes("-topmost", True)
+        self.root.attributes("-topmost", True)  # noqa: FBT003
         self.root.geometry("600x800")
 
         # Load current settings
@@ -360,7 +360,7 @@ class CalibrationTool:
         scrollable_frame = ttk.Frame(canvas)
 
         scrollable_frame.bind(
-            "<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+            "<Configure>", lambda _: canvas.configure(scrollregion=canvas.bbox("all"))
         )
 
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
@@ -641,12 +641,10 @@ class CalibrationTool:
         logger.info(f"Preprocessed image size: {processed.size}")  # Debug
 
         try:
-            import pytesseract
-
             text = pytesseract.image_to_string(processed, config="--psm 6")
             logger.info(f"Raw OCR text: {text!r}")  # Debug
 
-            item_name = self.ocr._parse_item_name_from_tooltip(text)
+            item_name = self.ocr.parse_item_name_from_tooltip(text)
             logger.info(f"Parsed item name: {item_name}")  # Debug
 
             if item_name:
@@ -657,7 +655,7 @@ class CalibrationTool:
                 self.result_label.config(
                     text="✗ No item name detected", foreground="red"
                 )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.info(f"OCR Error: {e}")  # Debug
             self.result_label.config(text=f"✗ OCR Error: {e}", foreground="red")
 
@@ -669,8 +667,6 @@ class CalibrationTool:
 
     def _save_config(self) -> None:
         """Save configuration to .env file."""
-        from arc_helper.config import TooltipCaptureSettings
-
         settings = Settings(
             trigger_region=TriggerRegion(
                 x=self.trigger_selector.x.get(),
@@ -751,7 +747,7 @@ class CalibrationTool:
                 f"Loaded items from {Path(filepath).name}\n\n"
                 f"Database now contains {self.db.count()} items.",
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             messagebox.showerror("Error", f"Failed to load CSV:\n\n{e}")
 
     def _view_items(self) -> None:
@@ -769,7 +765,7 @@ class CalibrationTool:
         view_window = tk.Toplevel(self.root)
         view_window.title("Item Database")
         view_window.geometry("700x400")
-        view_window.attributes("-topmost", True)
+        view_window.attributes("-topmost", True)  # noqa: FBT003
 
         # Create treeview with scrollbar
         tree_frame = ttk.Frame(view_window)

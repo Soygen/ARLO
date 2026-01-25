@@ -5,16 +5,16 @@ Displays item recommendations as a non-intrusive popup.
 
 # DPI awareness must be set before any GUI operations
 import ctypes
+import tkinter as tk
 from contextlib import suppress
 
 try:
     # Windows 10 1607+ (most reliable)
     ctypes.windll.shcore.SetProcessDpiAwareness(2)  # PROCESS_PER_MONITOR_DPI_AWARE
-except Exception:  # noqa
-    with suppress(Exception):
+except (AttributeError, OSError):
+    with suppress(AttributeError, OSError):
         # Fallback for older Windows
         ctypes.windll.user32.SetProcessDPIAware()
-import tkinter as tk
 
 from .config import get_dpi_scale
 from .config import get_settings
@@ -47,9 +47,9 @@ class OverlayWindow:
         self.window.title("Arc Raiders Helper")
 
         # Make window transparent and always on top
-        self.window.attributes("-topmost", True)
+        self.window.attributes("-topmost", True)  # noqa: FBT003
         self.window.attributes("-alpha", 0.9)
-        self.window.overrideredirect(True)  # Remove window decorations
+        self.window.overrideredirect(boolean=True)  # Remove window decorations
 
         # Start hidden
         self.window.withdraw()
@@ -201,9 +201,9 @@ class StatusWindow:
         # Create toplevel for status
         self.window = tk.Toplevel(root)
         self.window.title("Arc Helper Status")
-        self.window.attributes("-topmost", True)
+        self.window.attributes("-topmost", True)  # noqa: FBT003
         self.window.attributes("-alpha", 0.8)
-        self.window.overrideredirect(True)
+        self.window.overrideredirect(boolean=True)
 
         # Position in corner
         self.window.geometry("+10+10")

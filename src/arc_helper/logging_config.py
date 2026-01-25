@@ -4,10 +4,11 @@ Logging configuration for Arc Raiders Helper.
 
 import logging
 import sys
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 
-def setup_logging(app_dir: Path, debug_mode: bool = False) -> logging.Logger:
+def setup_logging(app_dir: Path, *, debug_mode: bool = False) -> logging.Logger:
     """
     Configure and return the application logger.
 
@@ -35,7 +36,9 @@ def setup_logging(app_dir: Path, debug_mode: bool = False) -> logging.Logger:
     # File handler (only in debug mode)
     if debug_mode:
         log_file = app_dir / "arc_helper.log"
-        file_handler = logging.FileHandler(log_file, encoding="utf-8")
+        file_handler = RotatingFileHandler(
+            log_file, maxBytes=5 * 1024 * 1024, backupCount=2, encoding="utf-8"
+        )
         file_handler.setLevel(logging.DEBUG)
         file_format = logging.Formatter(
             "%(asctime)s [%(levelname)s] %(name)s - %(message)s",

@@ -5,21 +5,12 @@ Coordinates OCR scanning and overlay display.
 
 # Enable windows DPI scaling
 import ctypes
-from contextlib import suppress
-
-try:
-    # Windows 10 1607+ (most reliable)
-    ctypes.windll.shcore.SetProcessDpiAwareness(2)  # PROCESS_PER_MONITOR_DPI_AWARE
-except Exception:  # noqa
-    with suppress(Exception):
-        # Fallback for older Windows
-        ctypes.windll.user32.SetProcessDPIAware()
-
-
 import sys
+import threading
 import time
 import tkinter as tk
 import traceback
+from contextlib import suppress
 from dataclasses import dataclass
 from dataclasses import field
 from enum import Enum
@@ -40,6 +31,15 @@ from arc_helper.ocr import OCREngineManager
 from arc_helper.ocr import get_ocr_engine
 from arc_helper.overlay import OverlayWindow
 from arc_helper.overlay import StatusWindow
+from arc_helper.resolution_profiles import get_profile_manager
+
+try:
+    # Windows 10 1607+ (most reliable)
+    ctypes.windll.shcore.SetProcessDpiAwareness(2)  # PROCESS_PER_MONITOR_DPI_AWARE
+except (AttributeError, OSError):
+    with suppress(AttributeError, OSError):
+        # Fallback for older Windows
+        ctypes.windll.user32.SetProcessDPIAware()
 
 load_dotenv(Path(__file__).with_name(".env"), override=False)
 
@@ -62,9 +62,9 @@ class DebugOverlay:
 
         self.window = tk.Toplevel(root)
         self.window.title("Capture Area")
-        self.window.attributes("-topmost", True)
+        self.window.attributes("-topmost", True)  # noqa: FBT003
         self.window.attributes("-alpha", 0.3)  # Semi-transparent
-        self.window.overrideredirect(True)
+        self.window.overrideredirect(boolean=True)
         self.window.config(bg="red")
 
         # Update position periodically
@@ -83,7 +83,7 @@ class DebugOverlay:
             h = self.settings.tooltip_capture.height
 
             self.window.geometry(f"{w}x{h}+{x}+{y}")
-        except Exception:
+        except Exception:  # noqa: BLE001
             pass
 
         # Schedule next update (every 50ms for smooth following)
@@ -125,6 +125,7 @@ class Scanner:
     # Cooldown tracking
     _last_shown_item: str = ""
     _last_shown_time: float = 0
+    _trigger_check_counter: int = 0
 
     # Thread control
     _running: bool = False
@@ -191,7 +192,11 @@ class Scanner:
                 # Phase 2: Active mode - scan tooltip
                 elif self.state == ScannerState.ACTIVE:
                     # First, verify trigger is still present
-                    if not ocr.check_trigger_any(
+                    # Optimization: Only check trigger every 3rd scan to save CPU
+                    self._trigger_check_counter += 1
+                    should_check_trigger = self._trigger_check_counter % 3 == 0
+
+                    if should_check_trigger and not ocr.check_trigger_any(
                         [settings.trigger_region, settings.trigger_region2]
                     ):
                         # Inventory closed, go back to idle
@@ -210,7 +215,7 @@ class Scanner:
                     # Wait before next tooltip scan
                     time.sleep(settings.scan.tooltip_scan_interval)
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.error(f"Scanner error: {e}")
                 self._update_status("error")
                 time.sleep(1.0)  # Back off on error
@@ -239,6 +244,8 @@ class Scanner:
             logger.debug(f"Found: {item_name} → {recommendation.action}")
         else:
             logger.debug(f"Unknown item: {item_name}")
+            # Log to missing items file for easier database updates
+            self.db.log_missing_item(item_name)
 
         # Show overlay (must be done on main thread)
         self._show_overlay(item_name, recommendation)
@@ -357,8 +364,6 @@ def check_first_run() -> bool:
 
     Returns True if ready to run, False if calibration needed.
     """
-    from arc_helper.resolution_profiles import get_profile_manager
-
     profile_manager = get_profile_manager()
     resolution = profile_manager.get_resolution_key()
 
@@ -405,15 +410,13 @@ def main() -> None:
         # Also write to a crash log file
         crash_log = APP_DIR / "crash.log"
         Path(crash_log).write_text(
-            "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
+            "".join(traceback.format_exception(exc_type, exc_value, exc_tb)),
+            encoding="utf-8",
         )
         logger.error(f"Crash log written to: {crash_log}")
         sys.__excepthook__(exc_type, exc_value, exc_tb)
 
     sys.excepthook = exception_hook
-
-    # Also catch thread exceptions (Python 3.8+)
-    import threading
 
     def thread_exception_hook(args):
         logger.error("=" * 50)
@@ -427,7 +430,7 @@ def main() -> None:
             )
         )
         crash_log = APP_DIR / "crash.log"
-        with Path(crash_log).open("a") as f:
+        with Path(crash_log).open("a", encoding="utf-8") as f:
             f.write(f"\n\nTHREAD {args.thread.name}:\n")
             f.write(
                 "".join(
@@ -454,7 +457,7 @@ def main() -> None:
         app = Application()
         app.run()
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.error(f"Fatal error in main: {e}")
         logger.error(traceback.format_exc())
         input("\nPress Enter to exit after error...")
