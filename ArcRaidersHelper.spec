@@ -20,6 +20,7 @@ a = Analysis(
         'pydantic',
         'pydantic_settings',
         'dotenv',
+        'yaml',
     ],
     hookspath=[],
     hooksconfig={},

@@ -1,0 +1,10 @@
+# Arc Raiders Helper - Station Levels
+# Set each to your current completed level (0 = not built).
+stations:
+  gear_bench: 0
+  gunsmith: 0
+  medical_lab: 0
+  explosives_station: 0
+  utility_station: 0
+  refiner: 0
+  scrappy: 0

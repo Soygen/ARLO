@@ -32,6 +32,8 @@ from arc_helper.ocr import get_ocr_engine
 from arc_helper.overlay import OverlayWindow
 from arc_helper.overlay import StatusWindow
 from arc_helper.resolution_profiles import get_profile_manager
+from arc_helper.stations import get_station_levels
+from arc_helper.stations import resolve_action
 
 try:
     # Windows 10 1607+ (most reliable)
@@ -240,6 +242,7 @@ class Scanner:
         recommendation = self.db.lookup(item_name)
 
         if recommendation:
+            recommendation = resolve_action(recommendation, get_station_levels())
             self.stats.items_found_in_db += 1
             logger.debug(f"Found: {item_name} → {recommendation.action}")
         else:
@@ -336,6 +339,13 @@ class Application:
         logger.info(
             f"Tooltip scan interval: {self.settings.scan.tooltip_scan_interval}s"
         )
+        logger.info("=" * 50)
+        levels = get_station_levels()
+        active = {k: v for k, v in levels.model_dump().items() if v > 0}
+        if active:
+            logger.info(f"Station levels: {active}")
+        else:
+            logger.info("Station levels: all at 0 (resolution disabled)")
         logger.info("=" * 50)
         logger.info("Looking for INVENTORY screen...")
         logger.info("Press Ctrl+C in terminal to quit")
