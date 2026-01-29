@@ -319,4 +319,4 @@ def reload_settings() -> Settings:
 # =============================================================================
 
 _initial_settings = Settings()  # Load settings to get debug_mode
-logger = setup_logging(APP_DIR, _initial_settings.debug_mode)
+logger = setup_logging(APP_DIR, debug_mode=_initial_settings.debug_mode)
