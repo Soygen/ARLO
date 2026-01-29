@@ -295,8 +295,6 @@ def resolve_action(
     from .database import Item as _Item
 
     fallback = detect_fallback_action(item.action)
-    if fallback is None:
-        return item
 
     if not item.keep_for:
         return item
@@ -304,6 +302,14 @@ def resolve_action(
     requirements = parse_station_requirements(item.keep_for)
     if not requirements:
         return item
+
+    # For plain "Keep" items with station requirements, infer a fallback:
+    # recycle if the item has recycle_for (materials are useful), otherwise sell.
+    if fallback is None:
+        normalized = " ".join(item.action.split()).strip().lower()
+        if normalized != "keep":
+            return item
+        fallback = "Recycle" if item.recycle_for else "Sell"
 
     # Check if ALL station requirements are met.
     levels_dict = station_levels.model_dump()
