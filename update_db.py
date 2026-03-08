@@ -411,8 +411,9 @@ def write_csv(rows: list[dict[str, str]], csv_path: Path) -> None:
 def rebuild_database(csv_path: Path, db_path: Path) -> int:
     """Rebuild the SQLite database from the CSV file."""
     conn = sqlite3.connect(db_path)
+    conn.execute("DROP TABLE IF EXISTS items")
     conn.execute("""
-        CREATE TABLE IF NOT EXISTS items (
+        CREATE TABLE items (
             name TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
             action TEXT NOT NULL,
             recycle_for TEXT,
@@ -422,7 +423,9 @@ def rebuild_database(csv_path: Path, db_path: Path) -> int:
         )
     """)
     conn.execute("CREATE INDEX IF NOT EXISTS idx_items_name ON items(name COLLATE NOCASE)")
-    conn.execute("DELETE FROM items")
+
+    count = 0
+    ...
 
     count = 0
     with csv_path.open(encoding="utf-8") as f:
