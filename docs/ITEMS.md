@@ -1,26 +1,31 @@
 ## Item Database
 
-Items are stored in `items.db` (SQLite database). The database can be updated automatically from the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot) or managed manually via CSV.
+Items are stored in `items.db` (SQLite database) with the following columns: `name`, `action`, `recycle_for`, `keep_for`, `sell_price`, and `stack_size`. The database updates automatically from the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot) on every app launch, or can be updated manually.
 
-### Automatic Update from Wiki
+### Automatic Updates on Launch
 
-The easiest way to keep the item database current is to run the wiki scraper:
+Every time `ArcRaidersHelper.exe` (or `uv run arc-helper`) starts, it checks the wiki for item database updates. This is throttled to once per 24 hours so it doesn't slow down repeated launches. The update runs in merge mode, meaning your manual action overrides are always preserved.
+
+If the wiki is unreachable (no internet, site down, etc.), the app starts normally with whatever database it already has. The update never blocks or prevents the app from launching.
+
+The throttle timestamp is stored in `.last_wiki_update` in the app directory. Delete this file to force an update on the next launch.
+
+### Manual Update from Command Line
+
+You can also run the wiki scraper directly for more control:
 
 ```bash
-# Install scraper dependencies (one time)
-uv sync --extra scraper
+# Full update - overwrites items.csv and rebuilds items.db from wiki
+uv run python update_db.py
 
-# Full update — overwrites items.csv and rebuilds items.db
-python update_db.py
+# Merge mode - pulls new items from wiki but keeps your manual overrides
+uv run python update_db.py --merge
 
-# Merge mode — pulls new items from wiki but keeps your manual overrides
-python update_db.py --merge
+# Dry run - preview changes without writing any files
+uv run python update_db.py --dry-run
 
-# Dry run — preview changes without writing any files
-python update_db.py --dry-run
-
-# CSV only — update the CSV without rebuilding the database
-python update_db.py --csv-only
+# CSV only - update the CSV without rebuilding the database
+uv run python update_db.py --csv-only
 ```
 
 Or use the makefile shortcuts:
@@ -30,42 +35,52 @@ make update-db-merge    # Merge mode
 make update-db-dry      # Dry run preview
 ```
 
-#### How Auto-Update Works
+### How the Scraper Works
 
 The scraper:
 1. Fetches the loot table from `https://arcraiders.wiki/wiki/Loot`
 2. Parses every item's **name**, **rarity**, **recycles to**, **sell price**, **stack size**, **category**, and **uses**
 3. Auto-generates action recommendations based on category and uses:
-   - **Basic/Refined/Topside Materials** → `Keep` (crafting ingredients)
-   - **Trinkets** with no uses → `Sell`
-   - **Recyclables** with workshop/quest uses → `Keep until uses complete; recycle after`
-   - **Recyclables** with no uses → `Recycle`
-   - **Keys** → `Keep`
-   - **Quick Use / Mods / Augments / Shields** → `Keep` or `Use`
+   - **Basic/Refined/Topside Materials** - `Keep` (crafting ingredients)
+   - **Trinkets** with no uses - `Sell`
+   - **Recyclables** with workshop/quest uses - `Keep until uses complete; recycle after`
+   - **Recyclables** with no uses - `Recycle`
+   - **Keys** - `Keep`
+   - **Quick Use / Mods / Augments / Shields** - `Keep` or `Use`
 4. Writes `items.csv` and rebuilds `items.db`
 
-#### Merge Mode
+### Merge Mode
 
-Use `--merge` when you've customized action recommendations and don't want to lose them. The scraper will:
-- **Keep** your existing `action`, `recycle_for`, and `keep_for` for items already in your CSV
+The on-launch auto-update always uses merge mode. When you run the scraper manually, you can choose between full update or merge mode.
+
+In merge mode the scraper will:
+- **Preserve** your existing `action`, `recycle_for`, and `keep_for` for items already in your CSV
 - **Add** any new items from the wiki with auto-generated recommendations
 - **Fill in** empty `recycle_for` / `keep_for` fields from wiki data
+- **Always update** `sell_price` and `stack_size` to the latest wiki values
 
-#### GitHub Actions (Optional)
+### GitHub Actions (Optional)
 
-If you fork this repo, you can enable the included GitHub Actions workflow (`.github/workflows/update-db.yml`) to automatically check for wiki updates on a schedule. See the workflow file for configuration details.
+If you fork this repo, the included GitHub Actions workflow at `.github/workflows/update-db.yml` can sync the database on a schedule:
+
+- Runs weekly on Mondays at 6:00 UTC in merge mode
+- Auto-commits updated `items.csv` and `items.db` if changes are detected
+- Can be triggered manually from the **Actions** tab on GitHub
+
+No secrets or configuration needed - just push the workflow file and it works.
 
 ---
 
 ### Manual CSV Management
 
-Edit `items.csv` with the following columns:
+You can also edit `items.csv` directly. The CSV has the following columns:
+
 ```csv
-name,action,recycle_for,keep_for
-Advanced Arc Powercell,Keep,2x ARC Powercell,Medical Lab: Surge Shield Recharger
-ARC CIRCUITRY,RECYCLE,ARC Alloy,
-BASIC ELECTRONICS,RECYCLE,Basic components,
-MEDICAL SUPPLIES,USE,,Emergency healing
+name,action,recycle_for,keep_for,sell_price,stack_size
+Advanced Arc Powercell,Keep,2x ARC Powercell,Medical Lab: Surge Shield Recharger,640,5
+ARC Alloy,Keep,2x Metal Parts,Workshop Explosives Station 1 (6x),200,15
+Air Freshener,Sell,,,,2000,5
+Alarm Clock,Recycle,"1x Processor, 6x Plastic Parts",,1000,3
 ```
 
 | Column | Description |
@@ -74,6 +89,10 @@ MEDICAL SUPPLIES,USE,,Emergency healing
 | `action` | Recommended action: `KEEP`, `RECYCLE`, `SELL`, `USE`, `TRASH`, or any custom text |
 | `recycle_for` | What you get when recycling (shown when action is RECYCLE) |
 | `keep_for` | Why to keep it (shown when action is KEEP or USE) |
+| `sell_price` | Sell value in credits (shown on overlay) |
+| `stack_size` | Maximum stack size (shown on overlay) |
+
+The `sell_price` and `stack_size` columns are optional for backwards compatibility. If missing, the overlay just won't show that info for those items.
 
 ### Managing the Database via Calibration Tool
 
@@ -92,3 +111,4 @@ The database is automatically created on first run. Loading a CSV file will repl
 - Item names are matched case-insensitively (e.g., "Arc Circuitry" will match "ARC CIRCUITRY")
 - Leave `recycle_for` or `keep_for` empty if not applicable
 - The `action` field can be any text - it will be displayed as-is on the overlay
+- If you customize an action and want to keep it, use `--merge` mode (or just let the on-launch auto-update handle it - it always uses merge mode)

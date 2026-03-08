@@ -411,9 +411,8 @@ def write_csv(rows: list[dict[str, str]], csv_path: Path) -> None:
 def rebuild_database(csv_path: Path, db_path: Path) -> int:
     """Rebuild the SQLite database from the CSV file."""
     conn = sqlite3.connect(db_path)
-    conn.execute("DROP TABLE IF EXISTS items")
     conn.execute("""
-        CREATE TABLE items (
+        CREATE TABLE IF NOT EXISTS items (
             name TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
             action TEXT NOT NULL,
             recycle_for TEXT,
@@ -423,9 +422,7 @@ def rebuild_database(csv_path: Path, db_path: Path) -> int:
         )
     """)
     conn.execute("CREATE INDEX IF NOT EXISTS idx_items_name ON items(name COLLATE NOCASE)")
-
-    count = 0
-    ...
+    conn.execute("DELETE FROM items")
 
     count = 0
     with csv_path.open(encoding="utf-8") as f:
@@ -546,6 +543,81 @@ Examples:
         print(f"  Rebuilt {ITEMS_DB} with {db_count} items")
 
     print("\nDone!")
+
+
+# =============================================================================
+# Auto-update: called by the main app on startup
+# =============================================================================
+
+LAST_UPDATE_FILE = SCRIPT_DIR / ".last_wiki_update"
+AUTO_UPDATE_INTERVAL_HOURS = 24
+
+
+def _should_auto_update() -> bool:
+    """Check if enough time has passed since the last auto-update."""
+    import time
+
+    if not LAST_UPDATE_FILE.exists():
+        return True
+
+    try:
+        last_ts = float(LAST_UPDATE_FILE.read_text(encoding="utf-8").strip())
+        hours_since = (time.time() - last_ts) / 3600
+        return hours_since >= AUTO_UPDATE_INTERVAL_HOURS
+    except (ValueError, OSError):
+        return True
+
+
+def _mark_updated() -> None:
+    """Write the current timestamp to the update marker file."""
+    import time
+
+    try:
+        LAST_UPDATE_FILE.write_text(str(time.time()), encoding="utf-8")
+    except OSError:
+        pass  # Non-critical, just means we'll update again next launch
+
+
+def auto_update(*, force: bool = False) -> bool:
+    """
+    Run a wiki database update if due. Called by the main app on startup.
+
+    Uses merge mode to preserve any manual action overrides.
+    Throttled to once per 24 hours unless force=True.
+    Fails silently on any error so the app always starts.
+
+    Returns True if an update was performed, False otherwise.
+    """
+    if not force and not _should_auto_update():
+        return False
+
+    try:
+        print("Checking wiki for item database updates...")
+        html = fetch_wiki_page()
+        wiki_items = scrape_items(html)
+
+        if not wiki_items:
+            print("  No items found on wiki, skipping update.")
+            return False
+
+        existing = load_existing_csv(ITEMS_CSV)
+        rows, stats = build_csv_rows(wiki_items, existing, merge=True)
+
+        write_csv(rows, ITEMS_CSV)
+        rebuild_database(ITEMS_CSV, ITEMS_DB)
+
+        _mark_updated()
+
+        new_count = stats.items_written - stats.items_preserved
+        print(
+            f"  Item database updated: {stats.items_written} items "
+            f"({new_count} new, {stats.items_preserved} preserved)"
+        )
+        return True
+
+    except Exception as e:  # noqa: BLE001
+        print(f"  Wiki update skipped (offline or error: {e})")
+        return False
 
 
 if __name__ == "__main__":

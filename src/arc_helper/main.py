@@ -448,6 +448,14 @@ def main() -> None:
             input("\nPress Enter to exit...")
             return
 
+        # Auto-update item database from wiki (throttled to once per 24h)
+        try:
+            sys.path.insert(0, str(APP_DIR))
+            from update_db import auto_update
+            auto_update()
+        except Exception as e:  # noqa: BLE001
+            logger.debug(f"Wiki auto-update unavailable: {e}")
+
         settings = get_settings()
         logger.info(
             f"Settings loaded for resolution, trigger at ({settings.trigger_region.x}, {settings.trigger_region.y})"
