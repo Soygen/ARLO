@@ -64,6 +64,9 @@ class OverlayWindow:
         # Auto-hide timer ID
         self._hide_after_id: str | None = None
 
+        # Track currently displayed item to avoid redraw flicker
+        self._current_item: str | None = None
+
     def _scale(self, value: int) -> int:
         """Scale a value down to counteract DPI scaling."""
         return max(1, int(value / self.dpi_scale))
@@ -138,6 +141,16 @@ class OverlayWindow:
 
     def show(self, item_name: str, recommendation: Item | None) -> None:
         """Show the overlay with item info."""
+        # If already showing this exact item, just reset the hide timer
+        if self._current_item == item_name and self.is_visible():
+            if self._hide_after_id:
+                self.window.after_cancel(self._hide_after_id)
+            hide_ms = int(self.settings.overlay.display_time * 1000)
+            self._hide_after_id = self.window.after(hide_ms, self.hide)
+            return
+
+        self._current_item = item_name
+
         # Cancel any pending hide
         if self._hide_after_id:
             self.window.after_cancel(self._hide_after_id)
@@ -194,6 +207,7 @@ class OverlayWindow:
         if self._hide_after_id:
             self.window.after_cancel(self._hide_after_id)
             self._hide_after_id = None
+        self._current_item = None
         self.window.withdraw()
 
     def set_position(self, x: int, y: int) -> None:
