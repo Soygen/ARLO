@@ -1,6 +1,6 @@
 # PabsArcTooltip Deluxe
 
-An enhanced fork of [PabsArcTooltip](https://github.com/Pabosik/PabsArcTooltip) — a screen overlay tool for [Arc Raiders](https://store.steampowered.com/app/2073750/ARC_Raiders/) that detects items in your inventory and displays recommended actions (**keep**, **recycle**, **sell**) along with sell prices, stack sizes, and crafting details.
+An enhanced fork of [PabsArcTooltip](https://github.com/Pabosik/PabsArcTooltip) - a screen overlay tool for [Arc Raiders](https://store.steampowered.com/app/2073750/ARC_Raiders/) that detects items in your inventory and displays recommended actions (**keep**, **recycle**, **sell**) along with sell prices, stack sizes, and crafting details.
 
 This fork adds automatic item database updates from the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot) and an expanded overlay with pricing info.
 
@@ -11,12 +11,12 @@ This fork adds automatic item database updates from the [Arc Raiders Wiki](https
 
 ## What's New vs. the Original
 
-- **Wiki auto-sync** — Item database updates directly from the [Arc Raiders Wiki loot table](https://arcraiders.wiki/wiki/Loot) with a single command
-- **Sell price & stack size on the overlay** — See at a glance what an item sells for and how high it stacks
-- **300+ items** — Expanded coverage including keys, mods, augments, shields, ammo, and consumables
-- **Smart action generation** — The scraper auto-categorizes items (keep materials, sell trinkets, recycle junk) based on wiki data
-- **Merge mode** — Pull new items from the wiki without losing your manual action overrides
-- **GitHub Actions** — Optional scheduled workflow that auto-updates the database weekly
+- **Wiki auto-sync** - Item database updates directly from the [Arc Raiders Wiki loot table](https://arcraiders.wiki/wiki/Loot) with a single command
+- **Sell price & stack size on the overlay** - See at a glance what an item sells for and how high it stacks
+- **300+ items** - Expanded coverage including keys, mods, augments, shields, ammo, and consumables
+- **Smart action generation** - The scraper auto-categorizes items (keep materials, sell trinkets, recycle junk) based on wiki data
+- **Merge mode** - Pull new items from the wiki without losing your manual action overrides
+- **GitHub Actions** - Optional scheduled workflow that auto-updates the database weekly
 
 ---
 
@@ -24,8 +24,8 @@ This fork adds automatic item database updates from the [Arc Raiders Wiki](https
 
 The tool runs two detection phases while you play:
 
-1. **Trigger Detection** (every 500ms) — Scans for the word "INVENTORY" on screen to know when your inventory is open
-2. **Tooltip Detection** (every 300ms) — When inventory is open, captures the area around your cursor, reads the item name via OCR, looks it up in the database, and shows an overlay
+1. **Trigger Detection** (every 500ms) - Scans for the word "INVENTORY" on screen to know when your inventory is open
+2. **Tooltip Detection** (every 300ms) - When inventory is open, captures the area around your cursor, reads the item name via OCR, looks it up in the database, and shows an overlay
 
 The overlay popup displays:
 
@@ -41,7 +41,7 @@ The overlay popup displays:
 - **Item name** at the top
 - **Action** color-coded (green = keep, gold = sell, turquoise = recycle, pink = use)
 - **Sell price** and **stack size** on the info line
-- **Details** — what it recycles into, or why you're keeping it
+- **Details** - what it recycles into, or why you're keeping it
 
 ---
 
@@ -145,7 +145,7 @@ The included workflow at `.github/workflows/update-db.yml` can automatically syn
 - Auto-commits updated `items.csv` and `items.db` if changes are detected
 - Can also be triggered manually from the **Actions** tab on GitHub
 
-No secrets or extra configuration needed — just push the workflow file and it works.
+No secrets or extra configuration needed - just push the workflow file and it works.
 
 For more details on how the scraper works, CSV format, and manual database management, see [docs/ITEMS.md](docs/ITEMS.md).
 
@@ -160,7 +160,7 @@ uv sync --all-extras
 uv run python build.py
 ```
 
-Output lands in `dist/ArcRaidersHelper/` containing the exe, calibration tool, bundled Tesseract, config files, and item database. Zip that folder to share with anyone — no Python install needed on their end.
+Output lands in `dist/ArcRaidersHelper/` containing the exe, calibration tool, bundled Tesseract, config files, and item database. Zip that folder to share with anyone - no Python install needed on their end.
 
 See [docs/BUILD.md](docs/BUILD.md) for full build details.
 
@@ -242,13 +242,13 @@ Please include your screen resolution, debug images from the `debug/` folder (en
 
 ## Credits
 
-- **[PabsArcTooltip](https://github.com/Pabosik/PabsArcTooltip)** — Original project by [Pabosik](https://github.com/Pabosik)
-- **[Arc Raiders Wiki](https://arcraiders.wiki)** — Community wiki used as the item data source
-- **[Tesseract OCR](https://github.com/tesseract-ocr/tesseract)** — Text recognition engine
-- **[PyInstaller](https://pyinstaller.org/)** — Executable packaging
+- **[PabsArcTooltip](https://github.com/Pabosik/PabsArcTooltip)** - Original project by [Pabosik](https://github.com/Pabosik)
+- **[Arc Raiders Wiki](https://arcraiders.wiki)** - Community wiki used as the item data source
+- **[Tesseract OCR](https://github.com/tesseract-ocr/tesseract)** - Text recognition engine
+- **[PyInstaller](https://pyinstaller.org/)** - Executable packaging
 
 ---
 
 ## License
 
-MIT License — Free to use and modify.
+MIT License - Free to use and modify.
