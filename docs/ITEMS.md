@@ -1,8 +1,63 @@
 ## Item Database
 
-Items are stored in `items.db` (SQLite database). You can manage the database using the [Calibration tool](CALIBRATION.md) or by editing the CSV file directly.
+Items are stored in `items.db` (SQLite database). The database can be updated automatically from the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot) or managed manually via CSV.
 
-### CSV Format
+### Automatic Update from Wiki
+
+The easiest way to keep the item database current is to run the wiki scraper:
+
+```bash
+# Install scraper dependencies (one time)
+uv sync --extra scraper
+
+# Full update — overwrites items.csv and rebuilds items.db
+python update_db.py
+
+# Merge mode — pulls new items from wiki but keeps your manual overrides
+python update_db.py --merge
+
+# Dry run — preview changes without writing any files
+python update_db.py --dry-run
+
+# CSV only — update the CSV without rebuilding the database
+python update_db.py --csv-only
+```
+
+Or use the makefile shortcuts:
+```bash
+make update-db          # Full update
+make update-db-merge    # Merge mode
+make update-db-dry      # Dry run preview
+```
+
+#### How Auto-Update Works
+
+The scraper:
+1. Fetches the loot table from `https://arcraiders.wiki/wiki/Loot`
+2. Parses every item's **name**, **rarity**, **recycles to**, **sell price**, **stack size**, **category**, and **uses**
+3. Auto-generates action recommendations based on category and uses:
+   - **Basic/Refined/Topside Materials** → `Keep` (crafting ingredients)
+   - **Trinkets** with no uses → `Sell`
+   - **Recyclables** with workshop/quest uses → `Keep until uses complete; recycle after`
+   - **Recyclables** with no uses → `Recycle`
+   - **Keys** → `Keep`
+   - **Quick Use / Mods / Augments / Shields** → `Keep` or `Use`
+4. Writes `items.csv` and rebuilds `items.db`
+
+#### Merge Mode
+
+Use `--merge` when you've customized action recommendations and don't want to lose them. The scraper will:
+- **Keep** your existing `action`, `recycle_for`, and `keep_for` for items already in your CSV
+- **Add** any new items from the wiki with auto-generated recommendations
+- **Fill in** empty `recycle_for` / `keep_for` fields from wiki data
+
+#### GitHub Actions (Optional)
+
+If you fork this repo, you can enable the included GitHub Actions workflow (`.github/workflows/update-db.yml`) to automatically check for wiki updates on a schedule. See the workflow file for configuration details.
+
+---
+
+### Manual CSV Management
 
 Edit `items.csv` with the following columns:
 ```csv
@@ -20,9 +75,7 @@ MEDICAL SUPPLIES,USE,,Emergency healing
 | `recycle_for` | What you get when recycling (shown when action is RECYCLE) |
 | `keep_for` | Why to keep it (shown when action is KEEP or USE) |
 
-### Managing the Database
-
-The easiest way to update the item database is through the **Calibration tool**:
+### Managing the Database via Calibration Tool
 
 1. Edit `items.csv` in Excel, Google Sheets, or any text editor
 2. Run `Calibrate.exe` (or `uv run arc-calibrate`)

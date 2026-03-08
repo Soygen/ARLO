@@ -21,6 +21,8 @@ class Item(BaseModel):
     action: str = Field(..., min_length=1, max_length=100)
     recycle_for: str | None = Field(default=None, max_length=500)
     keep_for: str | None = Field(default=None, max_length=500)
+    sell_price: int | None = Field(default=None)
+    stack_size: int | None = Field(default=None)
 
 
 class Database:
@@ -47,13 +49,25 @@ class Database:
                     name TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
                     action TEXT NOT NULL,
                     recycle_for TEXT,
-                    keep_for TEXT
+                    keep_for TEXT,
+                    sell_price INTEGER,
+                    stack_size INTEGER
                 )
             """)
             conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_items_name
                 ON items(name COLLATE NOCASE)
             """)
+
+            # Migrate: add new columns if upgrading from older schema
+            existing_cols = {
+                row[1] for row in conn.execute("PRAGMA table_info(items)").fetchall()
+            }
+            if "sell_price" not in existing_cols:
+                conn.execute("ALTER TABLE items ADD COLUMN sell_price INTEGER")
+            if "stack_size" not in existing_cols:
+                conn.execute("ALTER TABLE items ADD COLUMN stack_size INTEGER")
+
             conn.commit()
 
     def lookup(self, name: str) -> Item | None:
@@ -113,6 +127,7 @@ class Database:
         Load items from a CSV file into the database.
 
         CSV must have columns: name, action, recycle_for, keep_for
+        Optional columns: sell_price, stack_size
 
         Args:
             csv_path: Path to the CSV file
@@ -140,19 +155,27 @@ class Database:
                     recycle_for = row.get("recycle_for", "").strip() or None
                     keep_for = row.get("keep_for", "").strip() or None
 
+                    # New columns (optional in CSV for backwards compat)
+                    sell_price_str = row.get("sell_price", "").strip()
+                    stack_size_str = row.get("stack_size", "").strip()
+                    sell_price = int(sell_price_str) if sell_price_str else None
+                    stack_size = int(stack_size_str) if stack_size_str else None
+
                     if not name or not action:
                         continue
 
                     conn.execute(
                         """
-                        INSERT INTO items (name, action, recycle_for, keep_for)
-                        VALUES (?, ?, ?, ?)
+                        INSERT INTO items (name, action, recycle_for, keep_for, sell_price, stack_size)
+                        VALUES (?, ?, ?, ?, ?, ?)
                         ON CONFLICT(name) DO UPDATE SET
                             action = excluded.action,
                             recycle_for = excluded.recycle_for,
-                            keep_for = excluded.keep_for
+                            keep_for = excluded.keep_for,
+                            sell_price = excluded.sell_price,
+                            stack_size = excluded.stack_size
                         """,
-                        (name, action, recycle_for, keep_for),
+                        (name, action, recycle_for, keep_for, sell_price, stack_size),
                     )
                     count += 1
 
@@ -183,6 +206,8 @@ class Database:
             action=row["action"],
             recycle_for=row["recycle_for"],
             keep_for=row["keep_for"],
+            sell_price=row["sell_price"] if "sell_price" in row.keys() else None,
+            stack_size=row["stack_size"] if "stack_size" in row.keys() else None,
         )
 
     def get_all_items(self) -> list[Item]:
@@ -190,7 +215,7 @@ class Database:
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.execute(
-                "SELECT name, action, recycle_for, keep_for FROM items ORDER BY name"
+                "SELECT name, action, recycle_for, keep_for, sell_price, stack_size FROM items ORDER BY name"
             )
             return [
                 Item(
@@ -198,6 +223,8 @@ class Database:
                     action=row["action"],
                     recycle_for=row["recycle_for"],
                     keep_for=row["keep_for"],
+                    sell_price=row["sell_price"],
+                    stack_size=row["stack_size"],
                 )
                 for row in cursor.fetchall()
             ]
@@ -219,7 +246,7 @@ def load_csv_to_database(csv_path: Path | str, *, clear_existing: bool = True) -
     Convenience function to load a CSV file into the database.
 
     Args:
-        csv_path: Path to CSV file (columns: name, action, recycle_for, keep_for)
+        csv_path: Path to CSV file (columns: name, action, recycle_for, keep_for, sell_price, stack_size)
         clear_existing: If True, clears existing data before loading
 
     Returns:

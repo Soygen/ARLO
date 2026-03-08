@@ -18,3 +18,12 @@ db_list:
 
 winbuild:
 	python build.py
+
+update-db:
+	uv run python update_db.py
+
+update-db-merge:
+	uv run python update_db.py --merge
+
+update-db-dry:
+	uv run python update_db.py --dry-run

@@ -113,6 +113,17 @@ class OverlayWindow:
         )
         self.action_label.pack(anchor="w", pady=(self._scale(5), 0))
 
+        # Info label (sell price / stack size)
+        self.info_label = tk.Label(
+            self.frame,
+            text="",
+            font=("Segoe UI", notes_font_size),
+            fg="#cc99ff",
+            bg="#1a1a2e",
+            anchor="w",
+        )
+        self.info_label.pack(anchor="w", pady=(self._scale(3), 0))
+
         # Notes label - wraplength will be updated dynamically in show()
         self.notes_label = tk.Label(
             self.frame,
@@ -140,6 +151,14 @@ class OverlayWindow:
             color = ACTION_COLORS.get(action_str.upper(), "#FFFFFF")
             self.action_label.config(text=f"→ {action_str}", fg=color)
 
+            # Show sell price and stack size info line
+            info_parts: list[str] = []
+            if recommendation.sell_price is not None:
+                info_parts.append(f"Sell: {recommendation.sell_price:,}₡")
+            if recommendation.stack_size is not None:
+                info_parts.append(f"Stack: {recommendation.stack_size}")
+            self.info_label.config(text="  ·  ".join(info_parts))
+
             # Show recycle_for or keep_for based on action
             detail_text = ""
             action_upper = action_str.upper()
@@ -150,6 +169,7 @@ class OverlayWindow:
             self.notes_label.config(text=detail_text)
         else:
             self.action_label.config(text="→ UNKNOWN", fg=ACTION_COLORS["UNKNOWN"])
+            self.info_label.config(text="")
             self.notes_label.config(text="Item not in database")
 
         # Position and show
@@ -157,11 +177,12 @@ class OverlayWindow:
         self.window.deiconify()
         self.window.lift()
 
-        # Update wraplength to match the width of the action label
+        # Update wraplength to match the width of the widest label
         self.window.update_idletasks()  # Force geometry calculation
         action_width = self.action_label.winfo_width()
         name_width = self.name_label.winfo_width()
-        max_width = max(action_width, name_width, 200)  # Minimum 200
+        info_width = self.info_label.winfo_width()
+        max_width = max(action_width, name_width, info_width, 200)  # Minimum 200
         self.notes_label.config(wraplength=max_width)
 
         # Auto-hide after configured time

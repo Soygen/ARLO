@@ -1,211 +1,133 @@
-# Arc Raiders Helper
+# Arc Raiders Helper (Wiki-Sync Fork)
 
-A screen overlay tool that helps you manage your inventory in Arc Raiders by automatically detecting items and displaying recommended actions (keep, recycle, etc.).
+A screen overlay tool for Arc Raiders that detects items in your inventory and shows recommended actions — **keep**, **recycle**, **sell** — along with sell prices, stack sizes, and crafting details. This fork adds automatic database updates from the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot).
 
-![Example 1](static/screen_01.png)
-![Example 2](static/screen_02.png)
-
-A video of how the tool works:
-- TODO: add youtube link
+[![Example 1](static/screen_01.png)](static/screen_01.png)
+[![Example 2](static/screen_02.png)](static/screen_02.png)
 
 ---
 
-## Table of Contents
+## What's New in This Fork
 
-- [How It Works](#how-it-works)
-- [Features](#features)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [First Run Setup](#first-run-setup)
-- [Calibration Tool](docs/CALIBRATION.md)
-- [Configuration](docs/CONFIGURATION.md)
-- [Item Database](docs/ITEMS.md)
-- [Building from Source](docs/BUILD.md)
-- [Troubleshooting](docs/TROUBLESHOOTING.md)
-- [Contributing](#contributing)
-- [Changelog](docs/CHANGELOG.md)
+- **Wiki auto-sync** — Item database updates automatically from the Arc Raiders Wiki loot table
+- **Sell price & stack size** — Shown directly on the in-game overlay popup
+- **300+ items** — Expanded coverage including keys, mods, augments, shields, ammo, and consumables
+- **Merge mode** — Pull new items from the wiki without losing your manual action overrides
+- **GitHub Actions** — Optional weekly auto-update that commits changes to your repo
 
 ---
 
 ## How It Works
 
-The tool uses a two-phase detection system:
+The tool runs two detection phases while you play:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│  Phase 1: TRIGGER DETECTION (low frequency, every 500ms)        │
-│  ─────────────────────────────────────────────────────────      │
-│  Scans specific screen regions looking for "INVENTORY" text     │
-│  This indicates that the inventory is open                      │
-│                                                                 │
-│                          │                                      │
-│                          ▼                                      │
-│              ┌───────────────────────┐                          │
-│              │  INVENTORY detected?  │                          │
-│              └───────────┬───────────┘                          │
-│                    YES   │                                      │
-│                          ▼                                      │
-│                                                                 │
-│  Phase 2: TOOLTIP DETECTION (high frequency, every 300ms)       │
-│  ─────────────────────────────────────────────────────────      │
-│  Captures area around cursor → Finds tooltip → Extracts         │
-│  item name via OCR → Looks up in database → Shows overlay       │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+1. **Trigger Detection** (every 500ms) — Scans for the word "INVENTORY" on screen to know when your inventory is open
+2. **Tooltip Detection** (every 300ms) — When inventory is open, captures the area around your cursor, reads the item name via OCR, looks it up in the database, and shows an overlay with the recommendation
 
-TODO: add screenshots
-
-### Detection Details
-
-1. **Trigger Detection**: Continuously scans two screen regions (menu mode and in-raid mode) looking for the word "INVENTORY". This indicates that you have opened your inventory in the game.
-
-2. **Tooltip Detection**: Once the inventory is detected, the tool starts scanning the area around your mouse cursor for item tooltips. When you hover over an item, it:
-   - Captures a region around your cursor
-   - Identifies the tooltip by its cream-colored background
-   - Filters out colored tags (rarity, item type)
-   - Extracts the item name using OCR
-
-3. **Overlay Display**: If the item is found in the database, an overlay appears showing the recommended action (e.g., "KEEP - needed for crafting" or "RECYCLE - not useful").
-
----
-
-## Features
-
-- **Automatic detection** - No hotkey needed, detects when inventory is open
-- **Cursor-following** - Finds tooltips wherever they appear on screen
-- **Two-phase scanning** - Minimizes CPU usage by only running tooltip OCR when inventory is open
-- **Resolution profiles** - Pre-configured settings for common screen resolutions
-- **Calibration tool** - GUI tool to configure screen regions for any resolution
-- **OCR-based** - Reads item names directly from screen using Tesseract
-- **SQLite database** - Load items from CSV files
-- **Configurable** - All settings stored in `.env` file
-- **Debug mode** - Saves intermediate images for troubleshooting OCR issues
-- **Bundled Tesseract** - Pre-built releases include Tesseract (no separate install needed)
+The overlay popup shows:
+- **Item name**
+- **Action** (Keep / Recycle / Sell / Use) in color
+- **Sell price** and **stack size**
+- **Details** — what it recycles into or why you're keeping it
 
 ---
 
 ## Requirements
 
-### To Run Pre-built Release
-
+### Pre-built Release
 - Windows 10/11
-- Arc Raiders running in **borderless windowed** or **windowed** mode (not fullscreen)
+- Arc Raiders in **borderless windowed** or **windowed** mode
 
-### To Run from Source
-
+### From Source
 - Windows 10/11
-- Python 3.11 or higher
-- [uv](https://github.com/astral-sh/uv) package manager (recommended) or pip
-- [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki) installed
-
-### To Build from Source
-
-- All of the above, plus:
-- PyInstaller (`uv sync --all-extras`)
+- Python 3.11+
+- [uv](https://github.com/astral-sh/uv) package manager
+- [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki)
 
 ---
 
 ## Installation
 
-### Option 1: Pre-built Release (Recommended)
+### Option 1: Pre-built Release
 
-1. Download the latest release from the [Releases](https://github.com/yourusername/arc-raiders-helper/releases) page
-2. Extract the zip file to a folder of your choice
-3. Run `ArcRaidersHelper.exe`
-
-The release includes all dependencies, including Tesseract OCR.
+1. Download from [Releases](https://github.com/yourusername/arc-raiders-helper/releases)
+2. Extract and run `ArcRaidersHelper.exe`
 
 ### Option 2: From Source
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/arc-raiders-helper.git
-   cd arc-raiders-helper
-   ```
+```bash
+git clone https://github.com/yourusername/arc-raiders-helper.git
+cd arc-raiders-helper
+uv sync
+cp .env.example .env
+uv run arc-helper
+```
 
-2. Install dependencies:
-   ```bash
-   uv sync
-   ```
+Install Tesseract OCR to `C:\Program Files\Tesseract-OCR\` or set `TESSERACT_PATH` in `.env`.
 
-3. Install Tesseract OCR:
-   - Download from [UB Mannheim](https://github.com/UB-Mannheim/tesseract/wiki)
-   - Install to `C:\Program Files\Tesseract-OCR\`
-   - Or set `TESSERACT_PATH` in `.env` to your installation path
+---
 
-4. Copy the example configuration:
-   ```bash
-   cp .env.example .env
-   ```
+## Updating the Item Database
 
-5. Run the application:
-   ```bash
-   uv run arc-helper
-   ```
+### Quick Update
+
+```bash
+# Install scraper dependencies (first time only)
+uv sync --extra scraper
+
+# Full update from wiki
+python update_db.py
+
+# Or use make
+make update-db
+```
+
+### Merge Mode (Preserve Your Overrides)
+
+If you've tweaked action recommendations for specific items and want to keep those while pulling new items from the wiki:
+
+```bash
+python update_db.py --merge
+```
+
+### Preview Changes
+
+```bash
+python update_db.py --dry-run
+```
+
+### Automatic Updates via GitHub Actions
+
+This fork includes a workflow at `.github/workflows/update-db.yml` that:
+- Runs **weekly** (Mondays at 6:00 UTC) in merge mode
+- Auto-commits updated `items.csv` and `items.db` if changes are found
+- Can be triggered manually from the **Actions** tab
+
+To enable it, just push the workflow file to your fork — no secrets or configuration needed.
+
+See [Item Database docs](docs/ITEMS.md) for full details on how the scraper works and how to manage the CSV manually.
 
 ---
 
 ## First Run Setup
 
-On first launch, the application will:
-
-1. **Detect your screen resolution**
-2. **Check for a pre-configured profile** for your resolution
-3. **If found**: Automatically apply the settings and start
-4. **If not found**: Display a message asking you to run the Calibration tool
-
-### Supported Resolutions
-
-The following resolutions have pre-configured profiles:
+On first launch the app detects your screen resolution and loads a matching profile if available:
 
 | Resolution | Aspect Ratio | Status |
-|------------|--------------|--------|
-| 3440x1440 | 21:9 (Ultrawide QHD) | ✅ Configured |
-| 2560x1440 | 16:9 (QHD) | ✅ Configured |
-| 1920x1080 | 16:9 (Full HD) | ✅ Configured  |
-| 3840x2160 | 16:9 (4K UHD) | ⚠️ Needs calibration |
-| 2560x1080 | 21:9 (Ultrawide FHD) | ✅ Configured  |
+|---|---|---|
+| 3440×1440 | 21:9 Ultrawide QHD | ✅ Configured |
+| 2560×1440 | 16:9 QHD | ✅ Configured |
+| 1920×1080 | 16:9 Full HD | ✅ Configured |
+| 3840×2160 | 16:9 4K UHD | ⚠️ Needs calibration |
+| 2560×1080 | 21:9 Ultrawide FHD | ✅ Configured |
 
-If your resolution isn't listed or shows "Needs calibration", run the [Calibration tool](docs/CALIBRATION.md) to configure it.
+If your resolution isn't listed, run the [Calibration tool](docs/CALIBRATION.md) to configure it.
 
-**NOTE:** if you want to force the app to load up a resolution config from the pre-configured resolutions, you need to:
+---
 
-- run the [Calibration tool](docs/CALIBRATION.md)
-- hit `Reset to Defaults`
-- hit `Save Configuration`
-- re-run the main app
+## Configuration
 
-
-## Contributing
-
-Contributions are welcome! Here's how you can help:
-
-### Resolution Profiles
-
-If you calibrate the app for a new resolution, please submit the values! This helps other users with the same resolution.
-
-1. Run the Calibration tool and find working values for your resolution
-2. Open `resolutions.json` and add your resolution's profile
-3. Submit a pull request
-
-### Item Database
-
-Help build a comprehensive item database:
-
-1. Create or update item entries in CSV format
-2. Test that the items are detected correctly
-3. Submit your CSV additions
-
-### Bug Reports
-
-When reporting issues, please include:
-
-- Your screen resolution
-- Debug images from the `debug/` folder (if applicable)
-- The `arc_helper.log` file (enable debug mode first)
-- Steps to reproduce the issue
+All settings are stored in `.env`. See [Configuration docs](docs/CONFIGURATION.md) for details on scan regions, overlay position, display time, and debug mode.
 
 ---
 
@@ -213,37 +135,55 @@ When reporting issues, please include:
 
 ```
 arc-raiders-helper/
-├── pyproject.toml              # Package configuration
-├── build.py                    # Build script for PyInstaller
-├── ArcRaidersHelper.spec       # PyInstaller spec file
-├── .env.example                # Example configuration
-├── sample_items.csv            # Sample item data
-├── README.md                   # This file
+├── update_db.py                    # Wiki scraper & DB updater
+├── items.csv                       # Item data (auto-generated or hand-edited)
+├── items.db                        # SQLite database (built from CSV)
+├── pyproject.toml                  # Package config & dependencies
+├── makefile                        # Convenience targets
+├── .env.example                    # Configuration template
+├── .github/workflows/
+│   └── update-db.yml               # Scheduled wiki sync
 ├── src/arc_helper/
-│   ├── __init__.py
-│   ├── config.py               # Settings and logging setup
-│   ├── logging_config.py       # Logging configuration
-│   ├── database.py             # SQLite database and CSV import
-│   ├── ocr.py                  # Screen capture and OCR
-│   ├── overlay.py              # Tkinter overlay window
-│   ├── resolution_profiles.py  # Resolution-based configuration
-│   ├── resolutions.json        # Pre-configured resolution profiles
-│   ├── main.py                 # Main application entry point
-│   └── calibrate.py            # Calibration tool
-└── test_*.py                   # Test scripts
+│   ├── main.py                     # Main app entry point
+│   ├── config.py                   # Settings & logging
+│   ├── database.py                 # SQLite + CSV import + fuzzy matching
+│   ├── ocr.py                      # Screen capture & Tesseract OCR
+│   ├── overlay.py                  # Tkinter overlay (action + price + stack)
+│   ├── calibrate.py                # GUI calibration tool
+│   ├── resolution_profiles.py      # Resolution presets
+│   └── resolutions.json            # Pre-configured profiles
+├── docs/
+│   ├── ITEMS.md                    # Item database & wiki sync docs
+│   ├── CALIBRATION.md              # Calibration guide
+│   ├── CONFIGURATION.md            # Settings reference
+│   ├── BUILD.md                    # Build instructions
+│   ├── TROUBLESHOOTING.md          # Common issues
+│   └── CHANGELOG.md                # Version history
+└── static/                         # Screenshots
 ```
 
 ---
 
-## License
+## Contributing
 
-MIT License - Free to use and modify.
+### Item Database
+Run `python update_db.py --dry-run` to see what the wiki has. If you spot incorrect auto-generated actions, edit `items.csv` and use `--merge` on future updates to preserve your fixes.
+
+### Resolution Profiles
+Calibrate for your resolution and submit the values in a PR.
+
+### Bug Reports
+Include your screen resolution, debug images from `debug/`, and `arc_helper.log`.
 
 ---
 
-## Acknowledgments
+## Credits
 
-- [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) for text recognition
-- [PyInstaller](https://pyinstaller.org/) for executable packaging
-- [Pydantic](https://docs.pydantic.dev/) for configuration management
-- Arc Raiders community for item information
+- [PabsArcTooltip](https://github.com/Pabosik/PabsArcTooltip) — Original project by Pabosik
+- [Arc Raiders Wiki](https://arcraiders.wiki) — Item data source
+- [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) — Text recognition
+- [PyInstaller](https://pyinstaller.org/) — Executable packaging
+
+## License
+
+MIT License — Free to use and modify.
