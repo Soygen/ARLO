@@ -30,6 +30,12 @@
       "trigger_region": {"x": 1085, "y": 20, "width": 120, "height": 28},
       "trigger_region2": {"x": 970, "y": 35, "width": 120, "height": 25},
       "tooltip_capture": {"width": 440, "height": 560, "offset_x": 40, "offset_y": -495}
+    },
+    "5120x2160": {
+      "name": "DQHD Ultrawide (21:9) 5120x2160",
+      "trigger_region": {"x": 2169, "y": 36, "width": 231, "height": 57},
+      "trigger_region2": {"x": 1923, "y": 52, "width": 252, "height": 67},
+      "tooltip_capture": {"width": 769, "height": 1048, "offset_x": 194, "offset_y": -629}
     }
   }
 }
