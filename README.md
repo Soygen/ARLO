@@ -1,14 +1,17 @@
-# PabsArcTooltip Deluxe
+# ARLO - Arc Raiders Loot Overlay
 
-An enhanced fork of [PabsArcTooltip](https://github.com/Pabosik/PabsArcTooltip) - a screen overlay tool for [Arc Raiders](https://store.steampowered.com/app/2073750/ARC_Raiders/) that detects items in your inventory and displays recommended actions (**keep**, **recycle**, **sell**) along with sell prices, stack sizes, and crafting details.
+> **A big thanks to [Pabosik](https://github.com/Pabosik) for creating the original [PabsArcTooltip](https://github.com/Pabosik/PabsArcTooltip) that this project is built on. The core idea - an OCR-based screen overlay that reads item tooltips and tells you what to do with them - is entirely his. ARLO just builds on that foundation with some extra features.**
 
-This fork adds automatic item database updates from the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot), sell price and stack size info on the overlay, and auto-sync on every launch.
+A screen overlay tool for [Arc Raiders](https://store.steampowered.com/app/2073750/ARC_Raiders/) that detects items in your inventory and displays recommended actions (**keep**, **recycle**, **sell**) along with sell prices, stack sizes, and crafting details. The item database auto-syncs from the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot) on every launch.
 
-New screenshots coming soon.
+![Example 1](static/ARLO_01.png)
+![Example 2](static/ARLO_02.png)
+![Example 3](static/ARLO_03.png)
+
 
 ---
 
-## What's New vs. the Original
+## Features
 
 - **Auto-sync on launch** - The item database updates from the wiki every time you start the app (throttled to once per 24 hours). No manual steps needed.
 - **Sell price & stack size on the overlay** - See at a glance what an item sells for and how high it stacks
@@ -63,7 +66,7 @@ The overlay popup displays:
 
 ### Option 1: Pre-built Release (Coming Soon)
 
-1. Download the latest release from the [Releases](https://github.com/Soygen/PabsArcTooltipDeluxe/releases) page
+1. Download the latest release from the [Releases](https://github.com/Soygen/ARLO/releases) page
 2. Extract the zip to a folder of your choice
 3. Run `ArcRaidersHelper.exe`
 
@@ -73,8 +76,8 @@ The release includes all dependencies, including Tesseract OCR. The item databas
 
 1. Clone the repository:
    ```
-   git clone https://github.com/Soygen/PabsArcTooltipDeluxe.git
-   cd PabsArcTooltipDeluxe
+   git clone https://github.com/Soygen/ARLO.git
+   cd ARLO
    ```
 
 2. Install dependencies:
@@ -182,7 +185,7 @@ All settings live in the `.env` file. See [docs/CONFIGURATION.md](docs/CONFIGURA
 ## Project Structure
 
 ```
-PabsArcTooltipDeluxe/
+ARLO/
 ├── update_db.py                    # Wiki scraper & DB updater
 ├── items.csv                       # Item data (auto-generated or hand-edited)
 ├── items.db                        # SQLite database (built from CSV)
