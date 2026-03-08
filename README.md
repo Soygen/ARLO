@@ -4,8 +4,7 @@ An enhanced fork of [PabsArcTooltip](https://github.com/Pabosik/PabsArcTooltip) 
 
 This fork adds automatic item database updates from the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot), sell price and stack size info on the overlay, and auto-sync on every launch.
 
-[![Example 1](static/screen_01.png)](static/screen_01.png)
-[![Example 2](static/screen_02.png)](static/screen_02.png)
+New screenshots coming soon.
 
 ---
 
@@ -48,6 +47,7 @@ The overlay popup displays:
 ## Requirements
 
 ### Pre-built Release
+- Coming soon
 - Windows 10/11
 - Arc Raiders running in **borderless windowed** or **windowed** mode (not exclusive fullscreen)
 
@@ -61,13 +61,13 @@ The overlay popup displays:
 
 ## Installation
 
-### Option 1: Pre-built Release (Recommended)
+### Option 1: Pre-built Release (Coming Soon)
 
 1. Download the latest release from the [Releases](https://github.com/Soygen/PabsArcTooltipDeluxe/releases) page
 2. Extract the zip to a folder of your choice
 3. Run `ArcRaidersHelper.exe`
 
-The release includes all dependencies, including Tesseract OCR. The item database updates automatically from the wiki on first launch.
+The release includes all dependencies, including Tesseract OCR. The item database updates automatically from the wiki on launch, no more than once per 24 hours.
 
 ### Option 2: From Source
 
