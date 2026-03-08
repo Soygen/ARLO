@@ -13,3 +13,4 @@ dist
 .DS_Store
 
 !.env.example
+.last_wiki_update

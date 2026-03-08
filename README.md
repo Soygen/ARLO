@@ -2,18 +2,20 @@
 
 An enhanced fork of [PabsArcTooltip](https://github.com/Pabosik/PabsArcTooltip) - a screen overlay tool for [Arc Raiders](https://store.steampowered.com/app/2073750/ARC_Raiders/) that detects items in your inventory and displays recommended actions (**keep**, **recycle**, **sell**) along with sell prices, stack sizes, and crafting details.
 
-This fork adds automatic item database updates from the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot) and an expanded overlay with pricing info.
+This fork adds automatic item database updates from the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot), sell price and stack size info on the overlay, and auto-sync on every launch.
 
-TBD: Add new screenshots with updated features
+[![Example 1](static/screen_01.png)](static/screen_01.png)
+[![Example 2](static/screen_02.png)](static/screen_02.png)
+
 ---
 
 ## What's New vs. the Original
 
-- **Wiki auto-sync** - Item database updates directly from the [Arc Raiders Wiki loot table](https://arcraiders.wiki/wiki/Loot) with a single command
+- **Auto-sync on launch** - The item database updates from the wiki every time you start the app (throttled to once per 24 hours). No manual steps needed.
 - **Sell price & stack size on the overlay** - See at a glance what an item sells for and how high it stacks
 - **300+ items** - Expanded coverage including keys, mods, augments, shields, ammo, and consumables
-- **Smart action generation** - The scraper auto-categorizes items (keep materials, sell trinkets, recycle junk) based on wiki data
-- **Merge mode** - Pull new items from the wiki without losing your manual action overrides
+- **Smart action generation** - Items are auto-categorized (keep materials, sell trinkets, recycle junk) based on wiki data
+- **Merge mode** - New items from the wiki are added without overwriting your manual action overrides
 - **GitHub Actions** - Optional scheduled workflow that auto-updates the database weekly
 
 ---
@@ -28,12 +30,12 @@ The tool runs two detection phases while you play:
 The overlay popup displays:
 
 ```
-┌──────────────────────────────────────┐
-│  ARC Alloy                           │
-│  → Keep                              │
-│  Sell: 200₡  ·  Stack: 15            │
-│  For: Workshop Explosives Station 1  │
-└──────────────────────────────────────┘
++--------------------------------------+
+|  ARC Alloy                           |
+|  -> Keep                             |
+|  Sell: 200   Stack: 15               |
+|  For: Workshop Explosives Station 1  |
++--------------------------------------+
 ```
 
 - **Item name** at the top
@@ -46,7 +48,6 @@ The overlay popup displays:
 ## Requirements
 
 ### Pre-built Release
-- Coming soon
 - Windows 10/11
 - Arc Raiders running in **borderless windowed** or **windowed** mode (not exclusive fullscreen)
 
@@ -66,7 +67,7 @@ The overlay popup displays:
 2. Extract the zip to a folder of your choice
 3. Run `ArcRaidersHelper.exe`
 
-The release includes all dependencies, including Tesseract OCR.
+The release includes all dependencies, including Tesseract OCR. The item database updates automatically from the wiki on first launch.
 
 ### Option 2: From Source
 
@@ -88,63 +89,49 @@ The release includes all dependencies, including Tesseract OCR.
    copy .env.example .env
    ```
 
-5. Run the wiki scraper to populate the item database:
-   ```
-   uv run python update_db.py
-   ```
-
-6. Launch the app:
+5. Launch the app:
    ```
    uv run arc-helper
    ```
 
+The item database updates automatically from the wiki on first launch. No separate step needed.
+
 ---
 
-## Updating the Item Database
+## Item Database
 
-The item database can be updated from the wiki at any time. You don't need to wait for a new release.
+### Automatic Updates
 
-### Full Update
+The app checks the [Arc Raiders Wiki loot table](https://arcraiders.wiki/wiki/Loot) for updates every time it starts, throttled to once per 24 hours. This happens silently in the background using merge mode, so any manual action overrides you've made are preserved and new items are added automatically.
 
-Overwrites `items.csv` and rebuilds `items.db` entirely from wiki data:
+If the wiki is unreachable (no internet, site down, etc.), the app continues normally with whatever database it already has.
 
-```
-uv run python update_db.py
-```
+### Manual Update
 
-### Merge Mode (Preserve Your Overrides)
-
-If you've hand-tuned action recommendations for specific items and want to keep those while pulling in any new items from the wiki:
+You can also trigger a database update manually from the command line:
 
 ```
-uv run python update_db.py --merge
+uv run python update_db.py              # Full update from wiki
+uv run python update_db.py --merge      # Keep your manual overrides
+uv run python update_db.py --dry-run    # Preview changes without writing
 ```
 
-### Preview Changes
-
-See what would change without writing any files:
-
-```
-uv run python update_db.py --dry-run
-```
-
-### Makefile Shortcuts
-
+Or use the makefile shortcuts:
 ```
 make update-db          # Full update
 make update-db-merge    # Merge mode
 make update-db-dry      # Dry run preview
 ```
 
-### Automatic Updates via GitHub Actions
+### GitHub Actions (Optional)
 
-The included workflow at `.github/workflows/update-db.yml` can automatically sync the database:
+The included workflow at `.github/workflows/update-db.yml` can also sync the database automatically:
 
-- Runs **weekly** on Mondays at 6:00 UTC in merge mode
+- Runs weekly on Mondays at 6:00 UTC in merge mode
 - Auto-commits updated `items.csv` and `items.db` if changes are detected
-- Can also be triggered manually from the **Actions** tab on GitHub
+- Can be triggered manually from the **Actions** tab on GitHub
 
-No secrets or extra configuration needed - just push the workflow file and it works.
+No secrets or extra configuration needed.
 
 For more details on how the scraper works, CSV format, and manual database management, see [docs/ITEMS.md](docs/ITEMS.md).
 
@@ -159,7 +146,7 @@ uv sync --all-extras
 uv run python build.py
 ```
 
-Output lands in `dist/ArcRaidersHelper/` containing the exe, calibration tool, bundled Tesseract, config files, and item database. Zip that folder to share with anyone - no Python install needed on their end.
+Output lands in `dist/ArcRaidersHelper/` containing the exe, calibration tool, bundled Tesseract, config files, item database, and the wiki updater script. Zip that folder to share with anyone - no Python install needed on their end.
 
 See [docs/BUILD.md](docs/BUILD.md) for full build details.
 
@@ -171,12 +158,12 @@ On first launch the app detects your screen resolution and loads a matching prof
 
 | Resolution | Aspect Ratio | Status |
 |---|---|---|
-| 5120×2160 | 21:9 DQHD Ultrawide | ✅ Configured |
-| 3840×2160 | 16:9 4K UHD | ✅ Configured |
-| 3440×1440 | 21:9 Ultrawide QHD | ✅ Configured |
-| 2560×1440 | 16:9 QHD | ✅ Configured |
-| 2560×1080 | 21:9 Ultrawide FHD | ✅ Configured |
-| 1920×1080 | 16:9 Full HD | ✅ Configured |
+| 5120x2160 | 21:9 DQHD Ultrawide | ✅ Configured |
+| 3840x2160 | 16:9 4K UHD | ✅ Configured |
+| 3440x1440 | 21:9 Ultrawide QHD | ✅ Configured |
+| 2560x1440 | 16:9 QHD | ✅ Configured |
+| 2560x1080 | 21:9 Ultrawide FHD | ✅ Configured |
+| 1920x1080 | 16:9 Full HD | ✅ Configured |
 
 If your resolution isn't listed, run the [Calibration tool](docs/CALIBRATION.md):
 
@@ -196,7 +183,7 @@ All settings live in the `.env` file. See [docs/CONFIGURATION.md](docs/CONFIGURA
 
 ```
 PabsArcTooltipDeluxe/
-├── update_db.py                    # Wiki scraper & DB updater (new)
+├── update_db.py                    # Wiki scraper & DB updater
 ├── items.csv                       # Item data (auto-generated or hand-edited)
 ├── items.db                        # SQLite database (built from CSV)
 ├── pyproject.toml                  # Package config & dependencies
@@ -204,7 +191,7 @@ PabsArcTooltipDeluxe/
 ├── build.py                        # PyInstaller build script
 ├── .env.example                    # Configuration template
 ├── .github/workflows/
-│   └── update-db.yml               # Scheduled wiki sync (new)
+│   └── update-db.yml               # Scheduled wiki sync
 ├── src/arc_helper/
 │   ├── main.py                     # Main app entry point
 │   ├── config.py                   # Settings & logging

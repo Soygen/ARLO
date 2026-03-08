@@ -75,6 +75,7 @@ def build():
     shutil.copy(ROOT / ".env.example", OUTPUT / ".env")
     shutil.copy(ROOT / "items.csv", OUTPUT / "items.csv")
     shutil.copy(ROOT / "items.db", OUTPUT / "items.db")
+    shutil.copy(ROOT / "update_db.py", OUTPUT / "update_db.py")
     shutil.copy(
         ROOT / "src" / "arc_helper" / "resolutions.json", OUTPUT / "resolutions.json"
     )
