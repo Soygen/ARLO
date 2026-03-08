@@ -4,9 +4,7 @@ An enhanced fork of [PabsArcTooltip](https://github.com/Pabosik/PabsArcTooltip) 
 
 This fork adds automatic item database updates from the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot) and an expanded overlay with pricing info.
 
-[![Example 1](static/screen_01.png)](static/screen_01.png)
-[![Example 2](static/screen_02.png)](static/screen_02.png)
-
+TBD: Add new screenshots with updated features
 ---
 
 ## What's New vs. the Original
@@ -33,7 +31,7 @@ The overlay popup displays:
 ┌──────────────────────────────────────┐
 │  ARC Alloy                           │
 │  → Keep                              │
-│  Sell: 200₡  ·  Stack: 15           │
+│  Sell: 200₡  ·  Stack: 15            │
 │  For: Workshop Explosives Station 1  │
 └──────────────────────────────────────┘
 ```
@@ -48,6 +46,7 @@ The overlay popup displays:
 ## Requirements
 
 ### Pre-built Release
+- Coming soon
 - Windows 10/11
 - Arc Raiders running in **borderless windowed** or **windowed** mode (not exclusive fullscreen)
 
