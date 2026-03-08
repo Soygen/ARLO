@@ -1,5 +1,5 @@
 """
-Configuration module for Arc Raiders Helper.
+Configuration module for ARLO.
 Uses Pydantic Settings for type-safe configuration via environment variables.
 """
 
@@ -241,7 +241,7 @@ class Settings(BaseSettings):
             env_path = APP_DIR / ".env"
 
         lines = [
-            "# Arc Raiders Helper Configuration",
+            "# ARLO Configuration",
             "# =================================",
             "",
             "# Trigger region 1 - Menu mode",

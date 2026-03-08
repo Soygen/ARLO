@@ -1,5 +1,5 @@
 """
-Resolution profiles for Arc Raiders Helper.
+Resolution profiles for ARLO.
 Contains pre-calibrated settings for common screen resolutions.
 """
 

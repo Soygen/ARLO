@@ -4,7 +4,7 @@ Items are stored in `items.db` (SQLite database) with the following columns: `na
 
 ### Automatic Updates on Launch
 
-Every time `ArcRaidersHelper.exe` (or `uv run arc-helper`) starts, it checks the wiki for item database updates. This is throttled to once per 24 hours so it doesn't slow down repeated launches. The update runs in merge mode, meaning your manual action overrides are always preserved.
+Every time `ARLO.exe` (or `uv run arc-helper`) starts, it checks the wiki for item database updates. This is throttled to once per 24 hours so it doesn't slow down repeated launches. The update runs in merge mode, meaning your manual action overrides are always preserved.
 
 If the wiki is unreachable (no internet, site down, etc.), the app starts normally with whatever database it already has. The update never blocks or prevents the app from launching.
 

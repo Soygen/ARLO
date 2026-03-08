@@ -19,7 +19,7 @@ logger = logging.getLogger("build")
 ROOT = Path(__file__).parent
 DIST = ROOT / "dist"
 BUILD = ROOT / "build"
-OUTPUT = DIST / "ArcRaidersHelper"
+OUTPUT = DIST / "ARLO"
 TESSERACT_SRC = Path(r"C:\Program Files\Tesseract-OCR")
 
 
@@ -39,7 +39,7 @@ def build():
     logger.info("Building main application...")
     PyInstaller.__main__.run(
         [
-            "ArcRaidersHelper.spec",
+            "ARLO.spec",
             "--clean",
         ]
     )

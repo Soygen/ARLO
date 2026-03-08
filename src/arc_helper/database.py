@@ -1,5 +1,5 @@
 """
-Database module for Arc Raiders Helper.
+Database module for ARLO.
 SQLite operations for item recommendations with Pydantic models.
 """
 

@@ -10,8 +10,8 @@
 
 1. Clone the repository and install dev dependencies:
    ```bash
-   git clone https://github.com/yourusername/arc-raiders-helper.git
-   cd arc-raiders-helper
+   git clone https://github.com/yourusername/ARLO.git
+   cd ARLO
    uv sync --all-extras
    ```
 
@@ -20,13 +20,13 @@
    uv run python build.py
    ```
 
-3. Find the output in `dist/ArcRaidersHelper/`
+3. Find the output in `dist/ARLO/`
 
 ### Build Output
 
 ```
-dist/ArcRaidersHelper/
-├── ArcRaidersHelper.exe    # Main application (shows console window)
+dist/ARLO/
+├── ARLO.exe    # Main application (shows console window)
 ├── Calibrate.exe           # Calibration tool (GUI only)
 ├── _internal/              # Python dependencies (don't modify)
 ├── tesseract/              # Bundled Tesseract OCR

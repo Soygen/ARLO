@@ -1,5 +1,5 @@
 """
-Overlay UI for Arc Raiders Helper.
+Overlay UI for ARLO.
 Displays item recommendations as a non-intrusive popup.
 """
 
@@ -44,7 +44,7 @@ class OverlayWindow:
 
         # Create toplevel window for overlay
         self.window = tk.Toplevel(root)
-        self.window.title("Arc Raiders Helper")
+        self.window.title("ARLO")
 
         # Make window transparent and always on top
         self.window.attributes("-topmost", True)  # noqa: FBT003

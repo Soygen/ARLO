@@ -1,5 +1,5 @@
 """
-Calibration tool for Arc Raiders Helper.
+Calibration tool for ARLO.
 Helps configure screen regions for trigger and tooltip detection.
 """
 
@@ -337,7 +337,7 @@ class CalibrationTool:
 
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("Arc Raiders Helper - Calibration")
+        self.root.title("ARLO - Calibration")
         self.root.attributes("-topmost", True)  # noqa: FBT003
         self.root.geometry("600x800")
 
@@ -383,7 +383,7 @@ class CalibrationTool:
         instructions = ttk.Label(
             main_frame,
             text=(
-                "Configure the screen regions for Arc Raiders Helper:\n\n"
+                "Configure the screen regions for ARLO:\n\n"
                 "1. TRIGGER regions: Where 'INVENTORY' text appears\n"
                 "2. TOOLTIP region: Where item names appear\n\n"
                 "Use 'Show' to visualize each region on screen."
