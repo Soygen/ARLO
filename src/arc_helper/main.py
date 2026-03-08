@@ -1,5 +1,5 @@
 """
-Arc Raiders Helper - Main Application.
+ARLO - Main Application.
 Coordinates OCR scanning and overlay display.
 """
 
@@ -310,7 +310,7 @@ class Application:
     def run(self) -> None:
         """Start the application."""
         logger.info("=" * 50)
-        logger.info("Arc Raiders Helper - Started")
+        logger.info("ARLO - Started")
         logger.info("=" * 50)
         logger.info(f"Database: {self.db.count()} items loaded")
         logger.info(f"Debug mode: {self.settings.debug_mode}")
@@ -399,7 +399,7 @@ def check_first_run() -> bool:
 
 
 def main() -> None:
-    """Entry point for Arc Raiders Helper."""
+    """Entry point for ARLO."""
 
     # Log any unhandled exception before exit
     def exception_hook(exc_type, exc_value, exc_tb):

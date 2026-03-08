@@ -1,5 +1,5 @@
 """
-OCR module for Arc Raiders Helper.
+OCR module for ARLO.
 Screen capture and text extraction using Tesseract.
 """
 

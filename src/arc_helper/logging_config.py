@@ -1,5 +1,5 @@
 """
-Logging configuration for Arc Raiders Helper.
+Logging configuration for ARLO.
 """
 
 import logging

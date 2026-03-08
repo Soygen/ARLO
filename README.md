@@ -68,7 +68,7 @@ The overlay popup displays:
 
 1. Download the latest release from the [Releases](https://github.com/Soygen/ARLO/releases) page
 2. Extract the zip to a folder of your choice
-3. Run `ArcRaidersHelper.exe`
+3. Run `ARLO.exe`
 
 The release includes all dependencies, including Tesseract OCR. The item database updates automatically from the wiki on launch, no more than once per 24 hours.
 
@@ -149,7 +149,7 @@ uv sync --all-extras
 uv run python build.py
 ```
 
-Output lands in `dist/ArcRaidersHelper/` containing the exe, calibration tool, bundled Tesseract, config files, item database, and the wiki updater script. Zip that folder to share with anyone - no Python install needed on their end.
+Output lands in `dist/ARLO/` containing the exe, calibration tool, bundled Tesseract, config files, item database, and the wiki updater script. Zip that folder to share with anyone - no Python install needed on their end.
 
 See [docs/BUILD.md](docs/BUILD.md) for full build details.
 
