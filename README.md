@@ -64,7 +64,7 @@ The overlay popup displays:
 
 ## Installation
 
-### Option 1: Pre-built Release (Coming Soon)
+### Option 1: Pre-built Release (Recommended)
 
 1. Download the latest release from the [Releases](https://github.com/Soygen/ARLO/releases) page
 2. Extract the zip to a folder of your choice
