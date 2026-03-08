@@ -411,53 +411,55 @@ def write_csv(rows: list[dict[str, str]], csv_path: Path) -> None:
 def rebuild_database(csv_path: Path, db_path: Path) -> int:
     """Rebuild the SQLite database from the CSV file."""
     conn = sqlite3.connect(db_path)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS items (
-            name TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
-            action TEXT NOT NULL,
-            recycle_for TEXT,
-            keep_for TEXT,
-            sell_price INTEGER,
-            stack_size INTEGER
-        )
-    """)
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_items_name ON items(name COLLATE NOCASE)")
-    conn.execute("DELETE FROM items")
-
-    count = 0
-    with csv_path.open(encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            name = row.get("name", "").strip()
-            action = row.get("action", "").strip()
-            recycle_for = row.get("recycle_for", "").strip() or None
-            keep_for = row.get("keep_for", "").strip() or None
-            sell_price_str = row.get("sell_price", "").strip()
-            stack_size_str = row.get("stack_size", "").strip()
-            sell_price = int(sell_price_str) if sell_price_str else None
-            stack_size = int(stack_size_str) if stack_size_str else None
-
-            if not name or not action:
-                continue
-
-            conn.execute(
-                """
-                INSERT INTO items (name, action, recycle_for, keep_for, sell_price, stack_size)
-                VALUES (?, ?, ?, ?, ?, ?)
-                ON CONFLICT(name) DO UPDATE SET
-                    action = excluded.action,
-                    recycle_for = excluded.recycle_for,
-                    keep_for = excluded.keep_for,
-                    sell_price = excluded.sell_price,
-                    stack_size = excluded.stack_size
-                """,
-                (name, action, recycle_for, keep_for, sell_price, stack_size),
+    try:
+        conn.execute("DROP TABLE IF EXISTS items")
+        conn.execute("""
+            CREATE TABLE items (
+                name TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
+                action TEXT NOT NULL,
+                recycle_for TEXT,
+                keep_for TEXT,
+                sell_price INTEGER,
+                stack_size INTEGER
             )
-            count += 1
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_items_name ON items(name COLLATE NOCASE)")
 
-    conn.commit()
-    conn.close()
-    return count
+        count = 0
+        with csv_path.open(encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                name = row.get("name", "").strip()
+                action = row.get("action", "").strip()
+                recycle_for = row.get("recycle_for", "").strip() or None
+                keep_for = row.get("keep_for", "").strip() or None
+                sell_price_str = row.get("sell_price", "").strip()
+                stack_size_str = row.get("stack_size", "").strip()
+                sell_price = int(sell_price_str) if sell_price_str else None
+                stack_size = int(stack_size_str) if stack_size_str else None
+
+                if not name or not action:
+                    continue
+
+                conn.execute(
+                    """
+                    INSERT INTO items (name, action, recycle_for, keep_for, sell_price, stack_size)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(name) DO UPDATE SET
+                        action = excluded.action,
+                        recycle_for = excluded.recycle_for,
+                        keep_for = excluded.keep_for,
+                        sell_price = excluded.sell_price,
+                        stack_size = excluded.stack_size
+                    """,
+                    (name, action, recycle_for, keep_for, sell_price, stack_size),
+                )
+                count += 1
+
+        conn.commit()
+        return count
+    finally:
+        conn.close()
 
 
 def main() -> None:
