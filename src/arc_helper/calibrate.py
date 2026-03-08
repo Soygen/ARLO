@@ -764,7 +764,7 @@ class CalibrationTool:
         # Create a new window
         view_window = tk.Toplevel(self.root)
         view_window.title("Item Database")
-        view_window.geometry("700x400")
+        view_window.geometry("850x400")
         view_window.attributes("-topmost", True)  # noqa: FBT003
 
         # Create treeview with scrollbar
@@ -779,7 +779,7 @@ class CalibrationTool:
 
         tree = ttk.Treeview(
             tree_frame,
-            columns=("name", "action", "recycle_for", "keep_for"),
+            columns=("name", "action", "sell_price", "stack_size", "recycle_for", "keep_for"),
             show="headings",
             yscrollcommand=v_scrollbar.set,
             xscrollcommand=h_scrollbar.set,
@@ -792,13 +792,17 @@ class CalibrationTool:
         # Configure columns
         tree.heading("name", text="Item Name")
         tree.heading("action", text="Action")
+        tree.heading("sell_price", text="Sell Price")
+        tree.heading("stack_size", text="Stack")
         tree.heading("recycle_for", text="Recycle For")
         tree.heading("keep_for", text="Keep For")
 
         tree.column("name", width=200, minwidth=100)
         tree.column("action", width=80, minwidth=60)
-        tree.column("recycle_for", width=180, minwidth=100)
-        tree.column("keep_for", width=180, minwidth=100)
+        tree.column("sell_price", width=70, minwidth=50)
+        tree.column("stack_size", width=50, minwidth=40)
+        tree.column("recycle_for", width=160, minwidth=100)
+        tree.column("keep_for", width=160, minwidth=100)
 
         # Add items
         for item in items:
@@ -808,6 +812,8 @@ class CalibrationTool:
                 values=(
                     item.name,
                     item.action,
+                    f"{item.sell_price:,}" if item.sell_price is not None else "",
+                    item.stack_size if item.stack_size is not None else "",
                     item.recycle_for or "",
                     item.keep_for or "",
                 ),
