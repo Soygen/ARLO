@@ -23,6 +23,7 @@ a = Analysis(
         'requests',
         'bs4',
         'beautifulsoup4',
+		'charset_normalizer',
     ],
     hookspath=[],
     hooksconfig={},
