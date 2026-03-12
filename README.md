@@ -2,7 +2,7 @@
 
 > **A big thanks to [Pabosik](https://github.com/Pabosik) for creating the original [PabsArcTooltip](https://github.com/Pabosik/PabsArcTooltip) that this project is built on. The core idea - an OCR-based screen overlay that reads item tooltips and tells you what to do with them - is entirely his. ARLO just builds on that foundation with some extra features.**
 
-A screen overlay tool for [Arc Raiders](https://store.steampowered.com/app/2073750/ARC_Raiders/) that detects items in your inventory and displays recommended actions (**keep**, **recycle**, **sell**) along with sell prices, stack sizes, and crafting details. The item database auto-syncs from the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot) on every launch.
+A screen overlay tool for [Arc Raiders](https://store.steampowered.com/app/2073750/ARC_Raiders/) that detects items in your inventory and displays recommended actions (**keep**, **recycle**, **sell**) along with sell prices, stack sizes, and crafting details. The item database auto-syncs from the [MetaForge API](https://metaforge.app/arc-raiders) on every launch.
 
 ![Example 1](static/ARLO_01.png)
 ![Example 2](static/ARLO_02.png)
@@ -13,11 +13,13 @@ A screen overlay tool for [Arc Raiders](https://store.steampowered.com/app/20737
 
 ## Features
 
-- **Auto-sync on launch** - The item database updates from the wiki every time you start the app (throttled to once per 24 hours). No manual steps needed.
+- **Auto-sync on launch** - The item database updates from the MetaForge API every time you start the app (throttled to once per 24 hours). No manual steps needed.
 - **Sell price & stack size on the overlay** - See at a glance what an item sells for and how high it stacks
-- **300+ items** - Expanded coverage including keys, mods, augments, shields, ammo, and consumables
-- **Smart action generation** - Items are auto-categorized (keep materials, sell trinkets, recycle junk) based on wiki data
-- **Merge mode** - New items from the wiki are added without overwriting your manual action overrides
+- **440+ items** - Full item coverage including keys, mods, augments, shields, ammo, consumables, and recycle components
+- **Quest-aware recommendations** - Items needed for quests are flagged to keep, with quest names shown
+- **Smart action generation** - Items are auto-categorized (keep materials, sell trinkets, recycle junk) based on API data
+- **Merge mode** - New items are added without overwriting your manual action overrides
+- **Dual data sources** - MetaForge API as primary, Arc Raiders Wiki as fallback
 - **GitHub Actions** - Optional scheduled workflow that auto-updates the database weekly
 
 ---
@@ -50,7 +52,6 @@ The overlay popup displays:
 ## Requirements
 
 ### Pre-built Release
-- Coming soon
 - Windows 10/11
 - Arc Raiders running in **borderless windowed** or **windowed** mode (not exclusive fullscreen)
 
@@ -70,7 +71,7 @@ The overlay popup displays:
 2. Extract the zip to a folder of your choice
 3. Run `ARLO.exe`
 
-The release includes all dependencies, including Tesseract OCR. The item database updates automatically from the wiki on launch, no more than once per 24 hours.
+The release includes all dependencies, including Tesseract OCR. The item database updates automatically on launch, no more than once per 24 hours.
 
 ### Option 2: From Source
 
@@ -97,7 +98,7 @@ The release includes all dependencies, including Tesseract OCR. The item databas
    uv run arc-helper
    ```
 
-The item database updates automatically from the wiki on first launch. No separate step needed.
+The item database updates automatically on first launch. No separate step needed.
 
 ---
 
@@ -105,18 +106,25 @@ The item database updates automatically from the wiki on first launch. No separa
 
 ### Automatic Updates
 
-The app checks the [Arc Raiders Wiki loot table](https://arcraiders.wiki/wiki/Loot) for updates every time it starts, throttled to once per 24 hours. This happens silently in the background using merge mode, so any manual action overrides you've made are preserved and new items are added automatically.
+The app fetches item data from the [MetaForge API](https://metaforge.app/arc-raiders) every time it starts, throttled to once per 24 hours. This pulls from three MetaForge data sources:
 
-If the wiki is unreachable (no internet, site down, etc.), the app continues normally with whatever database it already has.
+- **Items API** - Names, categories, sell prices, stack sizes, rarity (440+ items)
+- **Recycle components** - What each item breaks down into when recycled
+- **Quests API** - Which items are needed for which quests
+
+If MetaForge is unreachable, the updater falls back to scraping the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot). If both are down, the app continues normally with whatever database it already has.
+
+Updates always run in merge mode, so any manual action overrides you've made are preserved.
 
 ### Manual Update
 
-You can also trigger a database update manually from the command line:
+You can also trigger a database update from the command line:
 
 ```
-uv run python update_db.py              # Full update from wiki
-uv run python update_db.py --merge      # Keep your manual overrides
-uv run python update_db.py --dry-run    # Preview changes without writing
+uv run python update_db.py                # Full update from MetaForge API
+uv run python update_db.py --merge        # Keep your manual overrides
+uv run python update_db.py --dry-run      # Preview changes without writing
+uv run python update_db.py --source wiki  # Force wiki scraper instead of API
 ```
 
 Or use the makefile shortcuts:
@@ -136,7 +144,7 @@ The included workflow at `.github/workflows/update-db.yml` can also sync the dat
 
 No secrets or extra configuration needed.
 
-For more details on how the scraper works, CSV format, and manual database management, see [docs/ITEMS.md](docs/ITEMS.md).
+For more details on how the updater works, CSV format, and manual database management, see [docs/ITEMS.md](docs/ITEMS.md).
 
 ---
 
@@ -149,7 +157,7 @@ uv sync --all-extras
 uv run python build.py
 ```
 
-Output lands in `dist/ARLO/` containing the exe, calibration tool, bundled Tesseract, config files, item database, and the wiki updater script. Zip that folder to share with anyone - no Python install needed on their end.
+Output lands in `dist/ArcRaidersHelper/` containing the exe, calibration tool, bundled Tesseract, config files, item database, and the updater script. Zip that folder to share with anyone - no Python install needed on their end.
 
 See [docs/BUILD.md](docs/BUILD.md) for full build details.
 
@@ -186,7 +194,7 @@ All settings live in the `.env` file. See [docs/CONFIGURATION.md](docs/CONFIGURA
 
 ```
 ARLO/
-├── update_db.py                    # Wiki scraper & DB updater
+├── update_db.py                    # MetaForge API updater (with wiki fallback)
 ├── items.csv                       # Item data (auto-generated or hand-edited)
 ├── items.db                        # SQLite database (built from CSV)
 ├── pyproject.toml                  # Package config & dependencies
@@ -194,7 +202,7 @@ ARLO/
 ├── build.py                        # PyInstaller build script
 ├── .env.example                    # Configuration template
 ├── .github/workflows/
-│   └── update-db.yml               # Scheduled wiki sync
+│   └── update-db.yml               # Scheduled database sync
 ├── src/arc_helper/
 │   ├── main.py                     # Main app entry point
 │   ├── config.py                   # Settings & logging
@@ -205,7 +213,7 @@ ARLO/
 │   ├── resolution_profiles.py      # Resolution presets
 │   └── resolutions.json            # Pre-configured resolution profiles
 ├── docs/
-│   ├── ITEMS.md                    # Item database & wiki sync docs
+│   ├── ITEMS.md                    # Item database & updater docs
 │   ├── CALIBRATION.md              # Calibration guide
 │   ├── CONFIGURATION.md            # Settings reference
 │   ├── BUILD.md                    # Build instructions
@@ -219,7 +227,7 @@ ARLO/
 ## Contributing
 
 ### Item Database
-Run `uv run python update_db.py --dry-run` to preview the wiki data. If you spot incorrect auto-generated actions, edit `items.csv` directly and use `--merge` on future updates to preserve your fixes.
+Run `uv run python update_db.py --dry-run` to preview the API data. If you spot incorrect auto-generated actions, edit `items.csv` directly and use `--merge` on future updates to preserve your fixes.
 
 ### Resolution Profiles
 If you calibrate for a resolution that isn't pre-configured, add it to `resolutions.json` and submit a PR.
@@ -232,7 +240,8 @@ Please include your screen resolution, debug images from the `debug/` folder (en
 ## Credits
 
 - **[PabsArcTooltip](https://github.com/Pabosik/PabsArcTooltip)** - Original project by [Pabosik](https://github.com/Pabosik)
-- **[Arc Raiders Wiki](https://arcraiders.wiki)** - Community wiki used as the item data source
+- **[MetaForge](https://metaforge.app/arc-raiders)** - Primary item data source (API and community database)
+- **[Arc Raiders Wiki](https://arcraiders.wiki)** - Fallback item data source
 - **[Tesseract OCR](https://github.com/tesseract-ocr/tesseract)** - Text recognition engine
 - **[PyInstaller](https://pyinstaller.org/)** - Executable packaging
 
