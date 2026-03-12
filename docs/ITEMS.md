@@ -1,28 +1,37 @@
 ## Item Database
 
-Items are stored in `items.db` (SQLite database) with the following columns: `name`, `action`, `recycle_for`, `keep_for`, `sell_price`, and `stack_size`. The database updates automatically from the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot) on every app launch, or can be updated manually.
+Items are stored in `items.db` (SQLite database) with the following columns: `name`, `action`, `recycle_for`, `keep_for`, `sell_price`, and `stack_size`. The database updates automatically from the [MetaForge API](https://metaforge.app/arc-raiders) on every app launch, with the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot) as a fallback.
 
 ### Automatic Updates on Launch
 
-Every time `ARLO.exe` (or `uv run arc-helper`) starts, it checks the wiki for item database updates. This is throttled to once per 24 hours so it doesn't slow down repeated launches. The update runs in merge mode, meaning your manual action overrides are always preserved.
+Every time `ARLO.exe` (or `uv run arc-helper`) starts, it checks for item database updates. This is throttled to once per 24 hours so it doesn't slow down repeated launches. The update runs in merge mode, meaning your manual action overrides are always preserved.
 
-If the wiki is unreachable (no internet, site down, etc.), the app starts normally with whatever database it already has. The update never blocks or prevents the app from launching.
+The updater pulls data from three MetaForge sources:
+
+- **Items API** (`/api/arc-raiders/items`) - Item names, categories, sell prices, stack sizes, rarity
+- **Recycle components** (Supabase `arc_item_recycle_components`) - What each item recycles into
+- **Quests API** (`/api/arc-raiders/quests`) - Which items are needed for which quests
+
+If MetaForge is unreachable, the updater automatically falls back to scraping the Arc Raiders Wiki. If both are down, the app starts normally with whatever database it already has.
 
 The throttle timestamp is stored in `.last_wiki_update` in the app directory. Delete this file to force an update on the next launch.
 
 ### Manual Update from Command Line
 
-You can also run the wiki scraper directly for more control:
+You can also run the updater directly for more control:
 
 ```bash
-# Full update - overwrites items.csv and rebuilds items.db from wiki
+# Full update from MetaForge API (default)
 uv run python update_db.py
 
-# Merge mode - pulls new items from wiki but keeps your manual overrides
+# Merge mode - keeps your manual overrides
 uv run python update_db.py --merge
 
 # Dry run - preview changes without writing any files
 uv run python update_db.py --dry-run
+
+# Force wiki scraper instead of API
+uv run python update_db.py --source wiki
 
 # CSV only - update the CSV without rebuilding the database
 uv run python update_db.py --csv-only
@@ -35,29 +44,27 @@ make update-db-merge    # Merge mode
 make update-db-dry      # Dry run preview
 ```
 
-### How the Scraper Works
+### How Action Generation Works
 
-The scraper:
-1. Fetches the loot table from `https://arcraiders.wiki/wiki/Loot`
-2. Parses every item's **name**, **rarity**, **recycles to**, **sell price**, **stack size**, **category**, and **uses**
-3. Auto-generates action recommendations based on category and uses:
-   - **Basic/Refined/Topside Materials** - `Keep` (crafting ingredients)
-   - **Trinkets** with no uses - `Sell`
-   - **Recyclables** with workshop/quest uses - `Keep until uses complete; recycle after`
-   - **Recyclables** with no uses - `Recycle`
-   - **Keys** - `Keep`
-   - **Quick Use / Mods / Augments / Shields** - `Keep` or `Use`
-4. Writes `items.csv` and rebuilds `items.db`
+The updater auto-generates action recommendations based on item category and uses:
+
+- **Basic/Refined/Topside Materials** - `Keep` (crafting ingredients)
+- **Trinkets** with no uses - `Sell`
+- **Recyclables** with workshop/quest uses - `Keep until uses complete; recycle after`
+- **Recyclables** with no uses - `Recycle`
+- **Keys** - `Keep`
+- **Quick Use / Mods / Augments / Shields** - `Keep` or `Use`
+- Items needed for quests get a "Quests:" note in the keep_for field
 
 ### Merge Mode
 
-The on-launch auto-update always uses merge mode. When you run the scraper manually, you can choose between full update or merge mode.
+The on-launch auto-update always uses merge mode. When you run the updater manually, you can choose between full update or merge mode.
 
-In merge mode the scraper will:
+In merge mode the updater will:
 - **Preserve** your existing `action`, `recycle_for`, and `keep_for` for items already in your CSV
-- **Add** any new items from the wiki with auto-generated recommendations
-- **Fill in** empty `recycle_for` / `keep_for` fields from wiki data
-- **Always update** `sell_price` and `stack_size` to the latest wiki values
+- **Add** any new items with auto-generated recommendations
+- **Fill in** empty `recycle_for` / `keep_for` fields from API data
+- **Always update** `sell_price` and `stack_size` to the latest values
 
 ### GitHub Actions (Optional)
 

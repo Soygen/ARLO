@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """
-Wiki Scraper & Database Updater for PabsArcTooltip.
+MetaForge API & Database Updater for ARLO (Arc Raiders Loot Overlay).
 
-Scrapes the Arc Raiders Wiki loot table and updates items.csv + items.db
-with auto-generated action recommendations.
+Fetches item data from the MetaForge API (https://metaforge.app/arc-raiders)
+and updates items.csv + items.db with action recommendations.
+
+Falls back to the Arc Raiders Wiki if the API is unavailable.
 
 Usage:
     python update_db.py                 # Full update (overwrites items.csv)
     python update_db.py --merge         # Merge: keep existing manual overrides
     python update_db.py --dry-run       # Preview without writing files
     python update_db.py --csv-only      # Only update items.csv, skip DB rebuild
+    python update_db.py --source wiki   # Force wiki scraper instead of API
 """
 
 from __future__ import annotations
@@ -19,6 +22,7 @@ import csv
 import re
 import sqlite3
 import sys
+import time
 from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
@@ -36,21 +40,37 @@ except ImportError:
     sys.exit(1)
 
 
+# =============================================================================
+# Constants
+# =============================================================================
+
+METAFORGE_API_BASE = "https://metaforge.app/api/arc-raiders"
+METAFORGE_SUPABASE_URL = "https://unhbvkszwhczbjxgetgk.supabase.co/rest/v1"
+# MetaForge's public Supabase anonymous key - client-accessible, visible in their website source
+METAFORGE_SUPABASE_KEY = (
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+    "eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVuaGJ2a3N6d2hjemJqeGdldGdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ5NjgwMjUsImV4cCI6MjA2MDU0NDAyNX0."
+    "gckCmxnlpwwJOGmc5ebLYDnaWaxr5PW31eCrSPR5aRQ"
+)
+
 WIKI_URL = "https://arcraiders.wiki/wiki/Loot"
 SCRIPT_DIR = Path(__file__).parent.resolve()
 ITEMS_CSV = SCRIPT_DIR / "items.csv"
 ITEMS_DB = SCRIPT_DIR / "items.db"
 
-# Categories that are generally "use in the field" items, not inventory loot
-QUICK_USE_CATEGORIES = {"Quick Use", "Shield", "Augment", "Mods", "Ammunition", "Key"}
+USER_AGENT = "ARLO/1.0 (Arc Raiders Loot Overlay - https://github.com/Soygen/ARLO)"
 
-# Categories where the item is a crafting ingredient you should keep
+QUICK_USE_CATEGORIES = {"Quick Use", "Shield", "Augment", "Mods", "Ammunition", "Key"}
 MATERIAL_CATEGORIES = {"Basic Material", "Refined Material", "Topside Material"}
 
 
+# =============================================================================
+# Data classes
+# =============================================================================
+
 @dataclass
-class WikiItem:
-    """An item parsed from the wiki loot table."""
+class GameItem:
+    """An item from any data source, normalized to a common format."""
 
     name: str
     rarity: str = ""
@@ -60,7 +80,6 @@ class WikiItem:
     category: str = ""
     uses: str = ""
 
-    # Derived fields for the existing DB schema
     action: str = ""
     recycle_for: str = ""
     keep_for: str = ""
@@ -68,79 +87,250 @@ class WikiItem:
 
 @dataclass
 class ScraperStats:
-    """Track scraper results."""
+    """Track update results."""
 
     items_scraped: int = 0
     items_written: int = 0
     items_preserved: int = 0
     items_new: int = 0
+    source: str = ""
     errors: list[str] = field(default_factory=list)
 
+
+# =============================================================================
+# MetaForge API source
+# =============================================================================
+
+def _api_get(url: str, *, timeout: int = 30):
+    """Make a GET request to the MetaForge API."""
+    resp = requests.get(url, timeout=timeout, headers={"User-Agent": USER_AGENT})
+    resp.raise_for_status()
+    return resp.json()
+
+
+def _supabase_get(table: str, params: str = "") -> list:
+    """Fetch data from MetaForge's public Supabase tables."""
+    url = f"{METAFORGE_SUPABASE_URL}/{table}"
+    if params:
+        url += f"?{params}"
+    resp = requests.get(
+        url,
+        timeout=30,
+        headers={
+            "User-Agent": USER_AGENT,
+            "apikey": METAFORGE_SUPABASE_KEY,
+            "Authorization": f"Bearer {METAFORGE_SUPABASE_KEY}",
+        },
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+def fetch_metaforge_items() -> list[dict]:
+    """Fetch all items from the MetaForge API with pagination."""
+    print("Fetching items from MetaForge API...")
+    all_items: list[dict] = []
+    page = 1
+    limit = 100
+
+    while True:
+        url = f"{METAFORGE_API_BASE}/items?page={page}&limit={limit}"
+        data = _api_get(url)
+        items = data.get("data", [])
+        pagination = data.get("pagination", {})
+
+        all_items.extend(items)
+        total = pagination.get("total", "?")
+        print(f"  Page {page}: {len(items)} items (total: {len(all_items)}/{total})")
+
+        if not pagination.get("hasNextPage", False):
+            break
+        page += 1
+        time.sleep(0.1)
+
+    print(f"  Fetched {len(all_items)} items from API")
+    return all_items
+
+
+def fetch_metaforge_recycle_map(all_items: list[dict]) -> dict[str, str]:
+    """Fetch recycle component data and build item_id -> "2x Metal Parts, 3x Wires" map."""
+    print("Fetching recycle data from MetaForge...")
+    try:
+        components = _supabase_get("arc_item_recycle_components", "select=*")
+    except Exception as e:
+        print(f"  Recycle data unavailable ({e}), continuing without it")
+        return {}
+
+    id_to_name: dict[str, str] = {}
+    for item in all_items:
+        item_id = item.get("id", "")
+        name = item.get("name", "")
+        if item_id and name:
+            id_to_name[item_id] = name
+
+    recycle_raw: dict[str, list[tuple[str, int]]] = {}
+    for comp in components:
+        item_id = comp.get("item_id", "")
+        comp_id = comp.get("component_id", "")
+        qty = comp.get("quantity", 0)
+        if item_id and comp_id:
+            recycle_raw.setdefault(item_id, []).append((comp_id, qty))
+
+    recycle_map: dict[str, str] = {}
+    for item_id, parts in recycle_raw.items():
+        part_strs = []
+        for comp_id, qty in parts:
+            comp_name = id_to_name.get(comp_id, comp_id)
+            part_strs.append(f"{qty}x {comp_name}")
+        recycle_map[item_id] = ", ".join(part_strs)
+
+    print(f"  Loaded recycle data for {len(recycle_map)} items")
+    return recycle_map
+
+
+def fetch_metaforge_quest_items() -> dict[str, list[str]]:
+    """Fetch quests and build item_name -> [quest names] map."""
+    print("Fetching quests from MetaForge API...")
+    all_quests: list[dict] = []
+    page = 1
+    limit = 100
+
+    while True:
+        url = f"{METAFORGE_API_BASE}/quests?page={page}&limit={limit}"
+        try:
+            data = _api_get(url)
+        except Exception as e:
+            print(f"  Quest data unavailable ({e}), continuing without it")
+            return {}
+
+        quests = data.get("data", [])
+        pagination = data.get("pagination", {})
+        all_quests.extend(quests)
+
+        if not pagination.get("hasNextPage", False):
+            break
+        page += 1
+        time.sleep(0.1)
+
+    quest_item_map: dict[str, list[str]] = {}
+    for quest in all_quests:
+        quest_name = quest.get("name", "")
+        required = quest.get("required_items", [])
+        if not quest_name or not required:
+            continue
+        for req in required:
+            if isinstance(req, dict):
+                item_name = req.get("name", "")
+                qty = req.get("quantity", req.get("count", 1))
+                if item_name:
+                    quest_item_map.setdefault(item_name.lower(), []).append(
+                        f"{quest_name} ({qty}x)"
+                    )
+            elif isinstance(req, str) and req:
+                quest_item_map.setdefault(req.lower(), []).append(quest_name)
+
+    print(f"  Mapped quest requirements for {len(quest_item_map)} items")
+    return quest_item_map
+
+
+def _normalize_category(item_type: str) -> str:
+    """Map MetaForge item_type values to our category names."""
+    mapping = {
+        "basic_material": "Basic Material",
+        "refined_material": "Refined Material",
+        "topside_material": "Topside Material",
+        "recyclable": "Recyclable",
+        "trinket": "Trinket",
+        "nature": "Nature",
+        "quick_use": "Quick Use",
+        "key": "Key",
+        "ammunition": "Ammunition",
+        "ammo": "Ammunition",
+        "shield": "Shield",
+        "augment": "Augment",
+        "mods": "Mods",
+        "mod": "Mods",
+    }
+    normalized = item_type.lower().strip()
+    return mapping.get(normalized, item_type.title() if item_type else "")
+
+
+def fetch_items_from_metaforge() -> list[GameItem]:
+    """Fetch all item data from MetaForge API + Supabase and return GameItem objects."""
+    raw_items = fetch_metaforge_items()
+    recycle_map = fetch_metaforge_recycle_map(raw_items)
+    quest_map = fetch_metaforge_quest_items()
+
+    items: list[GameItem] = []
+    for raw in raw_items:
+        item_id = raw.get("id", "")
+        name = raw.get("name", "")
+        if not name:
+            continue
+
+        stat_block = raw.get("stat_block") or {}
+        category = _normalize_category(raw.get("item_type", ""))
+        sell_price = raw.get("value", 0) or 0
+        stack_size = stat_block.get("stackSize", 0) or 0
+        rarity = raw.get("rarity", "")
+
+        uses_parts: list[str] = []
+        quest_uses = quest_map.get(name.lower(), [])
+        if quest_uses:
+            uses_parts.append("Quests: " + ", ".join(quest_uses))
+        uses = "; ".join(uses_parts)
+
+        recycles_to = recycle_map.get(item_id, "")
+
+        items.append(GameItem(
+            name=name,
+            rarity=rarity,
+            recycles_to=recycles_to,
+            sell_price=sell_price,
+            stack_size=stack_size,
+            category=category,
+            uses=uses,
+        ))
+
+    print(f"  Processed {len(items)} items from MetaForge")
+    return items
+
+
+# =============================================================================
+# Wiki scraper source (fallback)
+# =============================================================================
 
 def fetch_wiki_page() -> str:
     """Fetch the loot page HTML from the wiki."""
     print(f"Fetching {WIKI_URL} ...")
-    resp = requests.get(WIKI_URL, timeout=30, headers={
-        "User-Agent": "PabsArcTooltip-Updater/1.0 (item database sync)"
-    })
+    resp = requests.get(WIKI_URL, timeout=30, headers={"User-Agent": USER_AGENT})
     resp.raise_for_status()
     print(f"  Got {len(resp.text):,} bytes")
     return resp.text
 
 
-def parse_recycles_to(cell) -> str:
-    """
-    Parse a 'Recycles To' cell into a clean string like '2x Metal Parts, 4x Wires'.
-
-    The wiki uses format like: '4× Metal Parts 6× Wires' with links.
-    """
+def _parse_recycles_to(cell) -> str:
     if not cell:
         return ""
-
     text = cell.get_text(" ", strip=True)
-
-    # "Cannot be recycled" → empty
     if "cannot" in text.lower() or "n/a" in text.lower():
         return ""
-
-    # Normalize × to x and clean up spacing
-    text = text.replace("×", "x")
-
-    # Split on the pattern: number followed by 'x' to find each component
-    # e.g. "4x Metal Parts 6x Wires" → ["4x Metal Parts", "6x Wires"]
+    text = text.replace("\u00d7", "x")
     parts = re.split(r"(?<=\S)\s+(?=\d+x\s)", text)
-    parts = [p.strip() for p in parts if p.strip()]
-
-    return ", ".join(parts)
+    return ", ".join(p.strip() for p in parts if p.strip())
 
 
-def parse_uses(cell) -> str:
-    """
-    Parse a 'Uses' cell into a clean string.
-
-    Wiki format is like:
-        **Workshop** Gear Bench 3 (5×) Utility Station 3 (5×)
-        **Projects** Expedition 1 (5×)
-        **Quests** Doctor's Orders (2×)
-    """
+def _parse_uses(cell) -> str:
     if not cell:
         return ""
-
     text = cell.get_text(" ", strip=True)
     if not text:
         return ""
-
-    # Normalize × to x
-    text = text.replace("×", "x")
-
-    # Clean up excessive whitespace
-    text = re.sub(r"\s+", " ", text).strip()
-
-    return text
+    text = text.replace("\u00d7", "x")
+    return re.sub(r"\s+", " ", text).strip()
 
 
-def parse_sell_price(cell) -> int:
-    """Parse sell price, stripping commas."""
+def _parse_int_cell(cell) -> int:
     if not cell:
         return 0
     text = cell.get_text(strip=True).replace(",", "").strip()
@@ -150,22 +340,11 @@ def parse_sell_price(cell) -> int:
         return 0
 
 
-def parse_stack_size(cell) -> int:
-    """Parse stack size."""
-    if not cell:
-        return 0
-    text = cell.get_text(strip=True).strip()
-    try:
-        return int(text)
-    except ValueError:
-        return 0
-
-
-def scrape_items(html: str) -> list[WikiItem]:
-    """Parse the wiki HTML and extract all items from the loot table."""
+def fetch_items_from_wiki() -> list[GameItem]:
+    """Parse the wiki loot table and return GameItem objects."""
+    html = fetch_wiki_page()
     soup = BeautifulSoup(html, "html.parser")
 
-    # Find the loot table by looking for a table with the right headers
     loot_table = None
     for table in soup.find_all("table"):
         headers = [th.get_text(strip=True).lower() for th in table.find_all("th")]
@@ -175,10 +354,8 @@ def scrape_items(html: str) -> list[WikiItem]:
 
     if not loot_table:
         print("ERROR: Could not find the loot table on the wiki page!")
-        print("  The wiki page structure may have changed.")
-        sys.exit(1)
+        return []
 
-    # Determine column indices from headers
     header_row = loot_table.find("tr")
     headers = [th.get_text(strip=True).lower() for th in header_row.find_all("th")]
 
@@ -200,11 +377,9 @@ def scrape_items(html: str) -> list[WikiItem]:
             col_map["uses"] = i
 
     print(f"  Found columns: {list(col_map.keys())}")
+    items: list[GameItem] = []
 
-    items: list[WikiItem] = []
-    rows = loot_table.find_all("tr")[1:]  # skip header row
-
-    for row in rows:
+    for row in loot_table.find_all("tr")[1:]:
         cells = row.find_all("td")
         if len(cells) < 4:
             continue
@@ -215,7 +390,6 @@ def scrape_items(html: str) -> list[WikiItem]:
                 return cells[idx]
             return None
 
-        # Extract item name from the link text in the Item column
         item_cell = get_cell("item")
         if not item_cell:
             continue
@@ -225,95 +399,64 @@ def scrape_items(html: str) -> list[WikiItem]:
         if not name:
             continue
 
-        item = WikiItem(
+        items.append(GameItem(
             name=name,
             rarity=get_cell("rarity").get_text(strip=True) if get_cell("rarity") else "",
-            recycles_to=parse_recycles_to(get_cell("recycles_to")),
-            sell_price=parse_sell_price(get_cell("sell_price")),
-            stack_size=parse_stack_size(get_cell("stack_size")),
+            recycles_to=_parse_recycles_to(get_cell("recycles_to")),
+            sell_price=_parse_int_cell(get_cell("sell_price")),
+            stack_size=_parse_int_cell(get_cell("stack_size")),
             category=get_cell("category").get_text(strip=True) if get_cell("category") else "",
-            uses=parse_uses(get_cell("uses")),
-        )
-        items.append(item)
+            uses=_parse_uses(get_cell("uses")),
+        ))
 
     print(f"  Scraped {len(items)} items from wiki")
     return items
 
 
-def generate_action(item: WikiItem) -> tuple[str, str, str]:
-    """
-    Generate (action, recycle_for, keep_for) based on wiki data.
+# =============================================================================
+# Action generation (shared by both sources)
+# =============================================================================
 
-    Returns a tuple of (action, recycle_for, keep_for) strings matching
-    the existing database schema.
-    """
+def generate_action(item: GameItem) -> tuple[str, str, str]:
+    """Generate (action, recycle_for, keep_for) based on item data."""
     has_uses = bool(item.uses.strip())
     can_recycle = bool(item.recycles_to.strip())
     category = item.category.strip()
 
-    # --- Build keep_for from uses ---
     keep_for = item.uses if has_uses else ""
-
-    # --- Build recycle_for ---
     recycle_for = item.recycles_to
 
-    # --- Determine action ---
-
-    # Keys: always keep
     if category == "Key":
         return "Keep", "", "Unlocks locked areas"
-
-    # Quick Use items: these are consumables you use in the field
     if category == "Quick Use":
         if has_uses:
             return "Keep", recycle_for, keep_for
         return "Use", recycle_for, "Quick Use consumable"
-
-    # Ammunition
     if category == "Ammunition":
         return "Keep", "", "Ammo"
-
-    # Shields, Augments, Mods: keep (equippable gear)
     if category in {"Shield", "Augment", "Mods"}:
         return "Keep", recycle_for, f"Equippable {category}"
-
-    # Basic/Refined/Topside Materials: keep (crafting ingredients)
     if category in MATERIAL_CATEGORIES:
         if has_uses:
             return "Keep", recycle_for, keep_for
-        # Materials without specific listed uses are still generally useful
         return "Keep", recycle_for, f"{category} - crafting ingredient"
-
-    # Nature items
     if category == "Nature":
         if has_uses:
             return "Keep", recycle_for, keep_for
-        # Nature items without uses: sell (like Agave, Roots)
-        if item.sell_price >= 800:
-            return "Sell", recycle_for, ""
         return "Sell", recycle_for, ""
-
-    # Trinkets: sell (they exist to be sold for credits)
     if category == "Trinket":
         if has_uses:
-            # Some trinkets have project uses (e.g. Breathtaking Snow Globe)
             return "Keep until uses complete; sell after", "", keep_for
         return "Sell", "", ""
-
-    # Recyclables: the big category of junk items
     if category == "Recyclable":
         if has_uses:
-            # Has workshop/quest/project uses → keep until done
             return "Keep until uses complete; recycle after", recycle_for, keep_for
-        # No uses: recycle for materials or sell if high value
         if can_recycle:
             if item.sell_price >= 2000:
                 return "Recycle if short on materials; Sell otherwise", recycle_for, ""
             return "Recycle", recycle_for, ""
-        # Can't recycle and no uses → sell
         return "Sell", "", ""
 
-    # Fallback: if we don't recognize the category
     if has_uses:
         return "Keep", recycle_for, keep_for
     if can_recycle:
@@ -321,12 +464,14 @@ def generate_action(item: WikiItem) -> tuple[str, str, str]:
     return "Sell", "", ""
 
 
+# =============================================================================
+# CSV / DB operations
+# =============================================================================
+
 def load_existing_csv(csv_path: Path) -> dict[str, dict[str, str]]:
-    """Load existing items.csv into a dict keyed by lowercase item name."""
     existing: dict[str, dict[str, str]] = {}
     if not csv_path.exists():
         return existing
-
     with csv_path.open(encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -344,20 +489,14 @@ def load_existing_csv(csv_path: Path) -> dict[str, dict[str, str]]:
 
 
 def build_csv_rows(
-    wiki_items: list[WikiItem],
+    items: list[GameItem],
     existing: dict[str, dict[str, str]] | None = None,
     merge: bool = False,
 ) -> tuple[list[dict[str, str]], ScraperStats]:
-    """
-    Build the final CSV rows from scraped wiki items.
-
-    If merge=True and existing data is provided, existing manual overrides
-    are preserved for items that already exist in the CSV.
-    """
-    stats = ScraperStats(items_scraped=len(wiki_items))
+    stats = ScraperStats(items_scraped=len(items))
     rows: list[dict[str, str]] = []
 
-    for item in wiki_items:
+    for item in items:
         action, recycle_for, keep_for = generate_action(item)
         item.action = action
         item.recycle_for = recycle_for
@@ -368,14 +507,13 @@ def build_csv_rows(
         stack_size = str(item.stack_size) if item.stack_size else ""
 
         if merge and existing and key in existing:
-            # Preserve the existing manual override
             old = existing[key]
             rows.append({
-                "name": item.name,  # Use wiki's canonical name
+                "name": item.name,
                 "action": old["action"],
-                "recycle_for": old["recycle_for"] or recycle_for,  # Fill in if was empty
+                "recycle_for": old["recycle_for"] or recycle_for,
                 "keep_for": old["keep_for"] or keep_for,
-                "sell_price": sell_price,  # Always use latest wiki price
+                "sell_price": sell_price,
                 "stack_size": stack_size,
             })
             stats.items_preserved += 1
@@ -391,14 +529,12 @@ def build_csv_rows(
             if existing and key not in (existing or {}):
                 stats.items_new += 1
 
-    # Sort alphabetically
     rows.sort(key=lambda r: r["name"].lower())
     stats.items_written = len(rows)
     return rows, stats
 
 
 def write_csv(rows: list[dict[str, str]], csv_path: Path) -> None:
-    """Write rows to CSV file."""
     with csv_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
             f,
@@ -409,7 +545,6 @@ def write_csv(rows: list[dict[str, str]], csv_path: Path) -> None:
 
 
 def rebuild_database(csv_path: Path, db_path: Path) -> int:
-    """Rebuild the SQLite database from the CSV file."""
     conn = sqlite3.connect(db_path)
     try:
         conn.execute("DROP TABLE IF EXISTS items")
@@ -462,62 +597,60 @@ def rebuild_database(csv_path: Path, db_path: Path) -> int:
         conn.close()
 
 
+# =============================================================================
+# CLI
+# =============================================================================
+
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Update items.csv and items.db from the Arc Raiders Wiki.",
+        description="Update items.csv and items.db from MetaForge API or Arc Raiders Wiki.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python update_db.py               # Full update from wiki
+  python update_db.py               # Full update from MetaForge API
   python update_db.py --merge       # Update but keep existing manual overrides
   python update_db.py --dry-run     # Preview changes without writing
-  python update_db.py --csv-only    # Update CSV only, skip DB rebuild
+  python update_db.py --source wiki # Force wiki scraper instead of API
         """,
     )
-    parser.add_argument(
-        "--merge",
-        action="store_true",
-        help="Preserve existing action overrides from items.csv for known items",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Show what would happen without writing any files",
-    )
-    parser.add_argument(
-        "--csv-only",
-        action="store_true",
-        help="Only update items.csv, do not rebuild items.db",
-    )
-    parser.add_argument(
-        "--url",
-        default=WIKI_URL,
-        help=f"Wiki loot page URL (default: {WIKI_URL})",
-    )
+    parser.add_argument("--merge", action="store_true",
+                        help="Preserve existing action overrides from items.csv")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Show what would happen without writing any files")
+    parser.add_argument("--csv-only", action="store_true",
+                        help="Only update items.csv, do not rebuild items.db")
+    parser.add_argument("--source", choices=["api", "wiki"], default="api",
+                        help="Data source: 'api' for MetaForge (default), 'wiki' for Arc Raiders Wiki")
 
     args = parser.parse_args()
 
-    # 1. Fetch wiki page
-    html = fetch_wiki_page()
+    if args.source == "wiki":
+        items = fetch_items_from_wiki()
+        source_name = "Arc Raiders Wiki"
+    else:
+        try:
+            items = fetch_items_from_metaforge()
+            source_name = "MetaForge API"
+        except Exception as e:
+            print(f"\nMetaForge API failed ({e}), falling back to wiki...")
+            items = fetch_items_from_wiki()
+            source_name = "Arc Raiders Wiki (fallback)"
 
-    # 2. Parse items
-    wiki_items = scrape_items(html)
-    if not wiki_items:
+    if not items:
         print("No items found. Aborting.")
         sys.exit(1)
 
-    # 3. Load existing CSV if merging
     existing = None
     if args.merge:
         existing = load_existing_csv(ITEMS_CSV)
         print(f"  Loaded {len(existing)} existing items for merge")
 
-    # 4. Build final rows
-    rows, stats = build_csv_rows(wiki_items, existing, merge=args.merge)
+    rows, stats = build_csv_rows(items, existing, merge=args.merge)
+    stats.source = source_name
 
-    # 5. Report
     print(f"\n{'=' * 50}")
-    print(f"  Items scraped from wiki: {stats.items_scraped}")
+    print(f"  Source:                  {stats.source}")
+    print(f"  Items fetched:           {stats.items_scraped}")
     print(f"  Items to write:          {stats.items_written}")
     if args.merge:
         print(f"  Existing preserved:      {stats.items_preserved}")
@@ -525,21 +658,19 @@ Examples:
     print(f"{'=' * 50}")
 
     if args.dry_run:
-        print("\n[DRY RUN] No files written. Here's a preview of the first 20 items:\n")
+        print("\n[DRY RUN] No files written. Preview of first 20 items:\n")
         print(f"  {'Name':<35} {'Action':<40} {'Sell':>7} {'Stack':>5}  {'Recycle For':<25}")
         print(f"  {'-'*35} {'-'*40} {'-'*7} {'-'*5}  {'-'*25}")
         for row in rows[:20]:
-            sell = row.get('sell_price', '')
-            stack = row.get('stack_size', '')
+            sell = row.get("sell_price", "")
+            stack = row.get("stack_size", "")
             print(f"  {row['name']:<35} {row['action']:<40} {sell:>7} {stack:>5}  {row['recycle_for']:<25}")
         print(f"\n  ... and {len(rows) - 20} more items")
         return
 
-    # 6. Write CSV
     write_csv(rows, ITEMS_CSV)
     print(f"\n  Wrote {len(rows)} items to {ITEMS_CSV}")
 
-    # 7. Rebuild DB
     if not args.csv_only:
         db_count = rebuild_database(ITEMS_CSV, ITEMS_DB)
         print(f"  Rebuilt {ITEMS_DB} with {db_count} items")
@@ -556,12 +687,8 @@ AUTO_UPDATE_INTERVAL_HOURS = 24
 
 
 def _should_auto_update() -> bool:
-    """Check if enough time has passed since the last auto-update."""
-    import time
-
     if not LAST_UPDATE_FILE.exists():
         return True
-
     try:
         last_ts = float(LAST_UPDATE_FILE.read_text(encoding="utf-8").strip())
         hours_since = (time.time() - last_ts) / 3600
@@ -571,43 +698,44 @@ def _should_auto_update() -> bool:
 
 
 def _mark_updated() -> None:
-    """Write the current timestamp to the update marker file."""
-    import time
-
     try:
         LAST_UPDATE_FILE.write_text(str(time.time()), encoding="utf-8")
     except OSError:
-        pass  # Non-critical, just means we'll update again next launch
+        pass
 
 
 def auto_update(*, force: bool = False) -> bool:
     """
-    Run a wiki database update if due. Called by the main app on startup.
+    Run a database update if due. Called by the main app on startup.
 
-    Uses merge mode to preserve any manual action overrides.
+    Uses MetaForge API with wiki fallback, always in merge mode.
     Throttled to once per 24 hours unless force=True.
-    Fails silently on any error so the app always starts.
-
-    Returns True if an update was performed, False otherwise.
+    Fails silently so the app always starts.
     """
     if not force and not _should_auto_update():
         return False
 
     try:
-        print("Checking wiki for item database updates...")
-        html = fetch_wiki_page()
-        wiki_items = scrape_items(html)
+        print("Checking MetaForge for item database updates...")
+        try:
+            items = fetch_items_from_metaforge()
+        except Exception:
+            print("  MetaForge API unavailable, trying wiki...")
+            try:
+                items = fetch_items_from_wiki()
+            except Exception:
+                print("  Wiki also unavailable, skipping update.")
+                return False
 
-        if not wiki_items:
-            print("  No items found on wiki, skipping update.")
+        if not items:
+            print("  No items found, skipping update.")
             return False
 
         existing = load_existing_csv(ITEMS_CSV)
-        rows, stats = build_csv_rows(wiki_items, existing, merge=True)
+        rows, stats = build_csv_rows(items, existing, merge=True)
 
         write_csv(rows, ITEMS_CSV)
         rebuild_database(ITEMS_CSV, ITEMS_DB)
-
         _mark_updated()
 
         new_count = stats.items_written - stats.items_preserved
@@ -618,7 +746,7 @@ def auto_update(*, force: bool = False) -> bool:
         return True
 
     except Exception as e:  # noqa: BLE001
-        print(f"  Wiki update skipped (offline or error: {e})")
+        print(f"  Database update skipped (error: {e})")
         return False
 
 
