@@ -29,15 +29,21 @@ APP_DIR = get_app_dir()
 
 def get_screen_resolution() -> tuple[int, int]:
     """Get the primary monitor resolution in physical pixels."""
-    user32 = ctypes.windll.user32
-    user32.SetProcessDPIAware()  # This makes us get physical pixels
-    width = user32.GetSystemMetrics(0)
-    height = user32.GetSystemMetrics(1)
-    return width, height
+    if sys.platform == "win32":
+        user32 = ctypes.windll.user32
+        user32.SetProcessDPIAware()
+        return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
+    import mss
+
+    with mss.mss() as sct:
+        monitor = sct.monitors[1]  # Primary monitor (0 is the combined "all" monitor)
+        return monitor["width"], monitor["height"]
 
 
 def get_dpi_scale() -> float:
     """Get the current DPI scaling factor (e.g., 1.0, 1.5, 2.0, 3.0)."""
+    if sys.platform != "win32":
+        return 1.0
     try:
         # Get the DPI for the primary monitor
         user32 = ctypes.windll.user32
@@ -50,7 +56,6 @@ def get_dpi_scale() -> float:
         # LOGPIXELSX = 88, standard DPI is 96
         dpi = gdi32.GetDeviceCaps(hdc, 88)
         user32.ReleaseDC(0, hdc)
-
         return dpi / 96.0
     except (AttributeError, OSError):
         return 1.0
@@ -71,16 +76,25 @@ def unscale_from_dpi(value: int) -> int:
 
 def get_tesseract_path() -> str | None:
     """Find Tesseract executable - checks bundled location first."""
-    # Check for bundled Tesseract
-    bundled = APP_DIR / "tesseract" / "tesseract.exe"
-    if bundled.exists():
-        return str(bundled)
+    # Check for bundled Tesseract (Windows exe or Linux binary)
+    for bundled_name in ("tesseract.exe", "tesseract"):
+        bundled = APP_DIR / "tesseract" / bundled_name
+        if bundled.exists():
+            return str(bundled)
 
-    # Check common installation paths
-    common_paths = [
-        Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe"),
-        Path(r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe"),
-    ]
+    # Check platform-specific common installation paths
+    if sys.platform == "win32":
+        common_paths = [
+            Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe"),
+            Path(r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe"),
+        ]
+    else:
+        common_paths = [
+            Path("/usr/bin/tesseract"),
+            Path("/usr/local/bin/tesseract"),
+            Path("/opt/homebrew/bin/tesseract"),  # macOS Homebrew
+        ]
+
     for path in common_paths:
         if path.exists():
             return str(path)

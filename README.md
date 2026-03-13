@@ -56,10 +56,10 @@ The overlay popup displays:
 - Arc Raiders running in **borderless windowed** or **windowed** mode (not exclusive fullscreen)
 
 ### Running from Source
-- Windows 10/11
+- Windows 10/11, or Linux (X11 — Wayland supported via XWayland)
 - Python 3.11+
 - [uv](https://github.com/astral-sh/uv) package manager
-- [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki)
+- [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki) — on Linux: `sudo apt install tesseract-ocr` / `nix-env -i tesseract`
 
 ---
 
@@ -86,7 +86,9 @@ The release includes all dependencies, including Tesseract OCR. The item databas
    uv sync --all-extras
    ```
 
-3. Install [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki) to `C:\Program Files\Tesseract-OCR\` (or set `TESSERACT_PATH` in `.env` if installed elsewhere)
+3. Install [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki):
+   - **Windows:** install to `C:\Program Files\Tesseract-OCR\` (or set `TESSERACT_PATH` in `.env`)
+   - **Linux:** `sudo apt install tesseract-ocr` or `nix-env -i tesseract` (must be on `$PATH`)
 
 4. Copy the example config:
    ```

@@ -5,14 +5,16 @@ Displays item recommendations as a styled popup with action colors.
 
 # DPI awareness must be set before any GUI operations
 import ctypes
+import sys
 import tkinter as tk
 from contextlib import suppress
 
-try:
-    ctypes.windll.shcore.SetProcessDpiAwareness(2)
-except (AttributeError, OSError):
-    with suppress(AttributeError, OSError):
-        ctypes.windll.user32.SetProcessDPIAware()
+if sys.platform == "win32":
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)
+    except (AttributeError, OSError):
+        with suppress(AttributeError, OSError):
+            ctypes.windll.user32.SetProcessDPIAware()
 
 from .config import get_dpi_scale
 from .config import get_settings

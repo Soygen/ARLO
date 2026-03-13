@@ -3,7 +3,6 @@ ARLO - Main Application.
 Coordinates OCR scanning and overlay display.
 """
 
-# Enable windows DPI scaling
 import ctypes
 import sys
 import threading
@@ -33,13 +32,12 @@ from arc_helper.overlay import OverlayWindow
 from arc_helper.overlay import StatusWindow
 from arc_helper.resolution_profiles import get_profile_manager
 
-try:
-    # Windows 10 1607+ (most reliable)
-    ctypes.windll.shcore.SetProcessDpiAwareness(2)  # PROCESS_PER_MONITOR_DPI_AWARE
-except (AttributeError, OSError):
-    with suppress(AttributeError, OSError):
-        # Fallback for older Windows
-        ctypes.windll.user32.SetProcessDPIAware()
+if sys.platform == "win32":
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)  # PROCESS_PER_MONITOR_DPI_AWARE
+    except (AttributeError, OSError):
+        with suppress(AttributeError, OSError):
+            ctypes.windll.user32.SetProcessDPIAware()
 
 load_dotenv(Path(__file__).with_name(".env"), override=False)
 
