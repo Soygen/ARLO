@@ -3,7 +3,6 @@ ARLO - Main Application.
 Coordinates OCR scanning and overlay display.
 """
 
-import ctypes
 import sys
 import threading
 import time
@@ -31,13 +30,6 @@ from arc_helper.ocr import get_ocr_engine
 from arc_helper.overlay import OverlayWindow
 from arc_helper.overlay import StatusWindow
 from arc_helper.resolution_profiles import get_profile_manager
-
-if sys.platform == "win32":
-    try:
-        ctypes.windll.shcore.SetProcessDpiAwareness(2)  # PROCESS_PER_MONITOR_DPI_AWARE
-    except (AttributeError, OSError):
-        with suppress(AttributeError, OSError):
-            ctypes.windll.user32.SetProcessDPIAware()
 
 load_dotenv(Path(__file__).with_name(".env"), override=False)
 
