@@ -259,7 +259,11 @@ class Scanner:
             elif status == "error":
                 self.status.set_error("Error")
 
-        self.root.after(0, update)
+        try:
+            self.root.after(0, update)
+        except RuntimeError:
+            # Main loop may already be stopped during shutdown
+            pass
 
 
 class Application:
@@ -279,7 +283,7 @@ class Application:
 
         # Create overlay and status windows
         self.overlay = OverlayWindow(self.root)
-        self.status = StatusWindow(self.root)
+        self.status = StatusWindow(self.root, on_quit=self.quit)
 
         # Debug overlay for visualizing capture area (separate from debug_mode)
         self.debug_overlay = None
