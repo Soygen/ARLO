@@ -225,8 +225,12 @@ class OCREngine:
         cropped = img_array[y_min:y_max, x_min:x_max]
         cropped_mask = mask[y_min:y_max, x_min:x_max]
 
-        # Find columns that are mostly cream
-        col_cream_pct = np.sum(cropped_mask, axis=0) / cropped_mask.shape[0]
+        # Find columns that are mostly cream (guard against empty crop)
+        n_rows = cropped_mask.shape[0]
+        if n_rows == 0:
+            result = Image.new("L", (image.width * 2, image.height * 2), 255)
+            return result
+        col_cream_pct = np.sum(cropped_mask, axis=0) / n_rows
         tight_cols = np.where(col_cream_pct > 0.5)[0]
 
         if len(tight_cols) == 0:
