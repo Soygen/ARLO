@@ -295,6 +295,9 @@ class StatusWindow:
     def set_active(self) -> None:
         self.status_label.config(text="\u25cf INVENTORY", fg="#32CD32")
 
+    def set_hotkey(self) -> None:
+        self.status_label.config(text="\u25cf HOTKEY SCAN", fg="#FFD700")
+
     def set_error(self, message: str) -> None:
         self.status_label.config(text=f"\u25cf {message}", fg="#FF4444")
 
