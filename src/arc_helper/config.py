@@ -4,6 +4,7 @@ Uses Pydantic Settings for type-safe configuration via environment variables.
 """
 
 import ctypes
+import os
 import sys
 from contextlib import suppress
 from pathlib import Path
@@ -43,7 +44,6 @@ def get_screen_resolution() -> tuple[int, int]:
         user32.SetProcessDPIAware()  # This makes us get physical pixels
         return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
     import mss
-
     with mss.mss() as sct:
         monitor = sct.monitors[1]  # Primary monitor (0 is the combined "all" monitor)
         return monitor["width"], monitor["height"]

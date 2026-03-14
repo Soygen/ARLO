@@ -4,6 +4,7 @@ Displays item recommendations as a styled popup with action colors.
 """
 
 import tkinter as tk
+from typing import Callable
 
 from .config import get_dpi_scale
 from .config import get_settings
@@ -247,8 +248,9 @@ class OverlayWindow:
 class StatusWindow:
     """Small status indicator showing scanner state."""
 
-    def __init__(self, root: tk.Tk):
+    def __init__(self, root: tk.Tk, *, on_quit: Callable[[], None] | None = None):
         self.root = root
+        self.on_quit = on_quit
         self.dpi_scale = get_dpi_scale()
 
         self.window = tk.Toplevel(root)
@@ -257,6 +259,8 @@ class StatusWindow:
         self.window.attributes("-alpha", 0.8)
         self.window.overrideredirect(boolean=True)
         self.window.geometry("+10+10")
+        if on_quit:
+            self.window.bind("<Button-3>", lambda e: on_quit())  # Right-click to quit
 
         self._setup_ui()
 
@@ -279,6 +283,9 @@ class StatusWindow:
             bg=BG_DARK,
         )
         self.status_label.pack()
+        if self.on_quit:
+            self.status_label.bind("<Button-3>", lambda e: self.on_quit())
+            self.frame.bind("<Button-3>", lambda e: self.on_quit())
 
     def set_scanning(self) -> None:
         self.status_label.config(text="\u25cf Scanning...", fg="#888888")

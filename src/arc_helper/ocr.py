@@ -23,7 +23,7 @@ from .config import logger
 
 
 def grab_screen(bbox: tuple[int, int, int, int]) -> Image.Image:
-    """Capture a screen region cross-platform using mss."""
+    """Capture a screen region using mss (X11 on Linux, native on Windows)."""
     left, top, right, bottom = bbox
     with mss.mss() as sct:
         monitor = {"top": top, "left": left, "width": right - left, "height": bottom - top}
