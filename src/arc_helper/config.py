@@ -5,6 +5,7 @@ Uses Pydantic Settings for type-safe configuration via environment variables.
 
 import ctypes
 import sys
+from contextlib import suppress
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -13,6 +14,14 @@ from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
 
 from .logging_config import setup_logging
+
+# Must be set before any GUI operations (tkinter/overlay imports)
+if sys.platform == "win32":
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)  # Windows 10 1607+
+    except (AttributeError, OSError):
+        with suppress(AttributeError, OSError):
+            ctypes.windll.user32.SetProcessDPIAware()
 
 
 def get_app_dir() -> Path:
@@ -31,7 +40,7 @@ def get_screen_resolution() -> tuple[int, int]:
     """Get the primary monitor resolution in physical pixels."""
     if sys.platform == "win32":
         user32 = ctypes.windll.user32
-        user32.SetProcessDPIAware()
+        user32.SetProcessDPIAware()  # This makes us get physical pixels
         return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
     import mss
 

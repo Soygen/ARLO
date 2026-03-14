@@ -3,13 +3,11 @@ OCR module for ARLO.
 Screen capture and text extraction using Tesseract.
 """
 
-# Enable windows DPI scaling
 import ctypes
 import re
 import string
 import sys
 import typing
-from contextlib import suppress
 
 import mss
 import numpy as np
@@ -22,15 +20,6 @@ from .config import RegionMixin
 from .config import get_screen_resolution
 from .config import get_settings
 from .config import logger
-
-if sys.platform == "win32":
-    try:
-        # Windows 10 1607+ (most reliable)
-        ctypes.windll.shcore.SetProcessDpiAwareness(2)  # PROCESS_PER_MONITOR_DPI_AWARE
-    except (AttributeError, OSError):
-        with suppress(AttributeError, OSError):
-            # Fallback for older Windows
-            ctypes.windll.user32.SetProcessDPIAware()
 
 
 def grab_screen(bbox: tuple[int, int, int, int]) -> Image.Image:
