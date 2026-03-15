@@ -117,6 +117,9 @@ class Scanner:
     _last_shown_time: float = 0
     _trigger_check_counter: int = 0
 
+    # Hotkey override (Ctrl+Shift to force tooltip scanning)
+    _hotkey_override: bool = False
+
     # Thread control
     _running: bool = False
     _scan_thread: Thread | None = None
@@ -148,6 +151,19 @@ class Scanner:
         """Resume scanning."""
         self.state = ScannerState.IDLE
 
+    @staticmethod
+    def _is_hotkey_held() -> bool:
+        """Check if Ctrl+Shift are both held down."""
+        try:
+            user32 = ctypes.windll.user32
+            # VK_CONTROL = 0x11, VK_SHIFT = 0x10
+            # GetAsyncKeyState: high bit (0x8000) set = key is currently down
+            ctrl = user32.GetAsyncKeyState(0x11) & 0x8000
+            shift = user32.GetAsyncKeyState(0x10) & 0x8000
+            return bool(ctrl and shift)
+        except (AttributeError, OSError):
+            return False
+
     def _scan_loop(self) -> None:
         """Main scanning loop running in background thread."""
         settings = get_settings()
@@ -162,14 +178,24 @@ class Scanner:
                 if self.state == ScannerState.STOPPED:
                     break
 
-                # Phase 1: Check for trigger (INVENTORY)
+                # Check hotkey override (Ctrl+Shift)
+                hotkey_now = self._is_hotkey_held()
+
+                # Phase 1: Check for trigger (INVENTORY) or hotkey
                 if self.state == ScannerState.IDLE:
                     self._update_status("scanning")
 
-                    if ocr.check_trigger_any(
+                    if hotkey_now:
+                        # Hotkey pressed - enter active mode via override
+                        self._hotkey_override = True
+                        self.state = ScannerState.ACTIVE
+                        self._update_status("hotkey")
+                        logger.info("Hotkey override - activating tooltip scanner")
+                    elif ocr.check_trigger_any(
                         [settings.trigger_region, settings.trigger_region2]
                     ):
                         # Trigger detected! Switch to active mode
+                        self._hotkey_override = False
                         self.state = ScannerState.ACTIVE
                         self._update_status("active")
                         logger.info("INVENTORY detected - activating tooltip scanner")
@@ -181,19 +207,27 @@ class Scanner:
 
                 # Phase 2: Active mode - scan tooltip
                 elif self.state == ScannerState.ACTIVE:
-                    # First, verify trigger is still present
-                    # Optimization: Only check trigger every 3rd scan to save CPU
-                    self._trigger_check_counter += 1
-                    should_check_trigger = self._trigger_check_counter % 3 == 0
+                    if self._hotkey_override:
+                        # Hotkey mode: stay active as long as hotkey is held
+                        if not hotkey_now:
+                            self._hotkey_override = False
+                            self.state = ScannerState.IDLE
+                            self._update_status("scanning")
+                            logger.info("Hotkey released - returning to idle")
+                            continue
+                    else:
+                        # Inventory mode: check trigger every 3rd scan
+                        self._trigger_check_counter += 1
+                        should_check_trigger = self._trigger_check_counter % 3 == 0
 
-                    if should_check_trigger and not ocr.check_trigger_any(
-                        [settings.trigger_region, settings.trigger_region2]
-                    ):
-                        # Inventory closed, go back to idle
-                        self.state = ScannerState.IDLE
-                        self._update_status("scanning")
-                        logger.info("INVENTORY closed - returning to idle")
-                        continue
+                        if should_check_trigger and not ocr.check_trigger_any(
+                            [settings.trigger_region, settings.trigger_region2]
+                        ):
+                            # Inventory closed, go back to idle
+                            self.state = ScannerState.IDLE
+                            self._update_status("scanning")
+                            logger.info("INVENTORY closed - returning to idle")
+                            continue
 
                     # Scan tooltip at cursor position
                     item_name = ocr.extract_item_name_at_cursor()
@@ -256,6 +290,8 @@ class Scanner:
                 self.status.set_scanning()
             elif status == "active":
                 self.status.set_active()
+            elif status == "hotkey":
+                self.status.set_hotkey()
             elif status == "error":
                 self.status.set_error("Error")
 
@@ -332,6 +368,7 @@ class Application:
         )
         logger.info("=" * 50)
         logger.info("Looking for INVENTORY screen...")
+        logger.info("Hold Ctrl+Shift to force tooltip scanning (vendor screens, etc.)")
         logger.info("Press Ctrl+C in terminal to quit")
         logger.info("=" * 50)
 
