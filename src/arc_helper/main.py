@@ -3,6 +3,7 @@ ARLO - Main Application.
 Coordinates OCR scanning and overlay display.
 """
 
+import ctypes
 import sys
 import threading
 import time
@@ -32,6 +33,37 @@ from arc_helper.overlay import StatusWindow
 from arc_helper.resolution_profiles import get_profile_manager
 
 load_dotenv(Path(__file__).with_name(".env"), override=False)
+
+# Linux: pynput keyboard listener state for Ctrl+Shift hotkey (started/stopped with Scanner)
+_linux_keys_pressed: set = set()
+_linux_key_listener = None
+
+
+def _linux_key_listener_start() -> None:
+    """Start background listener for modifier keys (Linux only)."""
+    global _linux_key_listener
+    if _linux_key_listener is not None:
+        return
+
+    from pynput import keyboard
+
+    def on_press(key):
+        _linux_keys_pressed.add(key)
+
+    def on_release(key):
+        _linux_keys_pressed.discard(key)
+
+    _linux_key_listener = keyboard.Listener(on_press=on_press, on_release=on_release)
+    _linux_key_listener.start()
+
+
+def _linux_key_listener_stop() -> None:
+    """Stop the modifier-key listener (Linux only)."""
+    global _linux_key_listener
+    if _linux_key_listener is not None:
+        _linux_key_listener.stop()
+        _linux_key_listener = None
+    _linux_keys_pressed.clear()
 
 
 class ScannerState(Enum):
@@ -131,6 +163,8 @@ class Scanner:
 
         self._running = True
         self.state = ScannerState.IDLE
+        if sys.platform != "win32":
+            _linux_key_listener_start()
         self._scan_thread = Thread(target=self._scan_loop, daemon=True)
         self._scan_thread.start()
         logger.info("Scanner started")
@@ -139,6 +173,8 @@ class Scanner:
         """Stop the scanner."""
         self._running = False
         self.state = ScannerState.STOPPED
+        if sys.platform != "win32":
+            _linux_key_listener_stop()
         if self._scan_thread:
             self._scan_thread.join(timeout=2.0)
         logger.info("Scanner stopped")
@@ -154,15 +190,23 @@ class Scanner:
     @staticmethod
     def _is_hotkey_held() -> bool:
         """Check if Ctrl+Shift are both held down."""
-        try:
-            user32 = ctypes.windll.user32
-            # VK_CONTROL = 0x11, VK_SHIFT = 0x10
-            # GetAsyncKeyState: high bit (0x8000) set = key is currently down
-            ctrl = user32.GetAsyncKeyState(0x11) & 0x8000
-            shift = user32.GetAsyncKeyState(0x10) & 0x8000
-            return bool(ctrl and shift)
-        except (AttributeError, OSError):
-            return False
+        if sys.platform == "win32":
+            try:
+                user32 = ctypes.windll.user32
+                # VK_CONTROL = 0x11, VK_SHIFT = 0x10
+                # GetAsyncKeyState: high bit (0x8000) set = key is currently down
+                ctrl = user32.GetAsyncKeyState(0x11) & 0x8000
+                shift = user32.GetAsyncKeyState(0x10) & 0x8000
+                return bool(ctrl and shift)
+            except (AttributeError, OSError):
+                return False
+        # Linux: use pynput listener state (Key.ctrl, Key.ctrl_l, Key.ctrl_r, etc.)
+        from pynput.keyboard import Key
+        ctrl_keys = {Key.ctrl, Key.ctrl_l, Key.ctrl_r}
+        shift_keys = {Key.shift, Key.shift_l, Key.shift_r}
+        has_ctrl = any(k in _linux_keys_pressed for k in ctrl_keys)
+        has_shift = any(k in _linux_keys_pressed for k in shift_keys)
+        return has_ctrl and has_shift
 
     def _scan_loop(self) -> None:
         """Main scanning loop running in background thread."""
