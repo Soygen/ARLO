@@ -5,16 +5,25 @@ Advanced ARC Powercell,Keep,2x ARC Powercell,Medical Lab: Surge Shield Recharger
 Advanced Electrical Components,Keep,"1x Electrical Components, 1x Wires",10x for Gear Bench III and Utility Station III Upgrades; 5x Expedition Stage 4,1750,5
 Advanced Mechanical Components,Keep,"1x Mechanical Components, 1x Steel Spring",5x for Gunsmith III Upgrade,1750,5
 Agave,Sell,3x Assorted Seeds,,1000,10
-Agave Juice,Keep; or sell if short on space,,Quick Use for Healing,1800,5
+Agave Juice,Keep; or sell if short on space,,Quick Use for Healing,1800,
 Air Freshener,Sell,,,2000,5
 Alarm Clock,Recycle,"6x Plastic Parts, 1x Processor",,1000,3
 Alien Duck,Sell,,,1000,15
-Ancient Fort Security Code,Keep,,Unlocks locked areas,,1
+Ancient Fort Security Code,Keep,,Unlocks locked areas,,
 Angled Grip I,Keep,6x Plastic Parts,Equippable Mods,640,1
 Angled Grip II,Keep,"1x Duct Tape, 1x Mechanical Components",Equippable Mods,2000,1
+Angled Grip II Blueprint,Sell,,,5000,
 Angled Grip III,Keep,"1x Mod Components, 2x Duct Tape",Equippable Mods,5000,1
+Angled Grip III Blueprint,Sell,,,5000,
 Antiseptic,Keep,10x Chemical,Crafting Heals,1000,5
+Anvil Blueprint,Sell,,,5000,
+Anvil I,Recycle,"2x Mechanical Components, 2x Simple Gun Parts",,5000,
+Anvil II,Recycle,"3x Mechanical Components, 3x Simple Gun Parts",,7000,
+Anvil III,Recycle,"4x Mechanical Components, 4x Simple Gun Parts",,10000,
+Anvil IV,Recycle,"5x Mechanical Components, 5x Simple Gun Parts",,13000,
 Anvil Splitter,Keep,"1x Mod Components, 1x Processor",Equippable Mods,7000,1
+Aphelion Rifle,Recycle,"2x Magnetic Accelerator, 1x Complex Gun Parts",,27500,
+Aphelion Rifle Blueprint,Sell,,,5000,
 Apricot,Keep until upgrades are complete; sell once done,3x Assorted Seeds,17x for Scrappy Level III and V,640,10
 ARC Alloy,Keep,2x Metal Parts,"18x for Explosives, Medical Lab, and Utility Station Level I Upgrades; 80x Expedition Stage 1",200,15
 ARC Circuitry,Keep,2x ARC Alloy,10x for Refiner III Upgrade,1000,5
@@ -25,177 +34,274 @@ ARC Performance Steel,Recycle,12x Metal Parts,Projects Trophy Display (10x),1000
 ARC Powercell,Keep,,5x for Refiner I; Medical Lab: Shield Rechargers,270,5
 ARC Synthetic Resin,Recycle if short on materials; Sell otherwise,14x Plastic Parts,Projects Trophy Display (10x),1000,3
 ARC Thermo Lining,Recycle if short on materials; Sell otherwise,16x Fabric,,1000,3
+Arpeggio I,Sell,,,5500,
+Arpeggio II,Sell,,,8000,
+Arpeggio III,Sell,,,11500,
+Arpeggio IV,Sell,,,15000,
 Assorted Seeds,Keep,,,100,100
+Aviator (Outfit),Sell,,,,
+Bag (Radio Renegade Variant),Sell,,,,
+Banana (Backpack Charm),Sell,,,,
 Bandage,Use,2x Fabric,Quick Use consumable,250,5
 Barricade Kit,Use,4x Metal Parts,Quick Use consumable,640,3
+Barricade Kit Blueprint,Sell,,,5000,
 Bastion Cell,Keep until upgrades are complete; sell once done,"2x ARC Alloy, 2x Advanced Mechanical Components",6x for Gear Bench III Upgrade,3000,3
 Battery,Keep,2x Metal Parts,Quests After Rain Comes (2x) Trash Into Treasure (1x) Projects Expedition 1 (30x) Expedition 2 (30x) Expedition 3 (25x),250,15
+Bettina Blueprint,Sell,,,5000,
+Bettina I,Sell,,,8000,
+Bettina II,Recycle,"2x Advanced Mechanical Components, 2x Heavy Gun Parts",,11000,
+Bettina III,Recycle,"2x Advanced Mechanical Components, 3x Heavy Gun Parts",,14000,
+Bettina IV,Recycle,"3x Advanced Mechanical Components, 3x Heavy Gun Parts",,18000,
 Bicycle Pump,Recycle,"4x Canister, 10x Metal Parts",Quests The League (1x),2000,3
 Binoculars,Use,"2x Rubber Parts, 4x Plastic Parts",Quick Use consumable,640,1
+Bison Driver,Recycle if short on materials; Sell otherwise,"2x ARC Motion Core, 2x ARC Alloy",,2500,3
+Black & White (Origin Color),Sell,,,,
+Black (Hiker Colour),Sell,,,,
+Black Eye (Face Style),Sell,,,,
 Blaze Grenade,Use,"2x Oil, 4x Metal Parts",Quick Use consumable,1600,5
+Blaze Grenade Blueprint,Sell,,,5000,
 Blaze Grenade Trap,Use,,Quick Use consumable,1000,3
 Bloated Tuna Can,Sell,,,1000,15
-Blue Gate Cellar Key,Keep,,Unlocks locked areas,100,1
-Blue Gate Communication Tower Key,Keep,,Unlocks locked areas,100,1
-Blue Gate Confiscation Room Key,Keep,,Unlocks locked areas,100,1
+Blue (Radio Renegade Color),Sell,,,,
+Blue Gate Cellar Key,Keep,,Unlocks locked areas,100,
+Blue Gate Communication Tower Key,Keep,,Unlocks locked areas,100,
+Blue Gate Confiscation Room Key,Keep,,Unlocks locked areas,100,
 Blue Gate Village Key,Keep,,Unlocks locked areas,100,1
 Blue Light Stick,Use,1x Chemicals,Quick Use consumable,150,5
-Bombardier Cell,Keep until upgrades are complete; sell once done,"2x Advanced Mechanical Components, 2x ARC Alloys",6x for Refiner III Upgrades,3000,3
+Blue Light Stick Blueprint,Sell,,,5000,
+Blue Yellow (Aviator Color),Sell,,,,
+Bobcat Blueprint,Sell,,,5000,
+Bobcat I,Sell,,,13000,
+Bobcat II,Recycle,"3x Advanced Mechanical Components, 3x Light Gun Parts",,17000,
+Bobcat III,Recycle,"4x Advanced Mechanical Components, 4x Light Gun Parts",,22000,
+Bobcat IV,Recycle,"5x Advanced Mechanical Components, 4x Light Gun Parts",,27000,
+Bombardier Cell,Keep until upgrades are complete; sell once done,"2x Advanced Mechanical Components, 2x ARC Alloys",6x for Refiner III Upgrades,5000,3
+Bow and Arrow (Emote),Sell,,,,
 Breathtaking Snow Globe,Sell,,Projects Expedition 3 (3x),7000,1
+Briefcase (Backpack Attachment),Sell,,,,
 Broken Flashlight,Recycle,"2x Battery, 6x Metal Parts",,1000,3
 Broken Guidance System,Recycle,4x Processor,Projects Expedition 3 (1x),2000,3
+Broken Handcuffs,Sell,,,270,5
 Broken Handheld Radio,Recycle,"3x Sensors, 2x Wires",,2000,3
 Broken Taser,Recycle,"2x Battery, 2x Wires",,1000,3
+Burgerboy (Backpack Charm),Sell,,,,
 Buried City Hospital Key,Keep,,Unlocks locked areas,100,1
 Buried City JKV Employee Access Card,Keep,,Unlocks locked areas,100,1
 Buried City Residential Master Key,Keep,,Unlocks locked areas,100,1
-Buried City Town Hall Key,Keep,,Unlocks locked areas,100,1
-Burned ARC Circuitry,Recycle,2x ARC Alloy,,640,5
-Burnt-Out Candles,Sell,,,640,15
+Buried City Town Hall Key,Keep,,Unlocks locked areas,100,
+Burletta Blueprint,Sell,,,5000,
+Burletta I,Recycle,"1x Mechanical Components, 2x Simple Gun Parts",,2900,
+Burletta II,Recycle,"2x Mechanical Components, 2x Simple Gun Parts",,5000,
+Burletta III,Recycle,"3x Mechanical Components, 3x Simple Gun Parts",,7000,
+Burletta IV,Recycle,"4x Mechanical Components, 4x Simple Gun Parts",,10000,
+Burned ARC Circuitry,Recycle,2x ARC Alloy,,640,3
+Burnt-Out Candles,Sell,,,640,16
 Camera Lens,Recycle,8x Plastic Parts,Projects Weather Monitor System (3x),640,5
 Candle Holder,Keep; recycle after stage 2 is complete,8x Metal Parts,3x Flickering Flames Stage 2,640,3
 Candleberries,Keep,2x Assorted Seeds,All Stages of Flickering Flames (260x Total),460,10
 Canister,Keep,3x Plastics Parts,Projects Weather Monitor System (5x),300,15
+Cans (Backpack Attachment),Sell,,,,
 Cat Bed,Keep until upgrade is complete; sell once done,,1x for Scrappy Level IV Upgrades,1000,3
+Cheer (Emote),Sell,,,,
 Chemicals,Keep,,Workshop Explosives Station 1 (50x) Projects Expedition 3 (100x),50,50
 Coffee Pot,Sell,,Projects Expedition 3 (1x),1000,3
-Combat Mk. 1,Keep,"3x Plastic Parts, 3x Rubber Parts",Equippable Augment,640,1
-Combat Mk. 2,Keep,"1x Electrical Components, 1x Magnet",Equippable Augment,2000,1
-Combat Mk. 3 (Aggressive),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,1
-Combat Mk. 3 (Flanking),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,1
+Coins,Sell,,,,
+Combat Mk. 1,Keep,"3x Plastic Parts, 3x Rubber Parts",Equippable Augment,640,
+Combat Mk. 2,Keep,"1x Electrical Components, 1x Magnet",Equippable Augment,2000,
+Combat Mk. 3 (Aggressive),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,
+Combat Mk. 3 (Flanking) Blueprint,Sell,,,5000,
+Combat Mk.3 (Aggressive) Blueprint,Sell,,,5000,
+Combat Mk.3 (Flanking) ,Keep,,Equippable Augment,5000,
 Comet Igniter,Keep until uses complete; recycle after,"2x ARC Alloy, 2x Crude Explosives",Projects Weather Monitor System (1x),1000,3
-Compensator I,Keep,5x Metal Parts,Equippable Mods,640,1
-Compensator II,Keep,"1x Mechanical Components, 1x Wires",Equippable Mods,2000,1
+Compensator I,Keep,5x Metal Parts,Equippable Mods,640,
+Compensator II,Keep,"1x Mechanical Components, 1x Wires",Equippable Mods,2000,
+Compensator II Blueprint,Sell,,,5000,
 Compensator III,Keep,"1x Mod Components, 2x Wires",Equippable Mods,5000,1
+Compensator III Blueprint,Sell,,,5000,
 Complex Gun Parts,Keep,2x Simple Gun Parts,Topside Material - crafting ingredient,3000,3
+Complex Gun Parts Blueprint,Sell,,,5000,
 Coolant,Sell,"5x Chemicals, 2x Oil",,1000,3
 Cooling Coil,Recycle,"6x Chemicals, 2x Steel Springs",Projects Expedition 2 (4x),1000,3
 Cooling Fan,KEEP FOR EXPEDITION MATS; Sell after,"14x Plastic Parts, 4x Wires",5x Expedition Stage 2,2000,3
 Cracked Bioscanner,Keep until upgrade is complete; sell or recycle once done,"3x Rubber Parts, 3x Battery",2x for Medical Lab II Upgrade,1000,3
+Crimson Racer (Aviator Colour),Sell,,,,
 Crude Explosives,"Keep; If no inventory space, recycle",3x Chemicals,5x for Explosives Station II Upgrade,270,10
 Crumpled Plastic Bottle,Recycle,4x Plastic Parts,,270,3
-Dam Control Tower Key,Keep,,Unlocks locked areas,100,1
-Dam Controlled Access Zone Key,Keep,,Unlocks locked areas,100,1
+Dam Control Center Tower Key,Keep,,Unlocks locked areas,100,1
+Dam Controlled Access Zone Key,Keep,,Unlocks locked areas,100,
 Dam Staff Room Key,Keep,,Unlocks locked areas,100,1
-Dam Surveillance Key,Keep,,Unlocks locked areas,100,1
+Dam Surveillance Key,Keep,,Unlocks locked areas,100,
 Dam Testing Annex Key,Keep,,Unlocks locked areas,100,1
 Dam Utility Key,Keep,,Unlocks locked areas,100,1
 Damaged ARC Motion Core,Recycle,2x ARC Alloy,,640,5
 Damaged ARC Powercell,Recycle,1x ARC Alloy,,293,5
 Damaged Fireball Burner,Recycle,1x ARC Alloy,,270,3
 Damaged Heat Sink,Keep until upgrade is complete; sell once done,"6x Metal Parts, 2x Wires",2x for Utility Station II Upgrade,1000,3
-Damaged Hornet Driver,Recycle,2x ARC Alloy,,640,3
-Damaged Leaper Pulse Unit,Recycle,3x ARC Alloy,,1000,3
-Damaged Rocketeer Driver,Sell,3x ARC Alloy,,1000,3
-Damaged Snitch Scanner,Sell,,,659,3
+Damaged Hornet Driver,Recycle,2x ARC Alloy,,640,
+Damaged Rocketeer Driver,Sell,3x ARC Alloy,,2000,3
 Damaged Tick Pod,Recycle,1x ARC Alloy,,270,3
 Damaged Wasp Driver,Recycle,1x ARC Alloy,,270,3
 Dart Board,Sell,,,2000,3
 Deadline,Use,"1x ARC Circuitry, 1x Explosive Compound",Quick Use consumable,6000,1
+Deadline Blueprint,Sell,,,5000,
 Defibrillator,Use,"1x Moss, 1x Plastic Parts",Quick Use consumable,1000,3
+Defibrillator Blueprint,Sell,,,5000,
 Deflated Football,Recycle,"9x Rubber Parts, 9x Fabric",Quests The League (1x),1000,3
 Degraded ARC Rubber,Recycle,11x Rubber Parts,,640,3
 Diving Goggles,Recycle,12x Rubber Parts,,640,3
 Dog Collar,Keep until upgrade is complete; recycle once done,"8x Fabric, 1x Metal Parts",1x Scrappy for Level II Upgrade,640,3
 Doodly Duck,Sell,,,3000,15
-Door Blocker,Use,2x Metal Parts,Quick Use consumable,270,3
+Door Blocker,Use,2x Metal Parts,Quick Use consumable,270,
 Dried-Out ARC Resin,Recycle,9x Plastic Parts,,640,3
 Duct Tape,Keep,3x Fabric,10x Flickering Flames Stage 3,300,15
 Durable Cloth,Keep,6x Fabric,"5x for Medical Lab II Upgrade; 35x Expedition Stage 2, 5x Flickering Flames Stage 1",640,10
 Electrical Components,Keep,"3x Plastics Parts, 3x Rubber Parts",10x Gear Bench II and Utility Station II Upgrades; 30x Expedition Stage 2,640,10
 Empty Wine Bottle,Keep; sell after stage 1 is complete,,1x Flickering Flames Stage 1,1000,5
 Energy Clip,Keep,,Ammo,1000,5
+Equalizer,Sell,,,27500,
+Equalizer Blueprint,Sell,,,5000,
+ESR Analyzer,Sell,,,,
 Exodus Modules,Keep,"2x Magnet, 1x Mechanical Components",1x Expedition Stage 3,2750,3
 Expired Pasta,Keep,,,1000,15
 Expired Respirator,Recycle,"8x Rubber Parts, 4x Fabric",Projects Trophy Display (3x),640,3
 Explosive Compound,Keep,2x Crude Explosives,5x for Explosives Station III Upgrade,1000,5
 Explosive Mine,Use,"1x Sensors, 2x Oil",Quick Use consumable,1500,3
+Explosive Mine Blueprint,Sell,,,5000,
 Extended Barrel,Keep,"1x Mod Components, 1x Wires",Equippable Mods,5000,1
-Extended Light Mag I,Keep,6x Plastic Parts,Equippable Mods,640,1
+Extended Barrel Blueprint,Sell,,,5000,
+Extended Light Mag I,Keep,6x Plastic Parts,Equippable Mods,640,
 Extended Light Mag II,Keep,"1x Mechanical Components, 1x Steel Spring",Equippable Mods,2000,1
+Extended Light Mag II Blueprint,Sell,,,5000,
 Extended Light Mag III,Keep,"1x Mod Components, 2x Steel Spring",Equippable Mods,5000,1
-Extended Medium Mag I,Keep,6x Plastic Parts,Equippable Mods,640,1
+Extended Light Mag III Blueprint,Sell,,,5000,
+Extended Medium Mag I,Keep,6x Plastic Parts,Equippable Mods,640,
 Extended Medium Mag II,Keep,"1x Mechanical Components, 1x Steel Spring",Equippable Mods,2000,1
+Extended Medium Mag II Blueprint,Sell,,,5000,
 Extended Medium Mag III,Keep,"1x Mod Components, 2x Steel Spring",Equippable Mods,5000,1
-Extended Shotgun Mag I,Keep,6x Plastic Parts,Equippable Mods,640,1
+Extended Medium Mag III Blueprint,Sell,,,5000,
+Extended Shotgun Mag I,Keep,6x Plastic Parts,Equippable Mods,640,
 Extended Shotgun Mag II,Keep,"1x Mechanical Components, 1x Steel Spring",Equippable Mods,2000,1
+Extended Shotgun Mag II Blueprint,Sell,,,5000,
 Extended Shotgun Mag III,Keep,"1x Mod Components, 2x Steel Spring",Equippable Mods,5000,1
+Extended Shotgun Mag III Blueprint,Sell,,,5000,
 Fabric,Keep,,80x for Gear Bench I and Medical Lab I Upgrades,50,50
+Faded Flush (Aviator Color),Sell,,,,
 Faded Photograph,Sell,,,640,15
 Familiar Duck,Sell,,,7000,15
-Fertilizer,Keep for quest; Sell once done,2x Assorted Seeds,1x for Unexpected Initiative,1000,5
+Ferro I,Recycle,"2x Metal Parts, 1x Rubber Parts",,475,
+Ferro II,Recycle,"4x Metal Parts, 3x Rubber Parts",,1000,
+Ferro III,Recycle,"6x Metal Parts, 1x Simple Gun Parts",,2000,
+Ferro IV,Recycle,"1x Mechanical Components, 2x Simple Gun Parts",,2900,
+Fertilizer,Keep for quest; Sell once done,2x Assorted Seeds,1x for Unexpected Initiative,1000,10
 Film Reel,Keep for quest; Sell once done,,1x Trader Quest Item; 2x Flickering Flames Stage 3,2000,3
 Fine Wristwatch,Sell,,Projects Weather Monitor System (1x),3000,3
+Finger Gun Single Shot (Emote),Sell,,,,
 Fireball Burner,Keep until upgrade is complete; recycle once done,"1x ARC Alloy, 1x Crude Explosives",8x for Refiner II Upgrade,640,3
 Firecracker,Use,3x Plastic Parts,Quick Use consumable,270,5
 Firefly Burner,Keep until uses complete; recycle after,"2x ARC Alloy, 2x Crude Explosives",Projects Expedition 3 (5x) Weather Monitor System (1x),1000,3
 Fireworks Box,Use,1x Explosive Compound,Quick Use consumable,2000,1
-Flame Spray,Use,"1x Canister, 1x Fireball Burner",Quick Use consumable,2000,1
+Fireworks Box Blueprint,Sell,,,5000,
+Flame Spray,Use,"1x Canister, 1x Fireball Burner",Quick Use consumable,640,1
 Flashy Duck,Sell,,,3000,15
 Flow Controller,Recycle if short on materials; Sell otherwise,"1x Advanced Mechanical Components, 1x Sensors",Quests Snap And Salvage (1x),3000,3
+Flushing Terminal Key,Sell,,,,
 Fossilized Lightning,Sell,3x Explosive Compound,,4000,1
-Free Loadout Augment,Keep,,Equippable Augment,100,1
+Free Loadout Augment,Keep,,Equippable Augment,100,
 Frequency Modulation Box,Recycle if short on materials; Sell otherwise,"1x Advanced Electrical Components, 1x Speaker Component",Projects Expedition 1 (5x),3000,3
 Fried Motherboard,Keep until upgrade is complete; Sell once done,"5x Plastic Parts, 2x Electrical Components",3x for Utility Station III Upgrade,2000,3
 Fruit Mix,Use,,Quick Use consumable,1800,5
 Frying Pan,Recycle,8x Metal Parts,,640,3
 Garlic Press,Recycle if short on materials; Sell otherwise,12x Metal Parts,,1000,3
 Gas Grenade,Use,"1x Chemicals, 1x Rubber Parts",Quick Use consumable,270,3
-Gas Grenade Trap,Use,,Quick Use consumable,300,3
+Gas Grenade Trap,Use,,Quick Use consumable,300,
 Gas Mine,Use,"1x Chemicals, 1x Rubber Parts",Quick Use consumable,270,3
+Gas Mine Blueprint,Sell,,,5000,
 Geiger Counter,Recycle if short on materials; Sell otherwise,"3x Battery, 1x Exodus Modules",Projects Trophy Display (3x),3500,3
 Gentle Duck,Sell,,,1000,15
+Goggles (Radio Renegade Variant),Sell,,,,
 Great Mullein,Keep,2x Assorted Seeds,Quests Doctor's Orders (1x),300,15
 Green Light Stick,Use,1x Chemicals,Quick Use consumable,150,5
+Green Light Stick Blueprint,Sell,,,5000,
+Hairpin I,Recycle,"2x Metal Parts, 1x Rubber Parts",,450,
+Hairpin II,Recycle,"4x Metal Parts, 4x Rubber Parts",,1000,
+Hairpin III,Recycle,"6x Metal Parts, 1x Simple Gun Parts",,2000,
+Hairpin IV,Recycle,"1x Mechanical Components, 1x Simple Gun Parts",,2900,
+Happy Jig (Emote),Sell,,,,
 Headphones,Sell,"7x Rubber Parts, 1x Speaker Components",,1000,3
 Heavy Ammo,Keep,,Ammo,12,40
 Heavy Fuze Grenade,Use,"1x Oil, 2x Rubber Parts",Quick Use consumable,1600,3
 Heavy Gun Parts,Keep,2x Simple Gun Parts,Topside Material - crafting ingredient,700,5
-Heavy Shield,Keep,"1x Voltage Converter, 2x ARC Circuitry",Equippable Shield,5500,1
-Herbal Bandage,Use,"2x Assorted Seeds, 5x Fabric",Quick Use consumable,900,5
+Heavy Gun Parts Blueprint,Sell,,,5000,
+Heavy Shield,Keep,"1x Voltage Converter, 2x ARC Circuitry",Equippable Shield,5500,
+Helmet (Radio Renegade Variant),Sell,,,,
+Herbal Bandage,Use,"2x Assorted Seeds, 5x Fabric",Quick Use consumable,640,5
 Horizontal Grip,Keep,"1x Mod Components, 2x Duct Tape",Equippable Mods,7000,1
 Hornet Driver,"Keep until upgrade is complete; recycle once done
 (Sell if excess)","2x ARC Alloy, 2x Electrical Components",5x for Gear Bench II Upgrade,1000,3
 Household Cleaner,Recycle,11x Chemicals,,640,3
+Hullcracker Blueprint,Sell,,,5000,
+Hullcracker I,Recycle,"2x Advanced Mechanical Components, 2x Heavy Gun Parts",,10000,
+Hullcracker II,Recycle,"2x Advanced Mechanical Components, 3x Heavy Gun Parts",,13000,
+Hullcracker III,Recycle,"3x Advanced Mechanical Components, 4x Heavy Gun Parts",,17000,
+Hullcracker IV ,Recycle,"4x Advanced Mechanical Components, 5x Heavy Gun Parts",,22000,
 Humidifier,KEEP FOR EXPEDITION MATS; Recycle after,"2x Canister, 2x Wires",5x Expedition Stage 4,1000,3
 Ice Cream Scooper,Recycle,7x Metal Parts,,640,3
+Il Toro Blueprint,Sell,,,5000,
+Il Toro I,Recycle,"2x Mechanical Components, 2x Simple Gun Parts",,5000,
+Il Toro II,Recycle,"3x Mechanical Components, 3x Simple Gun Parts",,7000,
+Il Toro III,Recycle,"4x Mechanical Components, 4x Simple Gun Parts",,10000,
+Il Toro IV,Recycle,"5x Mechanical Components, 5x Simple Gun Parts",,13000,
 Impure ARC Coolant,Recycle,12x Chemicals,,640,3
 Industrial Battery,Recycle if short on materials; Sell otherwise,"7x Chemicals, 2x Battery",3x for Gear Bench III Upgrade; 1x Flickering Flames Stage 2,1000,3
 Industrial Charger,Recycle if short on materials; Sell otherwise,"5x Metal Parts, 1x Voltage Converter",Projects Expedition 3 (3x),1000,3
 Industrial Magnet,Recycle if short on materials; Sell otherwise,"4x Metal Parts, 2x Magnet",,1000,3
-Integrated Binoculars,Use,,Quick Use consumable,,
-Integrated Defibrillator,Use,,Quick Use consumable,,1
-Integrated Shield Recharger,Use,,Quick Use consumable,,
 Ion Sputter,Recycle if short on materials; Sell otherwise,"4x Voltage Converter, 1x Exodus Modules",Quests With A View (1x) Projects Expedition 1 (3x),6000,3
 Jolt Mine,Use,"1x Battery, 2x Plastic Parts",Quick Use consumable,850,3
+Jolt Mine Blueprint,Sell,,,5000,
+Junior (Outfit),Sell,,,,
+Jupiter,Sell,,,27500,
+Jupiter Blueprint,Sell,,,5000,
+Kettle I,Recycle,"3x Metal Parts, 2x Rubber Parts",,840,
+Kettle II,Recycle,"6x Metal Parts, 6x Rubber Parts",,2000,
+Kettle III,Recycle,"12x Metal Parts, 1x Simple Gun Parts",,3000,
+Kettle IV,Recycle,"2x Mechanical Components, 2x Simple Gun Parts",,5000,
 Kinetic Converter,Keep,"1x Mod Components, 2x Duct Tape",Equippable Mods,7000,1
 Laboratory Reagents,Keep until upgrade is complete; recycle once done,"16x Chemicals, 3x Crude Explosives",3x for Explosives Station III Upgrade,2000,3
 Lance's Mixtape (5th Edition),Sell,,,10000,3
-Launcher Ammo,Keep,,Ammo,250,24
-Leaper Pulse Unit,KEEP FOR EXPEDITION MATS; Recycle after,"3x Arc Alloy, 2x Advanced Mechanical Components",4x for Utility Station III Upgrade; 3x Expedition Stage 4,3000,3
+Laser Trap: Lure,Use,,Quick Use consumable,,3
+Launcher Ammo,Keep,,Ammo,250,
+Leaper Pulse Unit,KEEP FOR EXPEDITION MATS; Recycle after,"3x Arc Alloy, 2x Advanced Mechanical Components",4x for Utility Station III Upgrade; 3x Expedition Stage 4,5000,
 Lemon,Keep until upgrade is complete; sell once done,3x Assorted Seeds,5x for Scrappy Level III Upgrade,640,10
 Li'l Smoke Grenade,Use,"1x Chemicals, 1x Plastic Parts",Quick Use consumable,300,5
+Lidar Scanner,Sell,,,,
 Light Ammo,Keep,,Ammo,4,100
 Light Bulb,KEEP FOR EXPEDITION MATS; Sell after,,5x Expedition Stage 3; 3x Flickering Flames Stage 2,2000,3
 Light Gun Parts,Keep,2x Simple Gun Parts,Topside Material - crafting ingredient,700,5
+Light Gun Parts Blueprint,Sell,,,5000,
 Light Impact Grenade,Use,"1x Chemicals, 1x Plastic Parts",Quick Use consumable,270,5
-Light Shield,Keep,4x Plastic Parts,Equippable Shield,640,1
-Lightweight Stock,Keep,"1x Duct Tape, 1x Mod Components",Equippable Mods,5000,1
-Looting Mk. 1,Keep,"3x Plastic Parts, 3x Rubber Parts",Equippable Augment,640,1
-Looting Mk. 2,Keep,"1x Electrical Components, 1x Magnet",Equippable Augment,2000,1
-Looting Mk. 3 (Cautious),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,1
-Looting Mk. 3 (Safekeeper),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,1
-Looting Mk. 3 (Survivor),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,1
+Light Shield,Keep,4x Plastic Parts,Equippable Shield,640,
+Lightweight Stock,Keep,"1x Duct Tape, 1x Mod Components",Equippable Mods,5000,
+Lightweight Stock Blueprint,Sell,,,5000,
+Looting Mk. 1,Keep,"3x Plastic Parts, 3x Rubber Parts",Equippable Augment,640,
+Looting Mk. 2,Keep,"1x Electrical Components, 1x Magnet",Equippable Augment,2000,
+Looting MK. 3 (Cautious),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,
+Looting MK. 3 (Safekeeper),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,
+Looting MK. 3 (Safekeeper) Blueprint,Sell,,,5000,
+Looting MK. 3 (Survivor),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,
+Looting MK. 3 (Survivor) Blueprint,Sell,,,5000,
 Lure Grenade,Use,1x Speaker Component,Quick Use consumable,1000,3
-Lure Grenade Trap,Use,,Quick Use consumable,1000,3
+Lure Grenade Blueprint,Sell,,,5000,
+Lure Grenade Trap,Use,1x Speaker Component,Quick Use consumable,1000,3
 Magnet,Keep,2x Metal Parts,Topside Material - crafting ingredient,300,15
 Magnetic Accelerator,"Keep for high-tier crafting; if excess, sell","1x Advanced Mechanical Components, 1x ARC Motion Core",Projects Expedition 1 (3x) Trophy Display (10x),5500,3
 Magnetron,Recycle if short on materials; Sell otherwise,"1x Magnetic Accelerator, 1x Steel Spring",Quests Snap And Salvage (1x),6000,3
-Matriarch Reactor,"Keep for high-tier crafting; if excess, sell","1x Power Rod, 1x Magnetic Accelerator",Projects Trophy Display (3x),11000,1
+Mastery Medal (Backpack Charm),Sell,,,,
+Matriarch Reactor,"Keep for high-tier crafting; if excess, sell","1x Power Rod, 1x Magnetic Accelerator",Projects Trophy Display (3x),13000,
 Mechanical Components,Keep,"3x Metal Parts, 2x Rubber Parts",5x for Gunsmith II Upgrade,640,10
 Medium Ammo,Keep,,Ammo,6,80
 Medium Gun Parts,Keep,2x Simple Gun Parts,Topside Material - crafting ingredient,700,5
-Medium Shield,Keep,1x ARC Circuitry,Equippable Shield,2000,1
+Medium Gun Parts Blueprint,Sell,,,5000,
+Medium Shield,Keep,1x ARC Circuitry,Equippable Shield,2000,
 Metal Brackets,Recycle if short on materials; Sell otherwise,8x Metal Parts,,640,3
 Metal Parts,Keep,,80x for Gunsmith I and Refiner I Upgrades; 150x Expedition Stage 1,75,50
 Microscope,Recycle if short on materials; Sell otherwise,"1x Advanced Mechanical Components, 3x Magnet",,3000,3
@@ -206,47 +312,72 @@ Motor,Keep until upgrade is complete; sell once done,"2x Oil, 2x Mechanical Comp
 Mushroom,Keep until upgrade is complete; sell once done,,12x for Scrappy Level V Upgrade,1000,10
 Music Album,Sell,,,3000,3
 Music Box,Sell,,,5000,3
-Muzzle Brake I,Keep,5x Metal Parts,Equippable Mods,640,1
+Muzzle Brake I,Keep,5x Metal Parts,Equippable Mods,640,
 Muzzle Brake II,Keep,"1x Mechanical Components, 1x Wires",Equippable Mods,2000,1
+Muzzle Brake II Blueprint,Sell,,,5000,
 Muzzle Brake III,Keep,"1x Mod Components, 2x Wires",Equippable Mods,5000,1
+Muzzle Brake III Blueprint,Sell,,,5000,
 Noisemaker,Use,1x Speaker Component,Quick Use consumable,640,3
 Number Plate,Recycle,3x Metal Parts,,270,3
 Oil,Keep,3x Chemicals,Projects Weather Monitor System (3x),300,15
 Olives,Keep until upgrade is complete; sell once done,2x Assorted Seeds,6x for Scrappy Level IV Upgrade,640,10
+Orange Camo (Origin Outfit),Sell,,,,
+Osprey Blueprint,Sell,,,5000,
+Osprey I,Recycle,"1x Advanced Mechanical Components, 2x Medium Gun Parts",,7000,
+Osprey II,Recycle,"1x Advanced Mechanical Components, 2x Medium Gun Parts",,10000,
+Osprey III,Recycle,"2x Advanced Mechanical Components, 3x Medium Gun Parts",,13000,
+Osprey IV,Recycle,"3x Advanced Mechanical Components, 3x Medium Gun Parts",,17000,
 Padded Stock,Keep,"1x Duct Tape, 1x Mod Components",Equippable Mods,5000,1
+Padded Stock Blueprint,Sell,,,5000,
 Painted Box,Sell,,,2000,3
-Patrol Car Key,Keep,,Unlocks locked areas,100,1
+Patchwork (Warden Color),Sell,,,,
+Patrol (Outfit),Sell,,,,
+Patrol Car Key,Keep,,Unlocks locked areas,100,
 Photoelectric Cloak,Use,"1x Advanced Electrical Components, 1x Speaker Component",Quick Use consumable,5000,1
-Pilgrim's Peak Security Code,Keep,,Unlocks locked areas,,1
+Pilgrim's Peak Security Code,Keep,,Unlocks locked areas,,
 Plastic Parts,Keep,,75x for Gear Bench I and Utility Station I Upgrades; 25x Flickering FLames Stage 1,60,50
 Playing Cards,Sell,,,5000,3
 Polluted Air Filter,Recycle if short on materials; Sell otherwise,"6x Fabric, 2x Oil",,1000,3
 Pop Trigger,Recycle after upgrade is done,"1x Crude Explosives, 1x ARC Alloy",5x for Explosives Station II Upgrade,640,3
-Portable TV,Recycle if short on materials; Sell otherwise,"6x Wires, 2x Battery",,2000,1
-Poster Of Natural Wonders,Sell,,,2000,3
+Portable TV,Recycle if short on materials; Sell otherwise,"6x Wires, 2x Battery",Quests Movie Night (1x),2000,1
+Poster of Natural Wonder,Sell,,,2000,3
 Pottery,Sell,,,2000,3
 Power Bank,Recycle if short on materials; Sell otherwise,"2x Battery, 2x Wires",,1000,3
 Power Cable,Recycle,4x Wires,3x for Gear Bench II Upgrade,1000,3
-Power Rod,"Keep for high-tier crafting; if excess, sell","1x Advanced Electrical Components, 1x ARC Circuitry",Quests Tribute To Toledo (1x),5000,3
+Power Rod,"Keep for high-tier crafting; if excess, sell","1x Advanced Electrical Components, 1x ARC Circuitry",Quests Tribute To Toledo (1x),5500,3
 Prickly Pear,Keep until upgrade is complete; sell once done,3x Assorted Seeds,8x for Scrappy Level IV Upgrade,640,10
 Processor,Keep,"1x Wires, 1x Plastic Parts",Topside Material - crafting ingredient,500,5
 Projector,Recycle if short on materials; Sell otherwise,"2x Wires, 1x Processor",,1000,3
 Pulse Mine,Use,6x Chemicals,Quick Use consumable,470,3
-Queen Reactor,"Keep for high-tier crafting; if excess, sell","1x Power Rod, 1x Magnetic Accelerator",Projects Trophy Display (3x),11000,1
+Pulse Mine Blueprint,Sell,,,5000,
+Queen Reactor,"Keep for high-tier crafting; if excess, sell","1x Power Rod, 1x Magnetic Accelerator",Projects Trophy Display (3x),11000,
 Radio,Recycle if short on materials; Sell otherwise,"1x Speaker Component, 1x Sensors",,1000,3
 Radio Relay,Recycle if short on materials; Sell otherwise,"2x Speaker Componets, 2x Sensors",,3000,3
+Radio Renegade (Outfit),Sell,,,,
 Raider Hatch Key,Keep,,Unlocks locked areas,2000,1
-Raider's Refuge Security Code,Keep,,Unlocks locked areas,,1
+Raider Tokens,Sell,,,,
+Raider's Refuge Security Code,Keep,,Unlocks locked areas,,
+Rattler I,Recycle,8x Metal Parts,,1750,
+Rattler II,Recycle,12x Metal Parts,,3000,
+Rattler III,Recycle,"3x Mechanical Components, 1x Simple Gun Parts",,5000,
+Rattler IV,Recycle,"4x Mechanical Components, 2x Simple Gun Parts",,7000,
 Recorder,Sell,10x Plastic Parts,Quick Use consumable,1000,1
+Red (Radio Renegade Color),Sell,,,,
 Red Coral Jewelry,Sell,,,5000,3
-Red Light Stick,Use,1x Chemicals,Quick Use consumable,150,5
-Reinforced Reception Security Code,Keep,,Unlocks locked areas,,1
+Red Light Stick,Use,1x Chemicals,Quick Use consumable,150,
+Red Light Stick Blueprint,Sell,,,5000,
+Reinforced Reception Security Code,Keep,,Unlocks locked areas,,
 Remote Control,Recycle if short on materials; Sell otherwise,"7x Plastic Parts, 1x Sensors",,1000,3
 Remote Raider Flare,Use,"1x Chemicals, 1x Rubber Parts",Quick Use consumable,270,3
+Remote Raider Flare Blueprint,Sell,,,5000,
+Renegade I,Recycle,"1x Advanced Mechanical Components, 2x Medium Gun Parts",,7000,
+Renegade II,Recycle,"2x Advanced Mechanical Components, 2x Medium Gun Parts",,10000,
+Renegade III,Recycle,"2x Advanced Mechanical Components, 2x Medium Gun Parts",,13000,
+Renegade IV,Recycle,"3x Advanced Mechanical Components, 3x Medium Gun Parts",,17000,
 Resin,Sell,,,1000,10
 Ripped Safety Vest,Recycle,"1x Durable Cloth, 1x Magnet",,1000,3
 Rocket Thruster,"Recycle if low on Metal Parts, otherwise sell","6x Metal Parts, 2x Synthesized Fuel",,2000,3
-Rocketeer Driver,Keep until upgrade is complete; sell once done,"3x ARC Alloy, 2x Advanced Electrical Components",3x for Explosive Station III Upgrade,3000,3
+Rocketeer Driver,Keep until upgrade is complete; sell once done,"3x ARC Alloy, 2x Advanced Electrical Components",3x for Explosive Station III Upgrade,5000,3
 Roots,Sell,1x Assorted Seeds,,640,10
 Rope,Keep,5x Fabric,Topside Material - crafting ingredient,500,5
 Rosary,Sell,,,2000,3
@@ -267,30 +398,40 @@ Rusted Shut Medical Kit,Keep until upgrade is complete; recycle once done,"2x Sy
 Rusted Tools,Keep until upgrade is complete; sell once done,"8x Metal Parts, 1x Steel Spring",3x for Gunsmith II Upgrade,1000,3
 Rusty ARC Steel,Recycle,8x Metal Parts,,640,3
 Sample Cleaner,Recycle if short on materials; Sell otherwise,"2x Electrical Components, 14x Assorted Seeds",,3000,3
-Seeker Grenade,Use,1x Crude Explosives,Quick Use consumable,640,5
+Seeker Grenade,Use,1x Crude Explosives,Quick Use consumable,640,
+Seeker Grenade Blueprint,Sell,,,5000,
 Sensors,Keep,"1x Wires, 1x Metal Parts",20x Expedition Stage 2,500,5
 Sentinel Firing Core,Keep until upgrade is complete; sell or recycle once done,"2x ARC Alloy, 3x Mechanical Components",4x for Gunsmith III Upgrade,2000,3
 Shaker,Use,10x Plastic Parts,Quick Use consumable,1000,1
 Shield Recharger,Use,4x Rubber Parts,Quick Use consumable,520,5
-Shotgun Ammo,Keep,,Ammo,20,20
+Shotgun ammo,Keep,,Ammo,20,20
 Shotgun Choke I,Keep,5x Metal Parts,Equippable Mods,640,1
 Shotgun Choke II,Keep,"1x Mechanical Components, 1x Wires",Equippable Mods,2000,1
+Shotgun Choke II Blueprint,Sell,,,5000,
 Shotgun Choke III,Keep,"1x Mod Components, 2x Wires",Equippable Mods,5000,1
-Shotgun Silencer,Keep,"1x Mod Components, 1x Wires",Equippable Mods,5000,1
+Shotgun Choke III Blueprint,Sell,,,5000,
+Shotgun Parts,Sell,,,700,5
+Shotgun Silencer,Keep,"1x Mod Components, 1x Wires",Equippable Mods,5000,
+Shotgun Silencer Blueprint,Sell,,,5000,
 Showstopper,Use,"1x Electrical Components, 1x Voltage Converter",Quick Use consumable,2100,5
+Showstopper Blueprint,Sell,,,5000,
 Shrapnel Grenade,Use,"1x Crude Explosives, 1x Metal Parts",Quick Use consumable,800,5
-Shredder Gyro,Recycle,"3x Mechanical Components, 3x ARC Alloy",Projects Expedition 2 (10x) Trophy Display (5x),2000,3
+Shredder Gyro,Recycle,"3x Mechanical Components, 3x ARC Alloy",Projects Expedition 2 (10x) Trophy Display (5x),3000,3
 Signal Amplifier,Recycle if short on materials; Sell otherwise,"2x Electrical Components, 2x Voltage Converter",,3000,3
 Silencer I,Keep,"1x Mechanical Components, 1x Wires",Equippable Mods,2000,1
-Silencer II,Keep,"1x Mod Components, 2x Wires",Equippable Mods,5000,1
+Silencer I Blueprint,Sell,,,5000,
+Silencer II,Keep,"1x Mod Components, 2x Wires",Equippable Mods,5000,
+Silencer II Blueprint,Sell,,,5000,
 Silencer III,Keep,"1x Mod Components, 3x Wires",Equippable Mods,7000,1
 Silver Teaspoon Set,Sell,,,3000,3
 Simple Gun Parts,Keep,2x Metals Parts,Topside Material - crafting ingredient,330,10
 Smoke Grenade,Use,"1x Canister, 2x Chemicals",Quick Use consumable,1000,5
+Smoke Grenade Blueprint,Sell,,,5000,
 Smoke Grenade Trap,Use,,Quick Use consumable,640,3
 Snap Blast Grenade,Use,"1x Chemicals, 1x Magnet",Quick Use consumable,800,3
 Snap Hook,Use,"1x Power Rod, 3x Rope",Quick Use consumable,14000,1
-Snitch Scanner,Keep,4x ARC Alloy,6x for Utility Station II Upgrade,1000,3
+Snap Hook Blueprint,Sell,,,5000,
+Snitch Scanner,Keep,4x ARC Alloy,6x for Utility Station II Upgrade,2000,3
 Snowball,Sell,,,10,5
 Spaceport Container Storage Key,Keep,,Unlocks locked areas,100,1
 Spaceport Control Tower Key,Keep,,Unlocks locked areas,100,1
@@ -301,52 +442,95 @@ Spectrometer,Recycle if short on materials; Sell otherwise,"1x Advanced Electric
 Spectrum Analyzer,Recycle if short on materials; Sell otherwise,"1x Sensors, 1x Exodus Modules",,3500,3
 Spotter Relay,Sell,"2x Electrical Components, 1x ARC Alloy",Projects Trophy Display (10x),1000,3
 Spring Cushion,Recycle if short on materials; Sell otherwise,"2x Durable Cloth, 2x Steel Springs",,2000,3
-Stable Stock I,Keep,6x Rubber Parts,Equippable Mods,640,1
-Stable Stock II,Keep,"1x Duct Tape, 1x Mechanical Components",Equippable Mods,2000,1
-Stable Stock III,Keep,"1x Mod Components, 2x Duct Tape",Equippable Mods,5000,1
+Stable Stock I,Keep,6x Rubber Parts,Equippable Mods,640,
+Stable Stock II,Keep,"1x Duct Tape, 1x Mechanical Components",Equippable Mods,2000,
+Stable Stock II Blueprint,Sell,,,5000,
+Stable Stock III,Keep,"1x Mod Components, 2x Duct Tape",Equippable Mods,5000,
+Stable Stock III Blueprint,Sell,,,5000,
+Stack of Movie Tapes,Sell,,,,
 Statuette,Sell,,,3000,3
 Steel Spring,Keep,2x Metal Parts,15x Steel Spring,300,15
 Stella Montis Archives Key,Keep,,Unlocks locked areas,100,1
-Stella Montis Assembly Admin Key,Keep,,Unlocks locked areas,250,1
+Stella Montis Assembly Admin Key,Keep,,Unlocks locked areas,100,1
 Stella Montis Medical Storage Key,Keep,,Unlocks locked areas,100,1
 Stella Montis Security Checkpoint Key,Keep,,Unlocks locked areas,100,1
 Sterilized Bandage,Use,"1x Antiseptic, 1x Fabric",Quick Use consumable,2000,3
+Stitcher I,Recycle,"3x Metal Parts, 2x Rubber Parts",,800,
+Stitcher II,Recycle,"6x Metal Parts, 6x Rubber Parts",,2000,
+Stitcher III,Recycle,"12x Metal Parts, 1x Simple Gun Parts",,3000,
+Stitcher IV,Recycle,"2x Mechanical Components, 2x Simple Gun Parts",,5000,
+Succulent (Backpack Charm),Sell,,,,
 Surge Shield Recharger,Use,1x Electrical Components,Quick Use consumable,1200,5
 Surveyor Vault,Keep until upgrade is complete; sell or recycle once done,"2x Mechanical Components, 2x ARC Alloy",5x for Medical Lab III Upgrades,1000,3
 Synthesized Fuel,Keep,"1x Oil, 1x Plastic Parts",Workshop Explosives Station 2 (3x),700,5
 Syringe,Keep,"3x Plastic Parts, 2x Chemicals",Quests Doctor's Orders (1x),500,5
 Tactical Mk. 1,Keep,"3x Plastic Parts, 3x Rubber Parts",Equippable Augment,640,1
-Tactical Mk. 2,Keep,"1x Electrical Components, 1x Magnet",Equippable Augment,2000,1
-Tactical Mk. 3 (Defensive),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,1
-Tactical Mk. 3 (Healing),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,1
-Tactical Mk. 3 (Revival),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,1
+Tactical Mk. 2,Keep,"1x Electrical Components, 1x Magnet",Equippable Augment,2000,
+Tactical Mk. 3 (Healing),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,
+Tactical MK. 3 (Revival),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,
+Tactical Mk. 3 (Revival) Blueprint,Sell,,,5000,
+Tactical Mk.3 (Defensive),Keep,,Equippable Augment,5000,
+Tactical MK.3 (Defensive) Blueprint,Sell,,,5000,
+Tactical MK.3 (Healing) Blueprint,Sell,,,5000,
 Tagging Grenade,Use,"1x Plastic Parts, 1x Sensors",Quick Use consumable,1000,3
+Tagging Grenade Blueprint,Sell,,,5000,
+Tangerine (Warden Color),Sell,,,,
 Tattered ARC Lining,Recycle if short on materials; Sell otherwise,12x Fabric,,640,3
 Tattered Clothes,Recycle,11x Fabric,,640,3
 Telemetry Transceiver,Recycle if short on materials; Sell otherwise,"1x Advanced Electrical Components, 1x Processor",,3000,3
+Tempest Blueprint,Sell,,,5000,
+Tempest I,Recycle,"2x Advanced Mechanical Components, 2x Medium Gun Parts",,13000,
+Tempest II,Recycle,"3x Advanced Mechanical Components, 3x Medium Gun Parts",,17000,
+Tempest III,Recycle,"4x Advanced Mechanical Components, 4x Medium Gun Parts",,22000,
+Tempest IV,Recycle,"5x Advanced Mechanical Components, 4x Medium Gun Parts",,27000,
 Thermostat,Sell,"7x Rubber Parts, 1x Sensors",,1000,3
 Tick Pod,Keep until upgrade is complete; sell or recycle once done,"2x Arc Alloy, 2x Chemicals",8x for Medical Lab II Upgrade,640,3
 Toaster,Keep until upgrade is complete; recycle otherwise,"5x Plastic Parts, 3x Wires",3x for Refiner II Upgrade,1000,3
+Torch Ginger,Recycle,3x Chemicals,,300,15
 Torn Blanket,Recycle,12x Fabric,,640,3
 Torn Book,Sell,,,1000,5
-Trailblazer,Use,2x Crude Explosives,Quick Use consumable,2200,3
-Trigger 'Nade,Use,"1x Chemicals, 1x Processor",Quick Use consumable,1000,3
+Torrente Blueprint,Sell,,,5000,
+Torrente I,Recycle,"1x Advanced Mechanical Components, 2x Medium Gun Parts",,7000,
+Torrente II,Recycle,"2x Advanced Mechanical Components, 2x Medium Gun Parts",,10000,
+Torrente III,Recycle,"2x Advanced Mechanical Components, 3x Medium Gun Parts",,13000,
+Torrente IV,Recycle,"3x Advanced Mechanical Components, 3x Medium Gun Parts",,15000,
+Trailblazer Grenade,Use,2x Crude Explosives,Quick Use consumable,2200,
+Trailblazer Grenade Blueprint,Sell,,,5000,
+Trigger Nade,Use,,Quick Use consumable,1000,3
+Trigger Nade Blueprint,Sell,,,5000,
 Tropical Duck,Sell,,,1000,15
 Turbo Pump,Recycle if short on materials; Sell otherwise,"1x Mechanical Components, 3x Oil",,2000,3
 Unusable Weapon,Recycle if short on materials; Sell otherwise,"4x Metal Parts, 5x Simple Gun Parts",,2000,3
 Vase,Sell,,,3000,3
-Vertical Grip I,Keep,6x Plastic Parts,Equippable Mods,640,1
-Vertical Grip II,Keep,"1x Duct Tape, 1x Mechanical Components",Equippable Mods,2000,1
+Venator Blueprint,Sell,,,5000,
+Venator I,Recycle,"1x Advanced Mechanical Components, 2x Medium Gun Parts",,7000,
+Venator II,Sell,,,10000,
+Venator III,Sell,,,13000,
+Venator IV,Recycle,"3x Advanced Mechanical Components, 3x Medium Gun Parts",,17000,
+Vertical Grip I,Keep,6x Plastic Parts,Equippable Mods,640,
+Vertical Grip II,Keep,"1x Duct Tape, 1x Mechanical Components",Equippable Mods,2000,
+Vertical Grip II Blueprint,Sell,,,5000,
 Vertical Grip III,Keep,"2x Duct Tape, 2x Mechanical Components",Equippable Mods,5000,1
+Vertical Grip III Blueprint,Sell,,,5000,
 Very Comfortable Pillow,Keep for Scrappy Level V Upgrade; sell afterwards,,3x for Scrappy Level V Upgrade,2000,3
-Vita Shot,Use,"1x Syringe, 4x Chemicals",Quick Use consumable,2200,3
+Vita Shot,Use,"1x Syringe, 4x Chemicals",Quick Use consumable,2000,3
+Vita Shot Blueprint,Sell,,,5000,
 Vita Spray,Use,"1x Antiseptic, 1x Canister",Quick Use consumable,3400,1
+Vita Spray Blueprint,Sell,,,5000,
 Volcanic Rock,Sell,,,270,5
 Voltage Converter,Keep,"1x Wires, 1x Rubber Parts",Projects Weather Monitor System (3x),500,5
+Vulcano Blueprint,Sell,,,5000,
+Vulcano I,Recycle,"2x Advanced Mechanical Components, 2x Heavy Gun Parts",,10000,
+Vulcano II,Recycle,"2x Advanced Mechanical Components, 3x Heavy Gun Parts",,13000,
+Vulcano III,Recycle,"3x Advanced Mechanical Components, 4x Heavy Gun Parts",,17000,
+Vulcano IV,Recycle,"4x Advanced Mechanical Components, 5x Heavy Gun Parts",,22000,
+Warden (Outfit),Sell,,,,
 Wasp Driver,Keep; sell or recycle after upgrade is complete,"1x ARC Alloy, 1x Electrical Components",8x for Gunsmith II Upgrade,640,3
 Water Filter,Recycle if short on materials; Sell otherwise,"2x Rubber Parts, 3x Canister",,1000,3
 Water Pump,Keep until quest is complete; recycle or sell,"4x Metal Parts, 2x Oil",1x for Unexpected Initiative,1000,3
 Wires,Keep,2x Rubber Parts,30x Expedition Stage 2,200,15
 Wolfpack,Use,"1x ARC Motion Core, 1x Explosive Compound",Quick Use consumable,6000,1
+Wolfpack Blueprint,Sell,,,5000,
 Yellow Light Stick,Use,1x Chemicals,Quick Use consumable,150,5
+Yellow Light Stick Blueprint,Sell,,,5000,
 Zipline,Use,"1x Metal Parts, 1x Rope",Quick Use consumable,1000,3
