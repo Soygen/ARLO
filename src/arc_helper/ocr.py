@@ -3,17 +3,16 @@ OCR module for ARLO.
 Screen capture and text extraction using Tesseract.
 """
 
-# Enable windows DPI scaling
 import ctypes
 import re
 import string
+import sys
 import typing
-from contextlib import suppress
 
+import mss
 import numpy as np
 import pytesseract
 from PIL import Image
-from PIL import ImageGrab
 from PIL import ImageOps
 from pydantic import BaseModel
 
@@ -22,13 +21,14 @@ from .config import get_screen_resolution
 from .config import get_settings
 from .config import logger
 
-try:
-    # Windows 10 1607+ (most reliable)
-    ctypes.windll.shcore.SetProcessDpiAwareness(2)  # PROCESS_PER_MONITOR_DPI_AWARE
-except (AttributeError, OSError):
-    with suppress(AttributeError, OSError):
-        # Fallback for older Windows
-        ctypes.windll.user32.SetProcessDPIAware()
+
+def grab_screen(bbox: tuple[int, int, int, int]) -> Image.Image:
+    """Capture a screen region using mss (X11 on Linux, native on Windows)."""
+    left, top, right, bottom = bbox
+    with mss.mss() as sct:
+        monitor = {"top": top, "left": left, "width": right - left, "height": bottom - top}
+        screenshot = sct.grab(monitor)
+        return Image.frombytes("RGB", screenshot.size, screenshot.rgb)
 
 
 class Point(BaseModel):
@@ -48,16 +48,19 @@ class OCRResult(BaseModel):
 
 def get_cursor_position() -> Point:
     """Get current cursor position on screen in physical pixels."""
+    if sys.platform == "win32":
+        # Ensure we're DPI aware to get physical coordinates
+        ctypes.windll.user32.SetProcessDPIAware()
 
-    # Ensure we're DPI aware to get physical coordinates
-    ctypes.windll.user32.SetProcessDPIAware()
+        class POINT(ctypes.Structure):
+            _fields_: typing.ClassVar = [("x", ctypes.c_long), ("y", ctypes.c_long)]
 
-    class POINT(ctypes.Structure):
-        _fields_: typing.ClassVar = [("x", ctypes.c_long), ("y", ctypes.c_long)]
-
-    pt = POINT()
-    ctypes.windll.user32.GetCursorPos(ctypes.byref(pt))
-    return Point(x=pt.x, y=pt.y)
+        pt = POINT()
+        ctypes.windll.user32.GetCursorPos(ctypes.byref(pt))
+        return Point(x=pt.x, y=pt.y)
+    from pynput import mouse as pynput_mouse
+    pos = pynput_mouse.Controller().position
+    return Point(x=int(pos[0]), y=int(pos[1]))
 
 
 class OCREngine:
@@ -90,7 +93,7 @@ class OCREngine:
     def capture_region(region: RegionMixin) -> Image.Image:
         """Capture a screen region."""
         try:
-            return ImageGrab.grab(bbox=region.bbox)
+            return grab_screen(region.bbox)
         except OSError as e:
             logger.error(f"Screen grab failed for region {region.bbox}: {e}")
             # Return a dummy image to avoid crashing
@@ -143,7 +146,7 @@ class OCREngine:
             )
 
         try:
-            image = ImageGrab.grab(bbox=(left, top, right, bottom))
+            image = grab_screen((left, top, right, bottom))
         except OSError as e:
             logger.error(
                 f"Screen grab failed at bbox ({left}, {top}, {right}, {bottom}): {e}"
@@ -222,8 +225,12 @@ class OCREngine:
         cropped = img_array[y_min:y_max, x_min:x_max]
         cropped_mask = mask[y_min:y_max, x_min:x_max]
 
-        # Find columns that are mostly cream
-        col_cream_pct = np.sum(cropped_mask, axis=0) / cropped_mask.shape[0]
+        # Find columns that are mostly cream (guard against empty crop)
+        n_rows = cropped_mask.shape[0]
+        if n_rows == 0:
+            result = Image.new("L", (image.width * 2, image.height * 2), 255)
+            return result
+        col_cream_pct = np.sum(cropped_mask, axis=0) / n_rows
         tight_cols = np.where(col_cream_pct > 0.5)[0]
 
         if len(tight_cols) == 0:

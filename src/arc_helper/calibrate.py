@@ -3,8 +3,8 @@ Calibration tool for ARLO.
 Helps configure screen regions for trigger and tooltip detection.
 """
 
-# Enable windows DPI scaling
 import ctypes
+import sys
 import tkinter as tk
 from contextlib import suppress
 from pathlib import Path
@@ -13,7 +13,7 @@ from tkinter import messagebox
 from tkinter import ttk
 
 import pytesseract
-from PIL import ImageGrab
+from PIL import Image
 from PIL import ImageTk
 
 from arc_helper.config import APP_DIR
@@ -29,14 +29,14 @@ from arc_helper.config import get_settings
 from arc_helper.config import logger
 from arc_helper.database import get_database
 from arc_helper.ocr import get_ocr_engine
+from arc_helper.ocr import grab_screen
 
-try:
-    # Windows 10 1607+ (most reliable)
-    ctypes.windll.shcore.SetProcessDpiAwareness(2)  # PROCESS_PER_MONITOR_DPI_AWARE
-except (AttributeError, OSError):
-    with suppress(AttributeError, OSError):
-        # Fallback for older Windows
-        ctypes.windll.user32.SetProcessDPIAware()
+if sys.platform == "win32":
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)  # PROCESS_PER_MONITOR_DPI_AWARE
+    except (AttributeError, OSError):
+        with suppress(AttributeError, OSError):
+            ctypes.windll.user32.SetProcessDPIAware()
 
 
 class RegionSelector:
@@ -285,7 +285,7 @@ class TooltipCaptureConfig:
                 pass
             self.overlay = None
 
-    def capture_at_cursor(self) -> tuple[ImageGrab.Image, int, int] | None:
+    def capture_at_cursor(self) -> tuple[Image.Image, int, int] | None:
         """Capture the area at current cursor position."""
 
         try:
@@ -314,7 +314,7 @@ class TooltipCaptureConfig:
         right = left + self.width.get()
         bottom = top + self.height.get()
 
-        image = ImageGrab.grab(bbox=(left, top, right, bottom))
+        image = grab_screen((left, top, right, bottom))
         return image, cursor_x, cursor_y
 
 
@@ -559,7 +559,7 @@ class CalibrationTool:
         bbox = selector.get_bbox()
         logger.info(f"Testing bbox: {bbox}")  # Debug
 
-        image = ImageGrab.grab(bbox=bbox)
+        image = grab_screen(bbox)
         logger.info(f"Captured image: {image.size}, mode: {image.mode}")  # Debug
 
         self._show_preview(image)
@@ -585,7 +585,7 @@ class CalibrationTool:
     def _test_tooltip(self) -> None:
         """Test OCR on tooltip region."""
         bbox = self.tooltip_capture.get_bbox()
-        image = ImageGrab.grab(bbox=bbox)
+        image = grab_screen(bbox)
         self._show_preview(image)
 
         region = TempRegion(
