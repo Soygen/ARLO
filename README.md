@@ -81,6 +81,7 @@ TODO: add screenshots
 - **OCR-based** - Reads item names directly from screen using Tesseract
 - **SQLite database** - Load items from CSV files
 - **Configurable** - All settings stored in `.env` file
+- **Station-level awareness** - Configure your crafting station levels in `station_levels.yaml` and the overlay will automatically resolve conditional actions (e.g., "Keep until upgrade is complete; sell once done" becomes "Sell" when your station is high enough)
 - **Debug mode** - Saves intermediate images for troubleshooting OCR issues
 - **Bundled Tesseract** - Pre-built releases include Tesseract (no separate install needed)
 
@@ -217,6 +218,7 @@ arc-raiders-helper/
 ├── build.py                    # Build script for PyInstaller
 ├── ArcRaidersHelper.spec       # PyInstaller spec file
 ├── .env.example                # Example configuration
+├── station_levels.yaml         # Crafting station levels config
 ├── sample_items.csv            # Sample item data
 ├── README.md                   # This file
 ├── src/arc_helper/
@@ -226,6 +228,7 @@ arc-raiders-helper/
 │   ├── database.py             # SQLite database and CSV import
 │   ├── ocr.py                  # Screen capture and OCR
 │   ├── overlay.py              # Tkinter overlay window
+│   ├── stations.py             # Station-level action resolution
 │   ├── resolution_profiles.py  # Resolution-based configuration
 │   ├── resolutions.json        # Pre-configured resolution profiles
 │   ├── main.py                 # Main application entry point
