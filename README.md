@@ -219,7 +219,6 @@ arc-raiders-helper/
 ├── build.py                    # Build script for PyInstaller
 ├── ArcRaidersHelper.spec       # PyInstaller spec file
 ├── .env.example                # Example configuration
-├── station_levels.yaml         # Crafting station levels config
 ├── sample_items.csv            # Sample item data
 ├── README.md                   # This file
 ├── src/arc_helper/
