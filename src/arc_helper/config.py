@@ -203,6 +203,31 @@ class ScanSettings(BaseSettings):
     )
 
 
+class StationLevelSettings(BaseSettings):
+    """User-configured crafting station levels."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="STATION_",
+        env_file=APP_DIR / ".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    gear_bench: int = Field(default=0, ge=0, le=3, description="Gear Bench level (0-3)")
+    gunsmith: int = Field(default=0, ge=0, le=3, description="Gunsmith level (0-3)")
+    medical_lab: int = Field(
+        default=0, ge=0, le=3, description="Medical Lab level (0-3)"
+    )
+    explosives_station: int = Field(
+        default=0, ge=0, le=3, description="Explosives Station level (0-3)"
+    )
+    utility_station: int = Field(
+        default=0, ge=0, le=3, description="Utility Station level (0-3)"
+    )
+    refiner: int = Field(default=0, ge=0, le=3, description="Refiner level (0-3)")
+    scrappy: int = Field(default=0, ge=0, le=5, description="Scrappy level (0-5)")
+
+
 class Settings(BaseSettings):
     """Main application settings."""
 
@@ -221,6 +246,7 @@ class Settings(BaseSettings):
     )
     overlay: OverlaySettings = Field(default_factory=OverlaySettings)
     scan: ScanSettings = Field(default_factory=ScanSettings)
+    stations: StationLevelSettings = Field(default_factory=StationLevelSettings)
 
     # Tesseract - auto-detect if not specified
     tesseract_path: str | None = Field(default_factory=get_tesseract_path)
@@ -275,6 +301,15 @@ class Settings(BaseSettings):
             "# Debug settings",
             f"DEBUG_MODE={str(self.debug_mode).lower()}",
             f"SHOW_CAPTURE_AREA={str(self.show_capture_area).lower()}",
+            "",
+            "# Station levels (0 = not built, max varies by station)",
+            f"STATION_GEAR_BENCH={self.stations.gear_bench}",
+            f"STATION_GUNSMITH={self.stations.gunsmith}",
+            f"STATION_MEDICAL_LAB={self.stations.medical_lab}",
+            f"STATION_EXPLOSIVES_STATION={self.stations.explosives_station}",
+            f"STATION_UTILITY_STATION={self.stations.utility_station}",
+            f"STATION_REFINER={self.stations.refiner}",
+            f"STATION_SCRAPPY={self.stations.scrappy}",
         ]
 
         with Path(env_path).open("w", encoding="utf-8") as f:

@@ -129,6 +129,9 @@ class Scanner:
     _last_shown_time: float = 0
     _trigger_check_counter: int = 0
 
+    # In-raid context (True when trigger_region2 detected)
+    _in_raid: bool = False
+
     # Thread control
     _running: bool = False
     _scan_thread: Thread | None = None
@@ -178,13 +181,18 @@ class Scanner:
                 if self.state == ScannerState.IDLE:
                     self._update_status("scanning")
 
-                    if ocr.check_trigger_any(
+                    trigger_idx = ocr.check_trigger_which(
                         [settings.trigger_region, settings.trigger_region2]
-                    ):
+                    )
+                    if trigger_idx is not None:
                         # Trigger detected! Switch to active mode
+                        self._in_raid = trigger_idx == 1  # trigger_region2 = in-raid
                         self.state = ScannerState.ACTIVE
                         self._update_status("active")
-                        logger.info("INVENTORY detected - activating tooltip scanner")
+                        context = "in-raid" if self._in_raid else "menu"
+                        logger.info(
+                            f"INVENTORY detected ({context}) - activating tooltip scanner"
+                        )
                     else:
                         # Wait before next trigger scan
                         time.sleep(settings.scan.trigger_scan_interval)
@@ -198,14 +206,19 @@ class Scanner:
                     self._trigger_check_counter += 1
                     should_check_trigger = self._trigger_check_counter % 3 == 0
 
-                    if should_check_trigger and not ocr.check_trigger_any(
-                        [settings.trigger_region, settings.trigger_region2]
-                    ):
-                        # Inventory closed, go back to idle
-                        self.state = ScannerState.IDLE
-                        self._update_status("scanning")
-                        logger.info("INVENTORY closed - returning to idle")
-                        continue
+                    if should_check_trigger:
+                        trigger_idx = ocr.check_trigger_which(
+                            [settings.trigger_region, settings.trigger_region2]
+                        )
+                        if trigger_idx is None:
+                            # Inventory closed, go back to idle
+                            self._in_raid = False
+                            self.state = ScannerState.IDLE
+                            self._update_status("scanning")
+                            logger.info("INVENTORY closed - returning to idle")
+                            continue
+                        # Update in-raid context in case it changed
+                        self._in_raid = trigger_idx == 1
 
                     # Scan tooltip at cursor position
                     item_name = ocr.extract_item_name_at_cursor()
@@ -251,15 +264,19 @@ class Scanner:
             self.db.log_missing_item(item_name)
 
         # Show overlay (must be done on main thread)
-        self._show_overlay(item_name, recommendation)
+        self._show_overlay(item_name, recommendation, in_raid=self._in_raid)
 
         # Update cooldown tracking
         self._last_shown_item = item_name
         self._last_shown_time = current_time
 
-    def _show_overlay(self, item_name: str, recommendation: Item | None) -> None:
+    def _show_overlay(
+        self, item_name: str, recommendation: Item | None, *, in_raid: bool = False
+    ) -> None:
         """Show overlay on main thread."""
-        self.root.after(0, lambda: self.overlay.show(item_name, recommendation))
+        self.root.after(
+            0, lambda: self.overlay.show(item_name, recommendation, in_raid=in_raid)
+        )
 
     def _update_status(self, status: str) -> None:
         """Update status display on main thread."""

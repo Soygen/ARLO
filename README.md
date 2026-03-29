@@ -81,7 +81,8 @@ TODO: add screenshots
 - **OCR-based** - Reads item names directly from screen using Tesseract
 - **SQLite database** - Load items from CSV files
 - **Configurable** - All settings stored in `.env` file
-- **Station-level awareness** - Configure your crafting station levels in `station_levels.yaml` and the overlay will automatically resolve conditional actions (e.g., "Keep until upgrade is complete; sell once done" becomes "Sell" when your station is high enough)
+- **Station-level awareness** - Configure your crafting station levels in `.env` and the overlay will automatically resolve conditional actions (e.g., "Keep until upgrade is complete; sell once done" becomes "Sell" when your station is high enough)
+- **In-raid price display** - When in a raid, the overlay shows item sell prices to help with loot decisions
 - **Debug mode** - Saves intermediate images for troubleshooting OCR issues
 - **Bundled Tesseract** - Pre-built releases include Tesseract (no separate install needed)
 

@@ -125,7 +125,20 @@ class OverlayWindow:
         )
         self.notes_label.pack(anchor="w", pady=(self._scale(5), 0))
 
-    def show(self, item_name: str, recommendation: Item | None) -> None:
+        # Price label (shown only in-raid)
+        self.price_label = tk.Label(
+            self.frame,
+            text="",
+            font=("Segoe UI", notes_font_size, "bold"),
+            fg="#FFD700",
+            bg="#1a1a2e",
+            anchor="w",
+        )
+        self.price_label.pack(anchor="w", pady=(self._scale(3), 0))
+
+    def show(
+        self, item_name: str, recommendation: Item | None, *, in_raid: bool = False
+    ) -> None:
         """Show the overlay with item info."""
         # Cancel any pending hide
         if self._hide_after_id:
@@ -156,9 +169,19 @@ class OverlayWindow:
             elif recommendation.keep_for:
                 detail_text = f"For: {recommendation.keep_for}"
             self.notes_label.config(text=detail_text)
+
+            # Show price only when in-raid
+            if in_raid and recommendation.sell_price:
+                self.price_label.config(text=f"💰 {recommendation.sell_price}")
+                self.price_label.pack(anchor="w", pady=(self._scale(3), 0))
+            else:
+                self.price_label.config(text="")
+                self.price_label.pack_forget()
         else:
             self.action_label.config(text="→ UNKNOWN", fg=ACTION_COLORS["UNKNOWN"])
             self.notes_label.config(text="Item not in database")
+            self.price_label.config(text="")
+            self.price_label.pack_forget()
 
         # Position and show
         self.window.geometry(f"+{self.overlay_x}+{self.overlay_y}")

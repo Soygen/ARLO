@@ -19,6 +19,8 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0.0",
     "pyinstaller>=6.0.0",
+    "pytest>=8.0.0",
+    "pytest-mock>=3.12.0",
 ]
 
 [project.scripts]
@@ -136,6 +138,13 @@ ignore = [
 [tool.ruff.lint.isort]
 force-single-line = true
 
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["PLR6301"]  # Method could be static - not relevant for pytest
+
 [tool.mypy]
 python_version = "3.11"
 strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
