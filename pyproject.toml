@@ -1,6 +1,6 @@
 [project]
 name = "arc-raiders-helper"
-version = "0.1.3"
+version = "0.2.0"
 description = "Item recommendation overlay for Arc Raiders"
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
