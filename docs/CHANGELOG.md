@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## Versions:
 
 ### [0.2.0]
-- Added in-game price detection
+- Added in-game price view
 - Added tests
 - Moved all configs to .env
 - Bugfixes
