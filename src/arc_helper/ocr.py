@@ -159,6 +159,17 @@ class OCREngine:
         """
         return any(self.check_trigger(region) for region in regions)
 
+    def check_trigger_which(self, regions: list[RegionMixin]) -> int | None:
+        """
+        Check which region (by index) contains the trigger word.
+
+        Returns the index of the first matching region, or None if no match.
+        """
+        for idx, region in enumerate(regions):
+            if self.check_trigger(region):
+                return idx
+        return None
+
     @staticmethod
     def preprocess_for_ocr(
         image: Image.Image, *, invert: bool = True, scale: int = 2

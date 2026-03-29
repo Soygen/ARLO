@@ -20,6 +20,7 @@ from arc_helper.config import APP_DIR
 from arc_helper.config import OverlaySettings
 from arc_helper.config import ScanSettings
 from arc_helper.config import Settings
+from arc_helper.config import StationLevelSettings
 from arc_helper.config import TooltipCaptureSettings
 from arc_helper.config import TooltipRegion
 from arc_helper.config import TriggerRegion
@@ -525,6 +526,13 @@ class CalibrationTool:
         ttk.Separator(main_frame, orient="horizontal").pack(fill="x", pady=10)
 
         # =====================================================================
+        # Station Levels Configuration
+        # =====================================================================
+        self._setup_station_levels_ui(main_frame)
+
+        ttk.Separator(main_frame, orient="horizontal").pack(fill="x", pady=10)
+
+        # =====================================================================
         # Action Buttons
         # =====================================================================
         btn_frame = ttk.Frame(main_frame)
@@ -694,6 +702,15 @@ class CalibrationTool:
             ),
             overlay=OverlaySettings(),
             scan=ScanSettings(),
+            stations=StationLevelSettings(
+                gear_bench=self.station_vars["gear_bench"].get(),
+                gunsmith=self.station_vars["gunsmith"].get(),
+                medical_lab=self.station_vars["medical_lab"].get(),
+                explosives_station=self.station_vars["explosives_station"].get(),
+                utility_station=self.station_vars["utility_station"].get(),
+                refiner=self.station_vars["refiner"].get(),
+                scrappy=self.station_vars["scrappy"].get(),
+            ),
         )
 
         settings.save_to_env()
@@ -718,6 +735,10 @@ class CalibrationTool:
         self.tooltip_capture.offset_y.set(0)
         self.tooltip_capture.width.set(1)
         self.tooltip_capture.height.set(1)
+
+        # Station level defaults
+        for var in self.station_vars.values():
+            var.set(0)
 
     # =========================================================================
     # Database Management Methods
@@ -779,7 +800,7 @@ class CalibrationTool:
 
         tree = ttk.Treeview(
             tree_frame,
-            columns=("name", "action", "recycle_for", "keep_for"),
+            columns=("name", "action", "recycle_for", "keep_for", "sell_price"),
             show="headings",
             yscrollcommand=v_scrollbar.set,
             xscrollcommand=h_scrollbar.set,
@@ -794,11 +815,13 @@ class CalibrationTool:
         tree.heading("action", text="Action")
         tree.heading("recycle_for", text="Recycle For")
         tree.heading("keep_for", text="Keep For")
+        tree.heading("sell_price", text="Sell Price")
 
-        tree.column("name", width=200, minwidth=100)
+        tree.column("name", width=180, minwidth=100)
         tree.column("action", width=80, minwidth=60)
-        tree.column("recycle_for", width=180, minwidth=100)
-        tree.column("keep_for", width=180, minwidth=100)
+        tree.column("recycle_for", width=150, minwidth=80)
+        tree.column("keep_for", width=150, minwidth=80)
+        tree.column("sell_price", width=80, minwidth=60)
 
         # Add items
         for item in items:
@@ -810,6 +833,7 @@ class CalibrationTool:
                     item.action,
                     item.recycle_for or "",
                     item.keep_for or "",
+                    item.sell_price or "",
                 ),
             )
 
@@ -841,6 +865,76 @@ class CalibrationTool:
             self.db.clear()
             self._update_item_count()
             messagebox.showinfo("Cleared", "Database cleared successfully.")
+
+    # =========================================================================
+    # Station Levels UI
+    # =========================================================================
+
+    def _setup_station_levels_ui(self, parent: ttk.Frame) -> None:
+        """Create station levels configuration UI."""
+        frame = ttk.LabelFrame(
+            parent,
+            text="Station Levels (for conditional action resolution)",
+            padding=10,
+        )
+        frame.pack(fill="x", pady=5)
+
+        # Explanation
+        ttk.Label(
+            frame,
+            text="Set your crafting station levels. Items with conditional actions\n"
+            "(e.g., 'Keep until upgrade; sell once done') will resolve based on these.",
+            justify="left",
+            foreground="gray",
+        ).grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 10))
+
+        # Station level variables
+        self.station_vars = {
+            "gear_bench": tk.IntVar(value=self.settings.stations.gear_bench),
+            "gunsmith": tk.IntVar(value=self.settings.stations.gunsmith),
+            "medical_lab": tk.IntVar(value=self.settings.stations.medical_lab),
+            "explosives_station": tk.IntVar(
+                value=self.settings.stations.explosives_station
+            ),
+            "utility_station": tk.IntVar(value=self.settings.stations.utility_station),
+            "refiner": tk.IntVar(value=self.settings.stations.refiner),
+            "scrappy": tk.IntVar(value=self.settings.stations.scrappy),
+        }
+
+        # Station config: (key, display_name, max_level)
+        stations = [
+            ("gear_bench", "Gear Bench", 3),
+            ("gunsmith", "Gunsmith", 3),
+            ("medical_lab", "Medical Lab", 3),
+            ("explosives_station", "Explosives Station", 3),
+            ("utility_station", "Utility Station", 3),
+            ("refiner", "Refiner", 3),
+            ("scrappy", "Scrappy", 5),
+        ]
+
+        # Create two columns of station controls
+        for idx, (key, name, max_level) in enumerate(stations):
+            row = (idx % 4) + 1  # Start after explanation row
+            col = (idx // 4) * 2  # 0 or 2
+
+            ttk.Label(frame, text=f"{name}:").grid(
+                row=row, column=col, sticky="w", padx=(0, 5)
+            )
+
+            # Spinbox for level selection
+            spinbox = ttk.Spinbox(
+                frame,
+                from_=0,
+                to=max_level,
+                textvariable=self.station_vars[key],
+                width=5,
+                wrap=True,
+            )
+            spinbox.grid(row=row, column=col + 1, sticky="w", padx=(0, 20))
+
+        # Configure grid weights
+        frame.columnconfigure(1, weight=1)
+        frame.columnconfigure(3, weight=1)
 
     # =========================================================================
     # Window Management

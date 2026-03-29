@@ -21,6 +21,7 @@ class Item(BaseModel):
     action: str = Field(..., min_length=1, max_length=100)
     recycle_for: str | None = Field(default=None, max_length=500)
     keep_for: str | None = Field(default=None, max_length=500)
+    sell_price: str | None = Field(default=None, max_length=50)
 
 
 class Database:
@@ -47,13 +48,19 @@ class Database:
                     name TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
                     action TEXT NOT NULL,
                     recycle_for TEXT,
-                    keep_for TEXT
+                    keep_for TEXT,
+                    sell_price TEXT
                 )
             """)
             conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_items_name
                 ON items(name COLLATE NOCASE)
             """)
+            # Migration: add sell_price column if missing (for existing DBs)
+            cursor = conn.execute("PRAGMA table_info(items)")
+            columns = {row[1] for row in cursor.fetchall()}
+            if "sell_price" not in columns:
+                conn.execute("ALTER TABLE items ADD COLUMN sell_price TEXT")
             conn.commit()
 
     def lookup(self, name: str) -> Item | None:
@@ -113,6 +120,7 @@ class Database:
         Load items from a CSV file into the database.
 
         CSV must have columns: name, action, recycle_for, keep_for
+        Optional column: sell_price
 
         Args:
             csv_path: Path to the CSV file
@@ -139,20 +147,22 @@ class Database:
                     action = row.get("action", "").strip()
                     recycle_for = row.get("recycle_for", "").strip() or None
                     keep_for = row.get("keep_for", "").strip() or None
+                    sell_price = row.get("sell_price", "").strip() or None
 
                     if not name or not action:
                         continue
 
                     conn.execute(
                         """
-                        INSERT INTO items (name, action, recycle_for, keep_for)
-                        VALUES (?, ?, ?, ?)
+                        INSERT INTO items (name, action, recycle_for, keep_for, sell_price)
+                        VALUES (?, ?, ?, ?, ?)
                         ON CONFLICT(name) DO UPDATE SET
                             action = excluded.action,
                             recycle_for = excluded.recycle_for,
-                            keep_for = excluded.keep_for
+                            keep_for = excluded.keep_for,
+                            sell_price = excluded.sell_price
                         """,
-                        (name, action, recycle_for, keep_for),
+                        (name, action, recycle_for, keep_for, sell_price),
                     )
                     count += 1
 
@@ -183,6 +193,7 @@ class Database:
             action=row["action"],
             recycle_for=row["recycle_for"],
             keep_for=row["keep_for"],
+            sell_price=row["sell_price"],
         )
 
     def get_all_items(self) -> list[Item]:
@@ -190,17 +201,9 @@ class Database:
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.execute(
-                "SELECT name, action, recycle_for, keep_for FROM items ORDER BY name"
+                "SELECT name, action, recycle_for, keep_for, sell_price FROM items ORDER BY name"
             )
-            return [
-                Item(
-                    name=row["name"],
-                    action=row["action"],
-                    recycle_for=row["recycle_for"],
-                    keep_for=row["keep_for"],
-                )
-                for row in cursor.fetchall()
-            ]
+            return [self._row_to_item(row) for row in cursor.fetchall()]
 
     def clear(self) -> None:
         """Delete all items from the database."""

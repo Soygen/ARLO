@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## Versions:
 
+### [0.2.0]
+- Added in-game price view
+- Added tests
+- Moved all configs to .env
+- Bugfixes
+- Tweaks
+
 ### [0.1.3]
 - Database update
 - Added column with price as a preparation for future update

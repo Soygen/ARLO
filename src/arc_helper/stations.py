@@ -11,21 +11,10 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel
 from pydantic import Field
 
-from .config import APP_DIR
-from .config import logger
+from .config import get_settings
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from .database import Item
-
-_YAML_AVAILABLE = True
-try:
-    import yaml
-except ImportError:
-    _YAML_AVAILABLE = False
-
-STATION_LEVELS_FILE = APP_DIR / "station_levels.yaml"
 
 # Roman numeral conversion
 _ROMAN_TO_INT: dict[str, int] = {
@@ -78,35 +67,18 @@ _NON_STATION_PATTERNS: list[str] = [
 ]
 
 
-def load_station_levels(path: Path | None = None) -> StationLevels:
-    """Load station levels from YAML file. Returns all-zeros on any failure."""
-    if path is None:
-        path = STATION_LEVELS_FILE
-
-    if not path.exists():
-        logger.info("station_levels.yaml not found — station-level resolution disabled")
-        return StationLevels()
-
-    if not _YAML_AVAILABLE:
-        logger.warning("pyyaml not installed — station-level resolution disabled")
-        return StationLevels()
-
-    try:
-        raw = path.read_text(encoding="utf-8")
-        data = yaml.safe_load(raw)
-        if not isinstance(data, dict):
-            logger.warning("station_levels.yaml: invalid format, using defaults")
-            return StationLevels()
-        stations = data.get("stations", data)
-        if not isinstance(stations, dict):
-            logger.warning(
-                "station_levels.yaml: invalid 'stations' section, using defaults"
-            )
-            return StationLevels()
-        return StationLevels(**stations)
-    except Exception as exc:  # noqa: BLE001
-        logger.warning(f"Failed to load station_levels.yaml: {exc} — using defaults")
-        return StationLevels()
+def load_station_levels() -> StationLevels:
+    """Load station levels from .env settings."""
+    settings = get_settings()
+    return StationLevels(
+        gear_bench=settings.stations.gear_bench,
+        gunsmith=settings.stations.gunsmith,
+        medical_lab=settings.stations.medical_lab,
+        explosives_station=settings.stations.explosives_station,
+        utility_station=settings.stations.utility_station,
+        refiner=settings.stations.refiner,
+        scrappy=settings.stations.scrappy,
+    )
 
 
 class StationLevelsSingleton:
@@ -200,6 +172,18 @@ def _parse_segment(segment: str, results: list[tuple[str, int]]) -> None:
     level_match = re.search(r"\bLevel\s+(I{1,3}|IV|V)\b", segment, re.IGNORECASE)
 
     if level_match:
+        # If there's only one station, collect ALL roman numerals (for "Scrappy Level III and V").
+        if len(found_stations) == 1:
+            config_key = found_stations[0][1]
+            levels: list[int] = []
+            for m in roman_matches:
+                lv = _parse_roman(m.group(1))
+                if lv is not None:
+                    levels.append(lv)
+            if levels:
+                results.append((config_key, max(levels)))
+            return
+        # Multiple stations share this level.
         shared_level = _parse_roman(level_match.group(1))
         if shared_level is not None:
             for _, config_key in found_stations:
@@ -256,6 +240,13 @@ def detect_fallback_action(action: str) -> str | None:
     if "keep for high-tier" in lower:
         return None
 
+    # "sell or recycle" / "recycle or sell" — use first mentioned.
+    # Check this BEFORE individual sell/recycle patterns to avoid partial matches.
+    sell_or_recycle = re.search(r"\b(sell|recycle)\s+or\s+(sell|recycle)\b", lower)
+    if sell_or_recycle:
+        first = sell_or_recycle.group(1)
+        return first.capitalize()
+
     # Detect the fallback action from various phrasings.
     if re.search(r"\bsell\s+once\s+done\b", lower):
         return "Sell"
@@ -269,12 +260,6 @@ def detect_fallback_action(action: str) -> str | None:
         return "Recycle"
     if re.search(r"\brecycle\s+otherwise\b", lower):
         return "Recycle"
-
-    # "sell or recycle" / "recycle or sell" — use first mentioned.
-    sell_or_recycle = re.search(r"\b(sell|recycle)\s+or\s+(sell|recycle)\b", lower)
-    if sell_or_recycle:
-        first = sell_or_recycle.group(1)
-        return first.capitalize()
 
     return None
 
@@ -321,6 +306,7 @@ def resolve_action(
             action=fallback,
             recycle_for=item.recycle_for,
             keep_for=None,
+            sell_price=item.sell_price,
         )
 
     return _Item(
@@ -328,4 +314,5 @@ def resolve_action(
         action="Keep",
         recycle_for=item.recycle_for,
         keep_for=item.keep_for,
+        sell_price=item.sell_price,
     )
