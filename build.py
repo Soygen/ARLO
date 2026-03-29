@@ -78,6 +78,8 @@ def build():
     shutil.copy(
         ROOT / "src" / "arc_helper" / "resolutions.json", OUTPUT / "resolutions.json"
     )
+    if (ROOT / "station_levels.yaml").exists():
+        shutil.copy(ROOT / "station_levels.yaml", OUTPUT / "station_levels.yaml")
     if (ROOT / "README.md").exists():
         shutil.copy(ROOT / "README.md", OUTPUT / "README.md")
 

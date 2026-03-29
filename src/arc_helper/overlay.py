@@ -136,8 +136,16 @@ class OverlayWindow:
 
         if recommendation:
             action_str = recommendation.action
-            # Try to get color for known actions, default to white
-            color = ACTION_COLORS.get(action_str.upper(), "#FFFFFF")
+            # Try to get color for known actions, fall back to keyword match
+            color = ACTION_COLORS.get(action_str.upper())
+            if color is None:
+                upper = action_str.upper()
+                for keyword, keyword_color in ACTION_COLORS.items():
+                    if keyword in upper:
+                        color = keyword_color
+                        break
+                else:
+                    color = "#FFFFFF"
             self.action_label.config(text=f"→ {action_str}", fg=color)
 
             # Show recycle_for or keep_for based on action
