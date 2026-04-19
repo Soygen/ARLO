@@ -146,14 +146,61 @@ def fetch_metaforge_items() -> list[dict]:
     return all_items
 
 
+def fetch_wiki_recycle_map() -> dict[str, str]:
+    """Scrape the wiki loot table and return item_name -> recycles_to string map."""
+    print("  Falling back to wiki for recycle data...")
+    try:
+        html = fetch_wiki_page()
+    except Exception as e:
+        print(f"  Wiki recycle fallback also failed ({e})")
+        return {}
+
+    soup = BeautifulSoup(html, "html.parser")
+    loot_table = None
+    for table in soup.find_all("table"):
+        headers = [th.get_text(strip=True).lower() for th in table.find_all("th")]
+        if "item" in headers and "recycles to" in headers:
+            loot_table = table
+            break
+
+    if not loot_table:
+        print("  Could not find recycle table on wiki")
+        return {}
+
+    header_row = loot_table.find("tr")
+    headers = [th.get_text(strip=True).lower() for th in header_row.find_all("th")]
+    item_idx = next((i for i, h in enumerate(headers) if h == "item"), None)
+    recycle_idx = next((i for i, h in enumerate(headers) if "recycles" in h), None)
+
+    if item_idx is None or recycle_idx is None:
+        return {}
+
+    recycle_map: dict[str, str] = {}
+    for row in loot_table.find_all("tr")[1:]:
+        cells = row.find_all("td")
+        if len(cells) <= max(item_idx, recycle_idx):
+            continue
+        item_cell = cells[item_idx]
+        name_link = item_cell.find("a")
+        name = name_link.get_text(strip=True) if name_link else item_cell.get_text(strip=True)
+        if not name:
+            continue
+        recycles_to = _parse_recycles_to(cells[recycle_idx])
+        if recycles_to:
+            recycle_map[name] = recycles_to
+
+    print(f"  Loaded recycle data for {len(recycle_map)} items from wiki")
+    return recycle_map
+
+
 def fetch_metaforge_recycle_map(all_items: list[dict]) -> dict[str, str]:
-    """Fetch recycle components and build item_id -> '2x Metal Parts, 3x Wires' map."""
+    """Fetch recycle components and build item_name -> '2x Metal Parts, 3x Wires' map."""
     print("Fetching recycle data from MetaForge...")
     try:
         components = _supabase_get("arc_item_recycle_components", "select=*")
     except Exception as e:
-        print(f"  Recycle data unavailable ({e})")
-        return {}
+        print(f"  Supabase unavailable ({e}), falling back to wiki for recycle data...")
+        return fetch_wiki_recycle_map()
 
     id_to_name = {item["id"]: item["name"] for item in all_items if item.get("id") and item.get("name")}
 
@@ -163,9 +210,11 @@ def fetch_metaforge_recycle_map(all_items: list[dict]) -> dict[str, str]:
         if item_id and comp_id:
             recycle_raw.setdefault(item_id, []).append((comp_id, qty))
 
-    recycle_map = {}
+    recycle_map: dict[str, str] = {}
     for item_id, parts in recycle_raw.items():
-        recycle_map[item_id] = ", ".join(f"{qty}x {id_to_name.get(cid, cid)}" for cid, qty in parts)
+        item_name = id_to_name.get(item_id, "")
+        if item_name:
+            recycle_map[item_name] = ", ".join(f"{qty}x {id_to_name.get(cid, cid)}" for cid, qty in parts)
 
     print(f"  Loaded recycle data for {len(recycle_map)} items")
     return recycle_map
@@ -414,7 +463,7 @@ def fetch_items_hybrid() -> list[GameItem]:
         sell_price = raw.get("value", 0) or 0
         stack_size = stat_block.get("stackSize", 0) or 0
         rarity = raw.get("rarity", "")
-        recycles_to = recycle_map.get(item_id, "")
+        recycles_to = recycle_map.get(name, "")
 
         # Wiki uses (workshop upgrades, expeditions, projects)
         wiki_use_str = wiki_uses.get(name.lower(), "")
@@ -690,7 +739,7 @@ def fetch_items_from_metaforge_only() -> list[GameItem]:
 
         items.append(GameItem(
             name=name, rarity=raw.get("rarity", ""),
-            recycles_to=recycle_map.get(item_id, ""),
+            recycles_to=recycle_map.get(name, ""),
             sell_price=raw.get("value", 0) or 0,
             stack_size=stat_block.get("stackSize", 0) or 0,
             category=_normalize_category(raw.get("item_type", "")),
