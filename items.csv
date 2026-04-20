@@ -38,7 +38,7 @@ Arpeggio I,Sell,,,5500,
 Arpeggio II,Sell,,,8000,
 Arpeggio III,Sell,,,11500,
 Arpeggio IV,Sell,,,15000,
-Assessor Matrix,Keep until uses complete; recycle after,,Projects High-Gain Antenna (18x) High-Gain Antenna (6x),5000,
+Assessor Matrix,Keep until uses complete; recycle after,"1x Advanced Mechanical Components, 3x Advanced ARC Powercell",Projects High-Gain Antenna (18x) High-Gain Antenna (6x),5000,
 Assorted Seeds,Keep,,,100,100
 Aviator (Outfit),Sell,,,,
 Bag (Radio Renegade Variant),Sell,,,,
@@ -214,7 +214,7 @@ Flashy Duck,Sell,,,3000,15
 Flow Controller,Recycle if short on materials; Sell otherwise,"1x Advanced Mechanical Components, 1x Sensors",Quests Snap And Salvage (1x),3000,3
 Flushing Terminal Key,Sell,,,,
 Fossilized Lightning,Sell,3x Explosive Compound,,4000,1
-Free Loadout Augment,Keep,,Equippable Augment,100,
+Free Loadout Augment,Keep,"6x Plastic Parts, 6x Rubber Parts",Equippable Augment,100,
 Frequency Modulation Box,Recycle if short on materials; Sell otherwise,"1x Advanced Electrical Components, 1x Speaker Component",Projects Expedition 1 (5x),3000,3
 Fried Motherboard,Keep until upgrade is complete; Sell once done,"5x Plastic Parts, 2x Electrical Components",3x for Utility Station III Upgrade,2000,3
 Fruit Mix,Use,,Quick Use consumable,1800,5
@@ -469,7 +469,7 @@ Stitcher II,Recycle,"6x Metal Parts, 6x Rubber Parts",,2000,
 Stitcher III,Recycle,"12x Metal Parts, 1x Simple Gun Parts",,3000,
 Stitcher IV,Recycle,"2x Mechanical Components, 2x Simple Gun Parts",,5000,
 Succulent (Backpack Charm),Sell,,,,
-Surge Coil,Sell,,,,
+Surge Coil,Sell,"1x Electrical Components, 1x Sensors",,,
 Surge Coil Blueprint,Sell,,,5000,
 Surge Shield Recharger,Use,1x Electrical Components,Quick Use consumable,1200,5
 Surveyor Vault,Keep until upgrade is complete; sell or recycle once done,"2x Mechanical Components, 2x ARC Alloy",5x for Medical Lab III Upgrades,1000,3
@@ -512,7 +512,7 @@ Trigger Nade Blueprint,Sell,,,5000,
 Tropical Duck,Sell,,,1000,15
 Turbo Pump,Recycle if short on materials; Sell otherwise,"1x Mechanical Components, 3x Oil",,2000,3
 Unusable Weapon,Recycle if short on materials; Sell otherwise,"4x Metal Parts, 5x Simple Gun Parts",,2000,3
-Vaporizer Regulator,Keep until uses complete; recycle after,,Projects High-Gain Antenna (15x) High-Gain Antenna (4x),6000,
+Vaporizer Regulator,Keep until uses complete; recycle after,"1x Advanced Electrical Components, 2x ARC Circuitry",Projects High-Gain Antenna (15x) High-Gain Antenna (4x),6000,
 Vase,Sell,,,3000,3
 Venator Blueprint,Sell,,,5000,
 Venator I,Recycle,"1x Advanced Mechanical Components, 2x Medium Gun Parts",,7000,
