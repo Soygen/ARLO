@@ -1,10 +1,15 @@
 name,action,recycle_for,keep_for,sell_price,stack_size
+"""Leviathan's Crown"" Ship Model",Keep until uses complete; sell after,,Projects Avian Alarm (1x),10000,
+"""Sirena Dorata"" Ship Model",Keep until uses complete; sell after,,Projects Avian Alarm (5x),7000,
+"""Twilight Compass"" Ship Model",Keep until uses complete; sell after,,Projects Avian Alarm (5x),1000,
+"""Velocity"" Ship Model",Keep until uses complete; sell after,,Projects Avian Alarm (5x),3000,
+"""Wind Sprite"" Ship Model",Sell,,,1000,
 Acoustic Guitar,Use,"4x Metal Parts, 6x Wires",Quick Use consumable,7000,1
 Adrenaline Shot,Use,"1x Chemicals, 1x Plastic Parts",Quick Use consumable,300,5
 Advanced ARC Powercell,Keep,2x ARC Powercell,Medical Lab: Surge Shield Recharger,640,5
 Advanced Electrical Components,Keep,"1x Electrical Components, 1x Wires",10x for Gear Bench III and Utility Station III Upgrades; 5x Expedition Stage 4,1750,5
 Advanced Mechanical Components,Keep,"1x Mechanical Components, 1x Steel Spring",5x for Gunsmith III Upgrade,1750,5
-Agave,Sell,3x Assorted Seeds,,1000,10
+Agave,Sell,3x Assorted Seeds,Projects Avian Alarm (8x),1000,10
 Agave Juice,Keep; or sell if short on space,,Quick Use for Healing,1800,
 Air Freshener,Sell,,,2000,5
 Alarm Clock,Recycle,"6x Plastic Parts, 1x Processor",,1000,3
@@ -130,6 +135,8 @@ Coolant,Sell,"5x Chemicals, 2x Oil",,1000,3
 Cooling Coil,Recycle,"6x Chemicals, 2x Steel Springs",Projects Expedition 2 (4x),1000,3
 Cooling Fan,KEEP FOR EXPEDITION MATS; Sell after,"14x Plastic Parts, 4x Wires",5x Expedition Stage 2,2000,3
 Cracked Bioscanner,Keep until upgrade is complete; sell or recycle once done,"3x Rubber Parts, 3x Battery",2x for Medical Lab II Upgrade,1000,3
+Crash Mat,Use,"3x Plastic Parts, 6x Fabric",Quick Use consumable,1200,5
+Crash Mat Blueprint,Sell,,,5000,
 Crimson Racer (Aviator Colour),Sell,,,,
 Crude Explosives,"Keep; If no inventory space, recycle",3x Chemicals,5x for Explosives Station II Upgrade,270,10
 Crumpled Plastic Bottle,Recycle,4x Plastic Parts,,270,3
@@ -155,6 +162,7 @@ Defibrillator Blueprint,Sell,,,5000,
 Deflated Football,Recycle,"9x Rubber Parts, 9x Fabric",Quests The League (1x),1000,3
 Degraded ARC Rubber,Recycle,11x Rubber Parts,,640,3
 Diving Goggles,Recycle,12x Rubber Parts,,640,3
+Dockmaster’s Detector,Sell,,,1000,
 Dog Collar,Keep until upgrade is complete; recycle once done,"8x Fabric, 1x Metal Parts",1x Scrappy for Level II Upgrade,640,3
 Dolabra,Sell,,,27500,
 Dolabra Blueprint,Sell,,,5000,
@@ -354,6 +362,8 @@ Pottery,Sell,,,2000,3
 Power Bank,Recycle if short on materials; Sell otherwise,"2x Battery, 2x Wires",,1000,3
 Power Cable,Recycle,4x Wires,3x for Gear Bench II Upgrade,1000,3
 Power Rod,"Keep for high-tier crafting; if excess, sell","1x Advanced Electrical Components, 1x ARC Circuitry",Quests Tribute To Toledo (1x),5500,3
+Powered Descender,Recycle,"1x Advanced Electrical Components, 1x ARC Circuitry",,10000,
+Powered Descender Blueprint,Sell,,,5000,
 Prickly Pear,Keep until upgrade is complete; sell once done,3x Assorted Seeds,8x for Scrappy Level IV Upgrade,640,10
 Processor,Keep,"1x Wires, 1x Plastic Parts",Topside Material - crafting ingredient,500,5
 Projector,Recycle if short on materials; Sell otherwise,"2x Wires, 1x Processor",,1000,3
@@ -372,7 +382,7 @@ Rattler III,Recycle,"3x Mechanical Components, 1x Simple Gun Parts",,5000,
 Rattler IV,Recycle,"4x Mechanical Components, 2x Simple Gun Parts",,7000,
 Recorder,Sell,10x Plastic Parts,Quick Use consumable,1000,1
 Red (Radio Renegade Color),Sell,,,,
-Red Coral Jewelry,Sell,,,5000,3
+Red Coral Jewelry,Sell,,Projects Avian Alarm (3x),5000,3
 Red Light Stick,Use,1x Chemicals,Quick Use consumable,150,
 Red Light Stick Blueprint,Sell,,,5000,
 Reinforced Reception Security Code,Keep,,Unlocks locked areas,,
@@ -385,9 +395,19 @@ Renegade III,Recycle,"2x Advanced Mechanical Components, 2x Medium Gun Parts",,1
 Renegade IV,Recycle,"3x Advanced Mechanical Components, 3x Medium Gun Parts",,17000,
 Resin,Sell,,,1000,10
 Ripped Safety Vest,Recycle,"1x Durable Cloth, 1x Magnet",,1000,3
+Riven Tides Classifed Records Keycard,Keep,,Unlocks locked areas,100,
+Riven Tides Crane House Keycard,Keep,,Unlocks locked areas,100,
+Riven Tides Hotel Keycard No. 102,Keep,,Unlocks locked areas,100,
+Riven Tides Hotel Keycard No. 107,Keep,,Unlocks locked areas,100,
+Riven Tides Hotel Keycard No. 113,Keep,,Unlocks locked areas,100,
+Riven Tides Hotel Keycard No. 205,Keep,,Unlocks locked areas,100,
+Riven Tides Hotel Keycard No. 208,Keep,,Unlocks locked areas,100,
+Riven Tides Hotel Keycard No. 311,Keep,,Unlocks locked areas,100,
+Riven Tides Hotel Keycard No. 404,Keep,,Unlocks locked areas,100,
+Riven Tides Secure Storage Keycard,Keep,,Unlocks locked areas,100,
 Rocket Thruster,"Recycle if low on Metal Parts, otherwise sell","6x Metal Parts, 2x Synthesized Fuel",,2000,3
 Rocketeer Driver,Keep until upgrade is complete; sell once done,"3x ARC Alloy, 2x Advanced Electrical Components",3x for Explosive Station III Upgrade,5000,3
-Roots,Sell,1x Assorted Seeds,,640,10
+Roots,Sell,1x Assorted Seeds,Projects Avian Alarm (4x),640,10
 Rope,Keep,5x Fabric,Topside Material - crafting ingredient,500,5
 Rosary,Sell,,,2000,3
 Rotary Encoder,Recycle if short on materials; Sell otherwise,"2x Electrical Components, 2x Processor",Quests With A View (1x),3000,3
@@ -480,9 +500,11 @@ Tactical Mk. 2,Keep,"1x Electrical Components, 1x Magnet",Equippable Augment,200
 Tactical Mk. 3 (Healing),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,
 Tactical MK. 3 (Revival),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,
 Tactical Mk. 3 (Revival) Blueprint,Sell,,,5000,
+Tactical Mk. 3 (Smoke),Keep,,Equippable Augment,5000,
 Tactical Mk.3 (Defensive),Keep,,Equippable Augment,5000,
 Tactical MK.3 (Defensive) Blueprint,Sell,,,5000,
 Tactical MK.3 (Healing) Blueprint,Sell,,,5000,
+Tactical MK.3 (Smoke) Blueprint,Sell,,,5000,
 Tagging Grenade,Use,"1x Plastic Parts, 1x Sensors",Quick Use consumable,1000,3
 Tagging Grenade Blueprint,Sell,,,5000,
 Tangerine (Warden Color),Sell,,,,
@@ -510,6 +532,7 @@ Trailblazer Grenade Blueprint,Sell,,,5000,
 Trigger Nade,Use,,Quick Use consumable,1000,3
 Trigger Nade Blueprint,Sell,,,5000,
 Tropical Duck,Sell,,,1000,15
+Turbine Compressor,Keep until uses complete; recycle after,"1x ARC Circuitry, 1x ARC Motion Core",Projects Avian Alarm (2x),5000,3
 Turbo Pump,Recycle if short on materials; Sell otherwise,"1x Mechanical Components, 3x Oil",,2000,3
 Unusable Weapon,Recycle if short on materials; Sell otherwise,"4x Metal Parts, 5x Simple Gun Parts",,2000,3
 Vaporizer Regulator,Keep until uses complete; recycle after,"1x Advanced Electrical Components, 2x ARC Circuitry",Projects High-Gain Antenna (15x) High-Gain Antenna (4x),6000,
@@ -540,10 +563,13 @@ Warden (Outfit),Sell,,,,
 Wasp Driver,Keep; sell or recycle after upgrade is complete,"1x ARC Alloy, 1x Electrical Components",8x for Gunsmith II Upgrade,640,3
 Water Filter,Recycle if short on materials; Sell otherwise,"2x Rubber Parts, 3x Canister",Projects Flickering Flames (2x),1000,3
 Water Pump,Keep until quest is complete; recycle or sell,"4x Metal Parts, 2x Oil",1x for Unexpected Initiative,1000,3
+White Flag,Use,"1x Plastic Parts, 5x Fabric",Quick Use consumable,640,5
+White Flag Blueprint,Sell,,,5000,
 White Indigo (Warden Color),Sell,,,,
 Wires,Keep,2x Rubber Parts,30x Expedition Stage 2,200,15
 Wolfpack,Use,"1x ARC Motion Core, 1x Explosive Compound",Quick Use consumable,6000,1
 Wolfpack Blueprint,Sell,,,5000,
+Yellow (Radio Renegade Color),Sell,,,,
 Yellow Light Stick,Use,1x Chemicals,Quick Use consumable,150,5
 Yellow Light Stick Blueprint,Sell,,,5000,
 Zipline,Use,"1x Metal Parts, 1x Rope",Quick Use consumable,1000,3
