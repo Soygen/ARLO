@@ -140,7 +140,7 @@ Crash Mat Blueprint,Sell,,,5000,
 Crimson Racer (Aviator Colour),Sell,,,,
 Crude Explosives,"Keep; If no inventory space, recycle",3x Chemicals,5x for Explosives Station II Upgrade,270,10
 Crumpled Plastic Bottle,Recycle,4x Plastic Parts,,270,3
-Dam Control Center Tower Key,Keep,,Unlocks locked areas,100,1
+Dam Control Tower Key,Keep,,Unlocks locked areas,100,1
 Dam Controlled Access Zone Key,Keep,,Unlocks locked areas,100,
 Dam Staff Room Key,Keep,,Unlocks locked areas,100,1
 Dam Surveillance Key,Keep,,Unlocks locked areas,100,
@@ -183,8 +183,11 @@ Expired Respirator,Recycle,"8x Rubber Parts, 4x Fabric",Projects Trophy Display 
 Explosive Compound,Keep,2x Crude Explosives,5x for Explosives Station III Upgrade,1000,5
 Explosive Mine,Use,"1x Sensors, 2x Oil",Quick Use consumable,1500,3
 Explosive Mine Blueprint,Sell,,,5000,
-Extended Barrel,Keep,"1x Mod Components, 1x Wires",Equippable Mods,5000,1
-Extended Barrel Blueprint,Sell,,,5000,
+Extended Barrel I ,Sell,,,1000,1
+Extended Barrel II,Recycle,"1x Mechanical Components, 1x Wires",,3000,1
+Extended Barrel II Blueprint,Sell,,,5000,
+Extended Barrel III Blueprint,Sell,,,5000,
+Extended Barrel IIII,Sell,,,5000,1
 Extended Light Mag I,Keep,6x Plastic Parts,Equippable Mods,640,
 Extended Light Mag II,Keep,"1x Mechanical Components, 1x Steel Spring",Equippable Mods,2000,1
 Extended Light Mag II Blueprint,Sell,,,5000,
@@ -376,6 +379,11 @@ Radio Renegade (Outfit),Sell,,,,
 Raider Hatch Key,Keep,,Unlocks locked areas,2000,1
 Raider Tokens,Sell,,,,
 Raider's Refuge Security Code,Keep,,Unlocks locked areas,,
+Rascal,Sell,,,7000,
+Rascal Blueprint,Sell,,,5000,
+Rascal II ,Sell,,,,
+Rascal III,Sell,,,,
+Rascal IV,Sell,,,,
 Rattler I,Recycle,8x Metal Parts,,1750,
 Rattler II,Recycle,12x Metal Parts,,3000,
 Rattler III,Recycle,"3x Mechanical Components, 1x Simple Gun Parts",,5000,
