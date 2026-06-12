@@ -23,21 +23,33 @@ class ScreenBackend(Protocol):
 
     name: str
 
-    def start(self) -> None: ...
+    def start(self) -> None:
+        """Acquire resources. grab()/cursor_position()/resolution() are only valid after this."""
+        ...
 
-    def stop(self) -> None: ...
+    def stop(self) -> None:
+        """Release resources. Safe to call multiple times."""
+        ...
 
     def grab(self, bbox: tuple[int, int, int, int]) -> Image.Image:
         """Capture (left, top, right, bottom) and return an RGB image."""
         ...
 
-    def cursor_position(self) -> Point: ...
+    def cursor_position(self) -> Point:
+        """Current pointer position in physical pixels."""
+        ...
 
-    def resolution(self) -> tuple[int, int]: ...
+    def resolution(self) -> tuple[int, int]:
+        """(width, height) of the captured monitor in physical pixels."""
+        ...
 
     @property
     def tk_scale(self) -> float:
-        """Divide physical pixels by this to get tkinter window coordinates."""
+        """Divide physical pixels by this to get tkinter window coordinates.
+
+        A property (not a plain attribute like ``name``) because backends
+        compute it at runtime from the compositor's scale factor.
+        """
         ...
 
 
@@ -56,7 +68,10 @@ def choose_backend_name(
 
 
 def compute_scale(physical_width: int, logical_width: int) -> float:
-    """Scale factor between physical pixels and X11/tk logical pixels."""
+    """Scale factor between physical pixels and X11/tk logical pixels.
+
+    Returns physical_width / logical_width, or 1.0 if logical_width <= 0.
+    """
     if logical_width <= 0:
         return 1.0
     return physical_width / logical_width
