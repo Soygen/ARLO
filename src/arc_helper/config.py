@@ -39,14 +39,9 @@ APP_DIR = get_app_dir()
 
 def get_screen_resolution() -> tuple[int, int]:
     """Get the primary monitor resolution in physical pixels."""
-    if sys.platform == "win32":
-        user32 = ctypes.windll.user32
-        user32.SetProcessDPIAware()  # This makes us get physical pixels
-        return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
-    import mss
-    with mss.mss() as sct:
-        monitor = sct.monitors[1]  # Primary monitor (0 is the combined "all" monitor)
-        return monitor["width"], monitor["height"]
+    from .screen import get_backend  # local import: screen imports config
+
+    return get_backend().resolution()
 
 
 def get_dpi_scale() -> float:
@@ -251,6 +246,16 @@ class Settings(BaseSettings):
     # Database in app directory
     database_path: Path = Field(default_factory=lambda: APP_DIR / "items.db")
 
+    # Screen capture backend: auto | x11 | wayland (Linux only)
+    screen_backend: str = Field(
+        default="auto", description="Screen backend: auto, x11 or wayland"
+    )
+
+    # Hold-to-scan hotkey, evdev key name (Wayland/Linux only)
+    hotkey_key: str = Field(
+        default="KEY_RIGHTCTRL", description="evdev key name for hold-to-scan"
+    )
+
     # Debug settings
     debug_mode: bool = Field(default=False, description="Enable debug mode")
     debug_output_dir: Path = Field(default_factory=lambda: APP_DIR / "debug")
@@ -298,6 +303,10 @@ class Settings(BaseSettings):
             "# Debug settings",
             f"DEBUG_MODE={str(self.debug_mode).lower()}",
             f"SHOW_CAPTURE_AREA={str(self.show_capture_area).lower()}",
+            "",
+            "# Platform settings",
+            f"SCREEN_BACKEND={self.screen_backend}",
+            f"HOTKEY_KEY={self.hotkey_key}",
         ]
 
         with Path(env_path).open("w", encoding="utf-8") as f:

@@ -3,13 +3,9 @@ OCR module for ARLO.
 Screen capture and text extraction using Tesseract.
 """
 
-import ctypes
 import re
 import string
-import sys
-import typing
 
-import mss
 import numpy as np
 import pytesseract
 from PIL import Image
@@ -20,22 +16,13 @@ from .config import RegionMixin
 from .config import get_screen_resolution
 from .config import get_settings
 from .config import logger
+from .screen import Point
+from .screen import get_backend
 
 
 def grab_screen(bbox: tuple[int, int, int, int]) -> Image.Image:
-    """Capture a screen region using mss (X11 on Linux, native on Windows)."""
-    left, top, right, bottom = bbox
-    with mss.mss() as sct:
-        monitor = {"top": top, "left": left, "width": right - left, "height": bottom - top}
-        screenshot = sct.grab(monitor)
-        return Image.frombytes("RGB", screenshot.size, screenshot.rgb)
-
-
-class Point(BaseModel):
-    """Screen coordinates."""
-
-    x: int
-    y: int
+    """Capture a screen region via the active screen backend."""
+    return get_backend().grab(bbox)
 
 
 class OCRResult(BaseModel):
@@ -48,19 +35,7 @@ class OCRResult(BaseModel):
 
 def get_cursor_position() -> Point:
     """Get current cursor position on screen in physical pixels."""
-    if sys.platform == "win32":
-        # Ensure we're DPI aware to get physical coordinates
-        ctypes.windll.user32.SetProcessDPIAware()
-
-        class POINT(ctypes.Structure):
-            _fields_: typing.ClassVar = [("x", ctypes.c_long), ("y", ctypes.c_long)]
-
-        pt = POINT()
-        ctypes.windll.user32.GetCursorPos(ctypes.byref(pt))
-        return Point(x=pt.x, y=pt.y)
-    from pynput import mouse as pynput_mouse
-    pos = pynput_mouse.Controller().position
-    return Point(x=int(pos[0]), y=int(pos[1]))
+    return get_backend().cursor_position()
 
 
 class OCREngine:
