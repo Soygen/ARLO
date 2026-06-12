@@ -22,6 +22,10 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0.0",
     "pyinstaller>=6.0.0",
+    "pytest>=8.0",
+]
+wayland = [
+    "pygobject>=3.50; sys_platform == 'linux'",
 ]
 
 [project.scripts]
@@ -143,3 +147,13 @@ force-single-line = true
 [tool.mypy]
 python_version = "3.11"
 strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+# Static metadata so uv never builds the PyGObject sdist at lock time
+# (PyGObject ships sdist-only; building requires Linux system headers).
+[[tool.uv.dependency-metadata]]
+name = "pygobject"
+requires-dist = ["pycairo>=1.16"]
+requires-python = ">=3.9"
