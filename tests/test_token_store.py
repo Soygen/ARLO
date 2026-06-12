@@ -33,3 +33,10 @@ def test_clear(tmp_path):
     clear_token(path)
     assert load_token(path) is None
     clear_token(path)  # idempotent
+
+
+def test_saved_token_is_owner_only(tmp_path):
+    path = tmp_path / "token"
+    save_token("abc123", path)
+    mode = path.stat().st_mode & 0o777
+    assert mode == 0o600

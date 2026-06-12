@@ -23,8 +23,10 @@ def load_token(path: Path | None = None) -> str | None:
 
 
 def save_token(token: str, path: Path | None = None) -> None:
+    """Persist the token; raises OSError on failure (caller logs and continues)."""
     target = path if path is not None else _default_path()
     target.write_text(token, encoding="utf-8")
+    target.chmod(0o600)
 
 
 def clear_token(path: Path | None = None) -> None:
