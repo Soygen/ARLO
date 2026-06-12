@@ -59,8 +59,17 @@ def test_bbox_clamped_to_frame():
 def test_bbox_fully_outside_returns_minimal_image():
     data = make_frame(10, 10)
     img = crop_bgrx(data, 10, 10, 40, (100, 100, 200, 200))
-    assert img.size[0] >= 1
-    assert img.size[1] >= 1
+    # Clamps to the bottom-right corner pixel
+    assert img.size == (1, 1)
+    assert img.getpixel((0, 0)) == expected_rgb(9, 9)
+
+
+def test_inverted_bbox_yields_minimal_strip_at_anchor():
+    # right < left: clamping anchors at left and forces a 1-wide strip
+    data = make_frame(10, 10)
+    img = crop_bgrx(data, 10, 10, 40, (7, 0, 3, 10))
+    assert img.size == (1, 10)
+    assert img.getpixel((0, 0)) == expected_rgb(7, 0)
 
 
 def test_short_buffer_raises():

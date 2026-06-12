@@ -14,6 +14,15 @@ def crop_bgrx(
     """Crop (left, top, right, bottom) out of a BGRx frame, returning RGB.
 
     Coordinates are clamped to the frame; the result is always >= 1x1.
+    An inverted bbox (right <= left or bottom <= top) collapses to a
+    1-pixel-wide/tall strip anchored at (left, top).
+
+    Args:
+        data: raw BGRx frame bytes.
+        width: frame width in pixels.
+        height: frame height in pixels.
+        stride: row pitch in bytes (may exceed width*4 due to alignment padding).
+        bbox: (left, top, right, bottom) crop region in pixel coordinates.
     """
     needed = height * stride
     if len(data) < needed:
