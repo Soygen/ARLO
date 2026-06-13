@@ -24,7 +24,10 @@ class ScreenBackend(Protocol):
     name: str
 
     def start(self) -> None:
-        """Acquire resources. grab()/cursor_position()/resolution() are only valid after this."""
+        """Acquire resources. grab()/cursor_position()/resolution() are only
+        valid after this. Must not call back into get_backend() or
+        get_screen_resolution() (non-reentrant initialization lock).
+        """
         ...
 
     def stop(self) -> None:

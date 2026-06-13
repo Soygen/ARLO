@@ -38,7 +38,11 @@ def get_backend() -> ScreenBackend:  # noqa: RUF067
 
                 backend = MssBackend(name)
             logger.info(f"Screen backend: {name}")
-            backend.start()
+            try:
+                backend.start()
+            except Exception:
+                backend.stop()  # release any partially acquired resources
+                raise
             _backend = backend
         return _backend
 
