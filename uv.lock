@@ -42,6 +42,7 @@ dependencies = [
     { name = "pynput" },
     { name = "pytesseract" },
     { name = "python-dotenv" },
+    { name = "python-xlib", marker = "sys_platform == 'linux'" },
     { name = "requests" },
 ]
 
@@ -72,6 +73,7 @@ requires-dist = [
     { name = "pytesseract", specifier = ">=0.3.10" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
+    { name = "python-xlib", marker = "sys_platform == 'linux'", specifier = ">=0.17" },
     { name = "requests", specifier = ">=2.28.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },
 ]

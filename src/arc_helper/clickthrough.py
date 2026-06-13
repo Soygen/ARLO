@@ -12,8 +12,8 @@ from arc_helper.config import logger
 
 
 def make_click_through(window: tk.Misc) -> None:
-    window.update_idletasks()  # realize the native window before winfo_id()
     try:
+        window.update_idletasks()  # realize the native window before winfo_id()
         if sys.platform == "win32":
             _windows_click_through(window)
         else:
@@ -45,9 +45,19 @@ def _x11_click_through(window: tk.Misc) -> None:
         if not xdisplay.has_extension("SHAPE"):
             logger.warning("X server lacks SHAPE; overlay will not be click-through")
             return
+        root_id = xdisplay.screen().root.id
         xwindow = xdisplay.create_resource_object("window", window.winfo_id())
-        # Empty input region: every click lands on whatever is underneath
-        xwindow.shape_rectangles(shape.SO.Set, shape.SK.Input, X.Unsorted, 0, 0, [])
-        xdisplay.flush()
+        # Tk reparents Toplevels into a wrapper window that keeps a full
+        # input region, which would swallow the clicks anyway. Empty the
+        # input region of the whole chain up to (excluding) the root.
+        while xwindow.id != root_id:
+            xwindow.shape_rectangles(
+                shape.SO.Set, shape.SK.Input, X.Unsorted, 0, 0, []
+            )
+            parent = xwindow.query_tree().parent
+            if parent is None or parent.id == root_id:
+                break
+            xwindow = parent
+        xdisplay.sync()  # force errors to surface inside this try
     finally:
         xdisplay.close()

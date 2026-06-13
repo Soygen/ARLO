@@ -16,6 +16,7 @@ dependencies = [
     "mss>=9.0.0",
     "pynput>=1.7.0",
     "evdev>=1.6; sys_platform == 'linux'",
+    "python-xlib>=0.17; sys_platform == 'linux'",
 ]
 
 [project.optional-dependencies]
