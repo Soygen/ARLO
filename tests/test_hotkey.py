@@ -64,3 +64,25 @@ def test_stop_closes_devices():
     monitor.stop()
     assert device.closed
     assert monitor._devices == []  # noqa: SLF001
+
+
+def test_empty_devices_triggers_throttled_rescan(monkeypatch):
+    monitor = EvdevKeyMonitor("KEY_RIGHTCTRL")
+    monitor._devices = []  # noqa: SLF001
+    calls = []
+    monkeypatch.setattr(monitor, "start", lambda: calls.append(1))
+    monitor._last_scan = 0.0  # noqa: SLF001 - far in the past: rescan due
+    assert monitor.is_held() is False
+    assert calls == [1]
+
+
+def test_rescan_is_throttled(monkeypatch):
+    import time
+
+    monitor = EvdevKeyMonitor("KEY_RIGHTCTRL")
+    monitor._devices = []  # noqa: SLF001
+    calls = []
+    monkeypatch.setattr(monitor, "start", lambda: calls.append(1))
+    monitor._last_scan = time.monotonic()  # noqa: SLF001 - just scanned
+    assert monitor.is_held() is False
+    assert calls == []

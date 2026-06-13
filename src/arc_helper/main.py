@@ -145,9 +145,9 @@ class Scanner:
         """Stop the scanner."""
         self._running = False
         self.state = ScannerState.STOPPED
-        self.hotkey.stop()
         if self._scan_thread:
             self._scan_thread.join(timeout=2.0)
+        self.hotkey.stop()
         logger.info("Scanner stopped")
 
     def pause(self) -> None:

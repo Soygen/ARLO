@@ -33,6 +33,7 @@ version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
+    { name = "evdev", marker = "sys_platform == 'linux'" },
     { name = "mss" },
     { name = "numpy" },
     { name = "pillow" },
@@ -58,6 +59,7 @@ wayland = [
 [package.metadata]
 requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.12.0" },
+    { name = "evdev", marker = "sys_platform == 'linux'", specifier = ">=1.6" },
     { name = "mss", specifier = ">=9.0.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "numpy", specifier = ">=1.24.0" },

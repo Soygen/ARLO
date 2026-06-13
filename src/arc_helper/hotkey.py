@@ -8,6 +8,7 @@ Wayland: evdev, hold a single key (default Right Ctrl, HOTKEY_KEY in .env).
 import ctypes
 import os
 import sys
+import time
 from contextlib import suppress
 from typing import Protocol
 
@@ -84,6 +85,8 @@ class PynputCtrlShiftMonitor:
 class EvdevKeyMonitor:
     """A single key held, read from /dev/input (works on Wayland)."""
 
+    RESCAN_INTERVAL_S = 5.0
+
     def __init__(self, key_name: str):
         import evdev
 
@@ -97,22 +100,27 @@ class EvdevKeyMonitor:
         self.key_name = key_name
         self.key_code = code
         self._devices: list = []
+        self._last_scan = 0.0
 
     def start(self) -> None:
         import evdev
 
+        self._last_scan = time.monotonic()
         self.stop()
         for path in evdev.list_devices():
             try:
                 device = evdev.InputDevice(path)
-                capabilities = device.capabilities()
-                key_caps = capabilities.get(evdev.ecodes.EV_KEY, [])
-                if self.key_code in key_caps:
-                    self._devices.append(device)
-                else:
-                    device.close()
             except OSError:
                 continue
+            try:
+                key_caps = device.capabilities().get(evdev.ecodes.EV_KEY, [])
+            except OSError:
+                device.close()
+                continue
+            if self.key_code in key_caps:
+                self._devices.append(device)
+            else:
+                device.close()
         if not self._devices:
             logger.warning(
                 f"Hotkey disabled: no keyboard with {self.key_name} accessible. "
@@ -127,6 +135,8 @@ class EvdevKeyMonitor:
         self._devices = []
 
     def is_held(self) -> bool:
+        if not self._devices:
+            self._maybe_rescan()
         dead = []
         held = False
         for device in self._devices:
@@ -137,8 +147,16 @@ class EvdevKeyMonitor:
             except OSError:
                 dead.append(device)
         for device in dead:
+            logger.warning(f"Hotkey device disappeared: {device}")
             self._devices.remove(device)
         return held
+
+    def _maybe_rescan(self) -> None:
+        """Recover from keyboard disconnect/reconnect (new event node)."""
+        if time.monotonic() - self._last_scan < self.RESCAN_INTERVAL_S:
+            return
+        logger.info("Rescanning input devices for the hotkey")
+        self.start()
 
 
 def get_hotkey_monitor() -> HotkeyMonitor:
