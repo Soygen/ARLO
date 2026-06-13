@@ -297,7 +297,11 @@ class TooltipCaptureConfig:
     def capture_at_cursor(self) -> tuple[Image.Image, int, int] | None:
         """Capture the area at current cursor position."""
 
-        cursor = get_cursor_position()
+        try:
+            cursor = get_cursor_position()
+        except OSError as e:
+            logger.warning(f"Cursor lookup failed: {e}")
+            return None
         cursor_x, cursor_y = cursor.x, cursor.y
 
         _screen_width, _ = get_screen_resolution()
@@ -319,7 +323,11 @@ class TooltipCaptureConfig:
         right = left + self.width.get()
         bottom = top + self.height.get()
 
-        image = grab_screen((left, top, right, bottom))
+        try:
+            image = grab_screen((left, top, right, bottom))
+        except OSError as e:
+            logger.warning(f"Capture failed: {e}")
+            return None
         return image, cursor_x, cursor_y
 
 
