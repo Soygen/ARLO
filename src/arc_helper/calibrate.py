@@ -572,7 +572,12 @@ class CalibrationTool:
         bbox = selector.get_bbox()
         logger.info(f"Testing bbox: {bbox}")  # Debug
 
-        image = grab_screen(bbox)
+        try:
+            image = grab_screen(bbox)
+        except OSError as e:
+            logger.warning(f"Capture failed: {e}")
+            self.result_label.config(text="✗ Capture failed (see log)", foreground="red")
+            return
         logger.info(f"Captured image: {image.size}, mode: {image.mode}")  # Debug
 
         self._show_preview(image)

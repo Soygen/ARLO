@@ -33,6 +33,7 @@ from arc_helper.ocr import get_ocr_engine
 from arc_helper.overlay import OverlayWindow
 from arc_helper.overlay import StatusWindow
 from arc_helper.resolution_profiles import get_profile_manager
+from arc_helper.screen import ScreenCaptureUnavailable
 
 load_dotenv(Path(__file__).with_name(".env"), override=False)
 
@@ -234,6 +235,11 @@ class Scanner:
                     # Wait before next tooltip scan
                     time.sleep(settings.scan.tooltip_scan_interval)
 
+            except ScreenCaptureUnavailable as e:
+                logger.error(f"Screen capture lost permanently: {e}")
+                self._update_status("error")
+                self.state = ScannerState.STOPPED
+                break  # latch: no point scanning without capture
             except Exception as e:  # noqa: BLE001
                 logger.error(f"Scanner error: {e}")
                 self._update_status("error")
