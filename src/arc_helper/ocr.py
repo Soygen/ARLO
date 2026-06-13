@@ -17,6 +17,7 @@ from .config import get_screen_resolution
 from .config import get_settings
 from .config import logger
 from .screen import Point
+from .screen import ScreenCaptureUnavailable
 from .screen import get_backend
 
 
@@ -69,6 +70,8 @@ class OCREngine:
         """Capture a screen region."""
         try:
             return grab_screen(region.bbox)
+        except ScreenCaptureUnavailable:
+            raise  # terminal: must reach the scanner's error handling, not become a black frame
         except OSError as e:
             logger.error(f"Screen grab failed for region {region.bbox}: {e}")
             # Return a dummy image to avoid crashing
@@ -122,6 +125,8 @@ class OCREngine:
 
         try:
             image = grab_screen((left, top, right, bottom))
+        except ScreenCaptureUnavailable:
+            raise  # terminal: must reach the scanner's error handling
         except OSError as e:
             logger.error(
                 f"Screen grab failed at bbox ({left}, {top}, {right}, {bottom}): {e}"

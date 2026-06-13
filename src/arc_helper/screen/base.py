@@ -18,6 +18,14 @@ class Point(BaseModel):
     y: int
 
 
+class ScreenCaptureUnavailable(OSError):  # noqa: N818
+    """Screen capture is permanently unavailable (e.g. share revoked).
+
+    Raised instead of plain OSError so callers that substitute dummy
+    frames for transient grab errors can let this one propagate.
+    """
+
+
 class ScreenBackend(Protocol):
     """Platform-specific screen access. All coordinates are physical pixels."""
 

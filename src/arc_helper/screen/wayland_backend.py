@@ -12,6 +12,7 @@ from PIL import Image
 from arc_helper.config import logger
 
 from .base import Point
+from .base import ScreenCaptureUnavailable
 from .base import compute_scale
 from .frame import crop_bgrx
 from .token_store import load_token
@@ -30,6 +31,7 @@ try:
 
     gi.require_version("Gst", "1.0")
     gi.require_version("GstVideo", "1.0")
+    from gi.repository import GLib
     from gi.repository import Gst
     from gi.repository import GstVideo
 except (ImportError, ValueError) as _e:
@@ -57,52 +59,75 @@ class WaylandBackend:
         self._size: tuple[int, int] = (0, 0)
         self._tk_scale = 1.0
         self._restarted = False
+        self._terminal_error: str | None = None
 
     def start(self) -> None:
         Gst.init(None)
         self._frame = None
         self._first_frame = threading.Event()
 
-        self._session = ScreenCastSession(restore_token=load_token())
         try:
-            self._session.open()
-        except PortalError as e:
-            msg = (
-                f"Screen sharing setup failed: {e}\n"
-                "ARLO needs screen-share permission on Wayland (a one-time dialog).\n"
-                "If no dialog appeared, check that xdg-desktop-portal and your "
-                "desktop's portal backend are running.\n"
-                "Alternatively use an X11 session with SCREEN_BACKEND=x11."
-            )
-            raise OSError(msg) from e
-        if self._session.new_restore_token:
-            save_token(self._session.new_restore_token)
+            self._session = ScreenCastSession(restore_token=load_token())
+            try:
+                self._session.open()
+            except PortalError as e:
+                msg = (
+                    f"Screen sharing setup failed: {e}\n"
+                    "ARLO needs screen-share permission on Wayland (a one-time dialog).\n"
+                    "If no dialog appeared, check that xdg-desktop-portal and your "
+                    "desktop's portal backend are running.\n"
+                    "Alternatively use an X11 session with SCREEN_BACKEND=x11."
+                )
+                raise OSError(msg) from e
+            if self._session.new_restore_token:
+                try:
+                    save_token(self._session.new_restore_token)
+                except OSError as e:
+                    logger.warning(f"Could not save screen-share restore token: {e}")
 
-        desc = (
-            f"pipewiresrc fd={self._session.pipewire_fd} "
-            f"path={self._session.node_id} keepalive-time={KEEPALIVE_MS} "
-            "! videoconvert ! video/x-raw,format=BGRx "
-            "! appsink name=sink emit-signals=true max-buffers=2 drop=true sync=false"
-        )
-        self._pipeline = Gst.parse_launch(desc)
-        sink = self._pipeline.get_by_name("sink")
-        sink.connect("new-sample", self._on_new_sample)
-        self._pipeline.set_state(Gst.State.PLAYING)
-
-        if not self._first_frame.wait(FIRST_FRAME_TIMEOUT_S):
-            bus_error = self._collect_bus_error()
-            self.stop()
-            msg = (
-                "No frame arrived from the compositor within "
-                f"{FIRST_FRAME_TIMEOUT_S:.0f}s.{bus_error}\n"
-                "If the screen-share dialog was approved, try moving the mouse "
-                "(some compositors only send frames on screen changes)."
+            desc = (
+                f"pipewiresrc fd={self._session.pipewire_fd} "
+                f"path={self._session.node_id} keepalive-time={KEEPALIVE_MS} "
+                "! videoconvert ! video/x-raw,format=BGRx "
+                "! appsink name=sink emit-signals=true max-buffers=2 drop=true sync=false"
             )
-            raise OSError(msg)
+            try:
+                self._pipeline = Gst.parse_launch(desc)
+            except GLib.Error as e:
+                msg = (
+                    f"GStreamer pipeline creation failed: {e.message}\n"
+                    "Is gst-plugin-pipewire installed?\n" + _INSTALL_HINT
+                )
+                raise OSError(msg) from e
+            sink = self._pipeline.get_by_name("sink")
+            sink.connect("new-sample", self._on_new_sample)
+            if self._pipeline.set_state(Gst.State.PLAYING) == Gst.StateChangeReturn.FAILURE:
+                msg = f"GStreamer pipeline refused to start.{self._collect_bus_error()}"
+                raise OSError(msg)  # noqa: TRY301
+
+            if not self._first_frame.wait(FIRST_FRAME_TIMEOUT_S):
+                bus_error = self._collect_bus_error()
+                msg = (
+                    "No frame arrived from the compositor within "
+                    f"{FIRST_FRAME_TIMEOUT_S:.0f}s.{bus_error}\n"
+                    "If the screen-share dialog was approved, try moving the mouse "
+                    "(some compositors only send frames on screen changes)."
+                )
+                raise OSError(msg)  # noqa: TRY301
+        except Exception:
+            self.stop()  # release partial session/pipeline; safe and idempotent
+            raise
 
         with self._lock:
-            assert self._frame is not None
-            _, width, height, _ = self._frame
+            frame = self._frame
+        if frame is None:
+            msg = "First frame vanished unexpectedly"
+            raise OSError(msg)
+        _, width, height, _ = frame
+        # Single-monitor assumption: XWayland reports the total logical
+        # screen width, the stream is one monitor. Fine for the primary-
+        # monitor use case; multi-monitor scaling is a known limitation.
+        # Plain attribute stores (atomic in CPython); readers may see one stale frame's worth during restart - harmless.
         self._size = (width, height)
         self._tk_scale = compute_scale(width, self._x11_logical_width())
         logger.info(
@@ -110,6 +135,8 @@ class WaylandBackend:
         )
 
     def stop(self) -> None:
+        # Order matters: NULL the pipeline first (joins streaming threads),
+        # then close the session (which closes our pipewire fd).
         if self._pipeline is not None:
             self._pipeline.set_state(Gst.State.NULL)
             self._pipeline = None
@@ -118,7 +145,10 @@ class WaylandBackend:
             self._session = None
 
     def grab(self, bbox: tuple[int, int, int, int]) -> Image.Image:
-        if self._session is not None and self._session.closed.is_set():
+        if self._terminal_error is not None:
+            raise ScreenCaptureUnavailable(self._terminal_error)
+        session = self._session  # local ref: stop() may null it concurrently
+        if session is not None and session.closed.is_set():
             self._attempt_restart()
         with self._lock:
             frame = self._frame
@@ -200,12 +230,21 @@ class WaylandBackend:
 
     def _attempt_restart(self) -> None:
         if self._restarted:
-            msg = (
+            # Deliberately leave the dead session in place as a tombstone;
+            # clearing it would let grab() serve the frozen last frame.
+            self._terminal_error = (
                 "Screen sharing was stopped (portal session closed). "
                 "Restart ARLO to share again."
             )
-            raise OSError(msg)
+            raise ScreenCaptureUnavailable(self._terminal_error)
         self._restarted = True
         logger.warning("Portal session closed - attempting one restart")
         self.stop()
-        self.start()
+        try:
+            self.start()
+        except Exception as e:
+            self._terminal_error = (
+                f"Screen sharing could not be restored: {e}\n"
+                "Restart ARLO to share again."
+            )
+            raise ScreenCaptureUnavailable(self._terminal_error) from e
