@@ -29,8 +29,10 @@ from arc_helper.config import get_screen_resolution
 from arc_helper.config import get_settings
 from arc_helper.config import logger
 from arc_helper.database import get_database
+from arc_helper.ocr import get_cursor_position
 from arc_helper.ocr import get_ocr_engine
 from arc_helper.ocr import grab_screen
+from arc_helper.screen import phys_to_tk
 
 if sys.platform == "win32":
     try:
@@ -123,7 +125,8 @@ class RegionSelector:
         """Update overlay position and size."""
         if self.overlay and self.overlay.winfo_exists():
             self.overlay.geometry(
-                f"{self.width.get()}x{self.height.get()}+{self.x.get()}+{self.y.get()}"
+                f"{phys_to_tk(self.width.get())}x{phys_to_tk(self.height.get())}"
+                f"+{phys_to_tk(self.x.get())}+{phys_to_tk(self.y.get())}"
             )
 
     def hide_overlay(self) -> None:
@@ -272,10 +275,13 @@ class TooltipCaptureConfig:
         #     offset_x = self.offset_x.get()
         offset_x = self.offset_x.get()
 
-        left = x + offset_x
-        top = y + self.offset_y.get()
+        left = x + phys_to_tk(offset_x)
+        top = y + phys_to_tk(self.offset_y.get())
 
-        self.overlay.geometry(f"{self.width.get()}x{self.height.get()}+{left}+{top}")
+        self.overlay.geometry(
+            f"{phys_to_tk(self.width.get())}x{phys_to_tk(self.height.get())}"
+            f"+{left}+{top}"
+        )
 
     def stop_tracking(self) -> None:
         """Stop tracking and hide overlay."""
@@ -291,12 +297,8 @@ class TooltipCaptureConfig:
     def capture_at_cursor(self) -> tuple[Image.Image, int, int] | None:
         """Capture the area at current cursor position."""
 
-        try:
-            root = self.parent.winfo_toplevel()
-            cursor_x = root.winfo_pointerx()
-            cursor_y = root.winfo_pointery()
-        except tk.TclError:
-            return None
+        cursor = get_cursor_position()
+        cursor_x, cursor_y = cursor.x, cursor.y
 
         _screen_width, _ = get_screen_resolution()
 

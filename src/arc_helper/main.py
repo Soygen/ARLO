@@ -67,14 +67,15 @@ class DebugOverlay:
     def _update_position(self):
         """Update overlay position to follow cursor."""
         try:
-            from src.arc_helper.ocr import get_cursor_position
+            from arc_helper.ocr import get_cursor_position
+            from arc_helper.screen import phys_to_tk
 
             cursor = get_cursor_position()
 
-            x = cursor.x + self.settings.tooltip_capture.offset_x
-            y = cursor.y + self.settings.tooltip_capture.offset_y
-            w = self.settings.tooltip_capture.width
-            h = self.settings.tooltip_capture.height
+            x = phys_to_tk(cursor.x + self.settings.tooltip_capture.offset_x)
+            y = phys_to_tk(cursor.y + self.settings.tooltip_capture.offset_y)
+            w = phys_to_tk(self.settings.tooltip_capture.width)
+            h = phys_to_tk(self.settings.tooltip_capture.height)
 
             self.window.geometry(f"{w}x{h}+{x}+{y}")
         except Exception:  # noqa: BLE001

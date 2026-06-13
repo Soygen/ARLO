@@ -10,6 +10,7 @@ from .clickthrough import make_click_through
 from .config import get_dpi_scale
 from .config import get_settings
 from .database import Item
+from .screen import phys_to_tk
 
 # Action colors
 ACTION_COLORS: dict[str, str] = {
@@ -212,7 +213,9 @@ class OverlayWindow:
             self.notes_label.config(text="Item not in database")
 
         # Position and show
-        self.window.geometry(f"+{self.overlay_x}+{self.overlay_y}")
+        self.window.geometry(
+            f"+{phys_to_tk(self.overlay_x)}+{phys_to_tk(self.overlay_y)}"
+        )
         self.window.deiconify()
         self.window.lift()
 
