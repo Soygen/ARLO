@@ -5,9 +5,11 @@ Request-style methods deliver results via a Response signal on a request
 object whose path is predictable from our unique bus name + handle_token.
 """
 
-import contextlib
+import itertools
 import os
 import threading
+import time
+from collections.abc import Callable
 
 import gi
 
@@ -31,23 +33,37 @@ PERSIST_UNTIL_REVOKED = 2
 RESPONSE_TIMEOUT_S = 10.0
 DIALOG_TIMEOUT_S = 120.0  # Start() may wait on the user clicking the dialog
 
+_instance_counter = itertools.count(1)
+
 
 class PortalError(RuntimeError):
     """A portal request failed or was cancelled."""
 
 
 class ScreenCastSession:
-    """One ScreenCast session: handshake, stream node, pipewire fd."""
+    """One ScreenCast session: handshake, stream node, pipewire fd.
+
+    `closed` is set when the compositor or user ends the cast (e.g. KDE's
+    "stop sharing"); the consumer should then close() and create a fresh
+    session. It is NOT set by our own close().
+    """
 
     def __init__(self, restore_token: str | None = None):
         self.restore_token = restore_token
         self.new_restore_token: str | None = None
         self.node_id: int | None = None
         self.stream_props: dict = {}
-        self.pipewire_fd: int = -1
+        self.pipewire_fd: int = -1  # dup'd from the portal; ours to close (pipewiresrc dups again internally)
         self.closed = threading.Event()  # compositor/user ended the cast
 
-        self._bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+        try:
+            self._bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+        except GLib.Error as e:
+            msg = (
+                "Cannot reach the D-Bus session bus. "
+                "ARLO's Wayland capture requires a desktop session."
+            )
+            raise PortalError(msg) from e
         # Signal callbacks only fire while something iterates the default
         # GLib main context; run a main loop in a daemon thread.
         self._loop = GLib.MainLoop()
@@ -55,9 +71,18 @@ class ScreenCastSession:
         self._counter = 0
         self._session_handle: str | None = None
         self._closed_sub: int | None = None
+        self._app_token = f"arlo{next(_instance_counter)}"
+        self._abort = threading.Event()
 
     def open(self) -> None:
-        """Run the full handshake. May block on the screen-share dialog."""
+        """Run the full handshake. May block on the screen-share dialog.
+
+        One-shot: create a new instance to reopen. On failure, call close()
+        to release the partially-created session.
+        """
+        if self._loop_thread is not None:
+            msg = "Session already opened; create a new ScreenCastSession"
+            raise PortalError(msg)
         self._loop_thread = threading.Thread(
             target=self._loop.run, name="arlo-glib-loop", daemon=True
         )
@@ -70,7 +95,7 @@ class ScreenCastSession:
                 (
                     {
                         "handle_token": GLib.Variant("s", token),
-                        "session_handle_token": GLib.Variant("s", "arlo"),
+                        "session_handle_token": GLib.Variant("s", self._app_token),
                     },
                 ),
             ),
@@ -120,27 +145,32 @@ class ScreenCastSession:
             f"ScreenCast stream: node {self.node_id}, props {self.stream_props}"
         )
 
-        reply, fd_list = self._bus.call_with_unix_fd_list_sync(
-            PORTAL_BUS,
-            PORTAL_OBJECT,
-            SCREENCAST_IFACE,
-            "OpenPipeWireRemote",
-            GLib.Variant("(oa{sv})", (self._session_handle, {})),
-            GLib.VariantType("(h)"),
-            Gio.DBusCallFlags.NONE,
-            5000,
-            None,
-            None,
-        )
+        try:
+            reply, fd_list = self._bus.call_with_unix_fd_list_sync(
+                PORTAL_BUS,
+                PORTAL_OBJECT,
+                SCREENCAST_IFACE,
+                "OpenPipeWireRemote",
+                GLib.Variant("(oa{sv})", (self._session_handle, {})),
+                GLib.VariantType("(h)"),
+                Gio.DBusCallFlags.NONE,
+                5000,
+                None,
+                None,
+            )
+        except GLib.Error as e:
+            msg = "OpenPipeWireRemote failed (is PipeWire running?)"
+            raise PortalError(msg) from e
         # 'h' is an index into the fd list; .get() returns a dup'd fd we own
         self.pipewire_fd = fd_list.get(reply.unpack()[0])
 
     def close(self) -> None:
+        self._abort.set()
         if self._closed_sub is not None:
             self._bus.signal_unsubscribe(self._closed_sub)
             self._closed_sub = None
         if self._session_handle is not None:
-            with contextlib.suppress(GLib.Error):
+            try:
                 self._bus.call_sync(
                     PORTAL_BUS,
                     self._session_handle,
@@ -152,19 +182,24 @@ class ScreenCastSession:
                     1000,
                     None,
                 )
+            except GLib.Error as e:
+                logger.debug(f"Portal session close failed (already gone?): {e}")
             self._session_handle = None
         if self.pipewire_fd >= 0:
             os.close(self.pipewire_fd)
             self.pipewire_fd = -1
         if self._loop.is_running():
             self._loop.quit()
+        if self._loop_thread is not None:
+            self._loop_thread.join(timeout=2.0)
+            self._loop_thread = None
 
     # ------------------------------------------------------------------
 
-    def _request(self, method, build_args, timeout: float = RESPONSE_TIMEOUT_S) -> dict:
+    def _request(self, method: str, build_args: Callable[[str], GLib.Variant], timeout: float = RESPONSE_TIMEOUT_S) -> dict:
         """Call a request-style portal method, wait for its Response signal."""
         self._counter += 1
-        token = f"arlo{self._counter}"
+        token = f"{self._app_token}_{self._counter}"
         sender = self._bus.get_unique_name().removeprefix(":").replace(".", "_")
         request_path = f"/org/freedesktop/portal/desktop/request/{sender}/{token}"
 
@@ -187,20 +222,33 @@ class ScreenCastSession:
             on_response,
         )
         try:
-            self._bus.call_sync(
-                PORTAL_BUS,
-                PORTAL_OBJECT,
-                SCREENCAST_IFACE,
-                method,
-                build_args(token),
-                GLib.VariantType("(o)"),
-                Gio.DBusCallFlags.NONE,
-                5000,
-                None,
-            )
-            if not event.wait(timeout):
-                msg = f"{method}: portal did not respond within {timeout:.0f}s"
-                raise PortalError(msg)
+            try:
+                self._bus.call_sync(
+                    PORTAL_BUS,
+                    PORTAL_OBJECT,
+                    SCREENCAST_IFACE,
+                    method,
+                    build_args(token),
+                    GLib.VariantType("(o)"),
+                    Gio.DBusCallFlags.NONE,
+                    5000,
+                    None,
+                )
+            except GLib.Error as e:
+                msg = (
+                    f"{method}: portal call failed - is xdg-desktop-portal "
+                    "running with a backend for your desktop "
+                    "(xdg-desktop-portal-kde/-gnome/-wlr)?"
+                )
+                raise PortalError(msg) from e
+            deadline = time.monotonic() + timeout
+            while not event.wait(0.2):
+                if self._abort.is_set():
+                    msg = f"{method}: session closed during request"
+                    raise PortalError(msg)
+                if time.monotonic() >= deadline:
+                    msg = f"{method}: portal did not respond within {timeout:.0f}s"
+                    raise PortalError(msg)
         finally:
             self._bus.signal_unsubscribe(sub)
 
