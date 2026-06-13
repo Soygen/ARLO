@@ -16,6 +16,7 @@ import pytesseract
 from PIL import Image
 from PIL import ImageTk
 
+from arc_helper.clickthrough import make_click_through
 from arc_helper.config import APP_DIR
 from arc_helper.config import OverlaySettings
 from arc_helper.config import ScanSettings
@@ -114,6 +115,7 @@ class RegionSelector:
         self.overlay.attributes("-alpha", 0.4)
         self.overlay.overrideredirect(boolean=True)
         self.overlay.config(bg=self.color)
+        make_click_through(self.overlay)
 
         self._update_overlay()
 
@@ -222,6 +224,7 @@ class TooltipCaptureConfig:
         self.overlay.attributes("-alpha", 0.3)
         self.overlay.overrideredirect(boolean=True)
         self.overlay.config(bg="green")
+        make_click_through(self.overlay)
 
         self.is_tracking = True
         self._track_cursor()

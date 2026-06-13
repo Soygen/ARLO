@@ -18,6 +18,7 @@ from threading import Thread
 
 from dotenv import load_dotenv
 
+from arc_helper.clickthrough import make_click_through
 from arc_helper.config import APP_DIR
 from arc_helper.config import SettingsManager
 from arc_helper.config import get_settings
@@ -58,6 +59,7 @@ class DebugOverlay:
         self.window.attributes("-alpha", 0.3)  # Semi-transparent
         self.window.overrideredirect(boolean=True)
         self.window.config(bg="red")
+        make_click_through(self.window)
 
         # Update position periodically
         self._update_position()
