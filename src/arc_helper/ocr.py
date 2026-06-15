@@ -45,6 +45,14 @@ class OCREngine:
     # The trigger word we're looking for
     TRIGGER_WORD = "INVENTORY"
 
+    # Item names render as uppercase letters and Roman numerals. Restricting
+    # OCR to this set stops "II" being misread as "Il"/"1l" and the trailing
+    # numeral from collapsing to "I" (which silently picks the wrong tier).
+    # No space: pytesseract splits the config on spaces, so a space in the
+    # whitelist breaks it. Words run together ("HULLCRACKERIV"); the database
+    # lookup is space-insensitive, so that still resolves correctly.
+    NAME_WHITELIST = string.ascii_uppercase
+
     def __init__(self):
         """Initialize OCR engine."""
         settings = get_settings()
@@ -416,24 +424,63 @@ class OCREngine:
         if self.debug_mode:
             processed.save(self.debug_dir / "tooltip_capture_processed.png")
 
-        # Extract all text from the tooltip area
+        # Extract the item name from the tooltip area
         try:
-            # Use PSM 6 for block of text, then parse out the item name
-            text = pytesseract.image_to_string(processed, config="--psm 6")
-
-            logger.debug(f"Raw tooltip OCR:\n{text}")
-
-            # Parse the text to find the item name
-            item_name = self.parse_item_name_from_tooltip(text)
-
-            if item_name:
-                logger.debug(f"Extracted item name: '{item_name}'")
-                return item_name
-
+            item_name = self._read_item_name(processed)
         except pytesseract.TesseractError as e:
             logger.error(f"OCR Error: {e}")
+            return None
 
-        return None
+        if item_name:
+            logger.debug(f"Extracted item name: '{item_name}'")
+        return item_name
+
+    def _read_item_name(self, processed: Image.Image) -> str | None:
+        """Read the item name from a preprocessed tooltip via two OCR passes.
+
+        The plain pass locates the name block (the leading mostly-uppercase
+        lines, set off from the lower-case description by case). A second
+        uppercase-whitelisted pass supplies the text with Roman numerals
+        intact - a plain pass reads "II" as "Il" or drops it to "I", which
+        silently selects the wrong item tier.
+        """
+        plain = pytesseract.image_to_string(processed, config="--psm 6")
+        logger.debug(f"Raw tooltip OCR:\n{plain}")
+
+        line_count = self._count_name_lines(plain)
+        if line_count == 0:
+            return None
+
+        whitelisted = pytesseract.image_to_string(
+            processed,
+            config=f"--psm 6 -c tessedit_char_whitelist={self.NAME_WHITELIST}",
+        )
+        name_lines = [ln.strip() for ln in whitelisted.split("\n") if ln.strip()]
+        return self._clean_text(" ".join(name_lines[:line_count])) or None
+
+    @staticmethod
+    def _upper_ratio(text: str) -> float:
+        """Fraction of alphabetic characters that are uppercase."""
+        alpha = [c for c in text if c.isalpha()]
+        return sum(c.isupper() for c in alpha) / len(alpha) if alpha else 0.0
+
+    @classmethod
+    def _count_name_lines(cls, text: str) -> int:
+        """Count the leading mostly-uppercase lines that form the item name.
+
+        Stops at the first lower-case line (the description), tolerating a
+        stray mis-cased character (e.g. "II" read as "Il") via a ratio.
+        """
+        count = 0
+        started = False
+        for raw_line in text.split("\n"):
+            line = cls._clean_text(raw_line)
+            if len(line) >= 2 and cls._upper_ratio(line) >= 0.6:
+                count += 1
+                started = True
+            elif started or len(line) >= 2:
+                break
+        return count
 
     def parse_item_name_from_tooltip(self, text: str) -> str | None:
         """
