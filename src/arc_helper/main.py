@@ -3,12 +3,12 @@ ARLO - Main Application.
 Coordinates OCR scanning and overlay display.
 """
 
+import queue
 import sys
 import threading
 import time
 import tkinter as tk
 import traceback
-from contextlib import suppress
 from dataclasses import dataclass
 from dataclasses import field
 from enum import Enum
@@ -118,6 +118,12 @@ class Scanner:
     state: ScannerState = ScannerState.IDLE
     stats: ScannerStats = field(default_factory=ScannerStats)
     hotkey: HotkeyMonitor = field(default_factory=get_hotkey_monitor)
+
+    # UI updates are posted here for the main (GUI) thread to apply. tkinter
+    # is not thread-safe, and on Linux/Tcl root.after() called from this
+    # background thread silently never fires - so we marshal via a queue that
+    # Application drains on a main-thread timer.
+    ui_queue: "queue.Queue[tuple]" = field(default_factory=queue.Queue)
 
     # Cooldown tracking
     _last_shown_item: str = ""
@@ -280,27 +286,12 @@ class Scanner:
         self._last_shown_time = current_time
 
     def _show_overlay(self, item_name: str, recommendation: Item | None) -> None:
-        """Show overlay on main thread."""
-        self.root.after(0, lambda: self.overlay.show(item_name, recommendation))
+        """Queue an overlay update for the main (GUI) thread to apply."""
+        self.ui_queue.put(("overlay", item_name, recommendation))
 
     def _update_status(self, status: str) -> None:
-        """Update status display on main thread."""
-
-        def update():
-            if status == "scanning":
-                self.status.set_scanning()
-            elif status == "active":
-                self.status.set_active()
-            elif status == "hotkey":
-                self.status.set_hotkey()
-            elif status == "error":
-                self.status.set_error("Error")
-
-        try:
-            self.root.after(0, update)
-        except RuntimeError:
-            # Main loop may already be stopped during shutdown
-            pass
+        """Queue a status update for the main (GUI) thread to apply."""
+        self.ui_queue.put(("status", status))
 
 
 class Application:
@@ -327,16 +318,43 @@ class Application:
         if self.settings.show_capture_area:
             self.debug_overlay = DebugOverlay(self.root, self.settings)
 
-        # Create scanner
+        # Create scanner. The scanner thread posts UI updates to this queue;
+        # the main thread drains it in _pump_ui_queue (tkinter is single-thread).
+        self.ui_queue: queue.Queue[tuple] = queue.Queue()
         self.scanner = Scanner(
             root=self.root,
             overlay=self.overlay,
             status=self.status,
             db=self.db,
+            ui_queue=self.ui_queue,
         )
 
         # Bind close handler
         self.root.protocol("WM_DELETE_WINDOW", self.quit)
+
+    def _apply_status(self, status: str) -> None:
+        """Apply a status update to the StatusWindow (main thread only)."""
+        if status == "scanning":
+            self.status.set_scanning()
+        elif status == "active":
+            self.status.set_active()
+        elif status == "hotkey":
+            self.status.set_hotkey()
+        elif status == "error":
+            self.status.set_error("Error")
+
+    def _pump_ui_queue(self) -> None:
+        """Drain scanner UI messages on the main thread, then reschedule."""
+        try:
+            while True:
+                msg = self.ui_queue.get_nowait()
+                if msg[0] == "status":
+                    self._apply_status(msg[1])
+                elif msg[0] == "overlay":
+                    self.overlay.show(msg[1], msg[2])
+        except queue.Empty:
+            pass
+        self.root.after(50, self._pump_ui_queue)
 
     def run(self) -> None:
         """Start the application."""
@@ -378,6 +396,9 @@ class Application:
 
         # Start scanner
         self.scanner.start()
+
+        # Start the main-thread UI pump (must be scheduled from the main thread)
+        self._pump_ui_queue()
 
         # Run Tk mainloop
         try:
