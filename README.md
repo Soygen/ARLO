@@ -4,10 +4,7 @@
 
 A screen overlay tool for [Arc Raiders](https://store.steampowered.com/app/2073750/ARC_Raiders/) that detects items in your inventory and displays recommended actions (**keep**, **recycle**, **sell**) along with sell prices, stack sizes, and crafting details. The item database auto-syncs from the [MetaForge API](https://metaforge.app/arc-raiders) on every launch.
 
-![Example 1](static/ARLO_01.png)
-![Example 2](static/ARLO_02.png)
-![Example 3](static/ARLO_03.png)
-
+[![Example 1](https://github.com/Soygen/ARLO/raw/master/static/ARLO_01.png)](/Soygen/ARLO/blob/master/static/ARLO_01.png) [![Example 2](https://github.com/Soygen/ARLO/raw/master/static/ARLO_02.png)](/Soygen/ARLO/blob/master/static/ARLO_02.png) [![Example 3](https://github.com/Soygen/ARLO/raw/master/static/ARLO_03.png)](/Soygen/ARLO/blob/master/static/ARLO_03.png)
 
 ---
 
@@ -52,10 +49,12 @@ The overlay popup displays:
 ## Requirements
 
 ### Pre-built Release
+
 - Windows 10/11
 - Arc Raiders running in **borderless windowed** or **windowed** mode (not exclusive fullscreen)
 
 ### Running from Source
+
 - Windows 10/11, or Linux (X11 or Wayland)
 - Python 3.11+
 - [uv](https://github.com/astral-sh/uv) package manager
@@ -76,30 +75,35 @@ The release includes all dependencies, including Tesseract OCR. The item databas
 ### Option 2: From Source
 
 1. Clone the repository:
-   ```
-   git clone https://github.com/Soygen/ARLO.git
-   cd ARLO
-   ```
+
+```
+git clone https://github.com/Soygen/ARLO.git
+cd ARLO
+```
 
 2. Install dependencies:
-   ```
-   uv sync --all-extras
-   ```
+
+```
+uv sync --all-extras
+```
 
 3. Install [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki):
+
    - **Windows:** install to `C:\Program Files\Tesseract-OCR\` (or set `TESSERACT_PATH` in `.env`)
    - **Linux:** `sudo apt install tesseract-ocr` or `nix-env -i tesseract` (must be on `$PATH`)
-- **NixOS:** Use the provided flake (see [NixOS](#nixos) below)
+   - **NixOS:** Use the provided flake (see [NixOS](#nixos) below)
 
 4. Copy the example config:
-   ```
-   copy .env.example .env
-   ```
+
+```
+copy .env.example .env
+```
 
 5. Launch the app:
-   ```
-   uv run arc-helper
-   ```
+
+```
+uv run arc-helper
+```
 
 The item database updates automatically on first launch. No separate step needed.
 
@@ -108,15 +112,18 @@ The item database updates automatically on first launch. No separate step needed
 The project includes a `flake.nix` so you can build the Python dependency `evdev` (required by `pynput`) with kernel headers and a C compiler, and get X11 libraries for screen capture. From the repo root:
 
 1. Enter the dev shell (first time will create `flake.lock`):
-   ```
-   nix develop
-   ```
+
+```
+nix develop
+```
+
 2. Install dependencies and run the app:
-   ```
-   uv sync --all-extras
-   cp -n .env.example .env   # if you don't have .env yet
-   uv run arc-helper
-   ```
+
+```
+uv sync --all-extras
+cp -n .env.example .env   # if you don't have .env yet
+uv run arc-helper
+```
 
 To run without entering the shell each time: `nix develop --command bash -c 'uv run arc-helper'`.
 
@@ -125,22 +132,27 @@ To run without entering the shell each time: `nix develop --command bash -c 'uv 
 On a Wayland session ARLO captures the screen through the desktop portal
 (xdg-desktop-portal + PipeWire) instead of X11. Requirements:
 
-- System packages (Arch): `sudo pacman -S --needed cairo pkgconf gcc gstreamer gst-plugins-base gst-plugin-pipewire`
-  (Debian/Ubuntu: `sudo apt install libcairo2-dev libgirepository1.0-dev pkg-config gcc gstreamer1.0-pipewire gstreamer1.0-plugins-base`)
+- System packages (Arch): `sudo pacman -S --needed cairo pkgconf gcc gstreamer gst-plugins-base gst-plugin-pipewire` (Debian/Ubuntu: `sudo apt install libcairo2-dev libgirepository1.0-dev pkg-config gcc gstreamer1.0-pipewire gstreamer1.0-plugins-base`)
 - `xdg-desktop-portal` plus your desktop's backend (`xdg-desktop-portal-kde`,
   `-gnome` or `-wlr`) — preinstalled on KDE/GNOME.
 - Python deps: `uv sync --all-extras` (builds PyGObject).
-- Hold-to-scan hotkey: reading the keyboard needs your user in the `input`
-  group: `sudo usermod -aG input $USER` (log out and back in). Without it the
+- Hold-to-scan hotkey: reading the keyboard needs your user in the `input` group: `sudo usermod -aG input $USER` (log out and back in). Without it the
   hotkey is disabled but everything else works. The key is `HOTKEY_KEY` in
   `.env` (default `KEY_RIGHTCTRL` — hold Right Ctrl).
 
 On first launch your desktop shows a screen-share dialog once; pick your
 monitor. The approval is remembered (`.screencast_restore_token`).
 
+Overlay and cursor positions are correctly mapped under fractional display
+scaling (e.g. 4K @ 175%) — no extra configuration needed.
+
 Notes and limitations:
+
 - The game must run under XWayland (Proton's default) for cursor-relative
   tooltip detection; cursor position over native Wayland windows is stale.
+- Tooltip capture is cursor-relative, while the game's info panel anchors to
+  the hovered item, so framing isn't pixel-perfect on Wayland — it works,
+  but you may see occasional "clamped" warnings in the log.
 - Force a backend with `SCREEN_BACKEND=x11|wayland` in `.env`.
 - Diagnostic: `uv run python -m arc_helper.screen.diag` prints the backend,
   resolution, scale and cursor, and saves a test capture to `diag_frame.png`.
@@ -173,6 +185,7 @@ uv run python update_db.py --source wiki  # Force wiki scraper instead of API
 ```
 
 Or use the makefile shortcuts:
+
 ```
 make update-db          # Full update
 make update-db-merge    # Merge mode
@@ -189,7 +202,7 @@ The included workflow at `.github/workflows/update-db.yml` can also sync the dat
 
 No secrets or extra configuration needed.
 
-For more details on how the updater works, CSV format, and manual database management, see [docs/ITEMS.md](docs/ITEMS.md).
+For more details on how the updater works, CSV format, and manual database management, see [docs/ITEMS.md](https://github.com/Soygen/ARLO/blob/master/docs/ITEMS.md).
 
 ---
 
@@ -204,7 +217,7 @@ uv run python build.py
 
 Output lands in `dist/ArcRaidersHelper/` containing the exe, calibration tool, bundled Tesseract, config files, item database, and the updater script. Zip that folder to share with anyone - no Python install needed on their end.
 
-See [docs/BUILD.md](docs/BUILD.md) for full build details.
+See [docs/BUILD.md](https://github.com/Soygen/ARLO/blob/master/docs/BUILD.md) for full build details.
 
 ---
 
@@ -212,16 +225,16 @@ See [docs/BUILD.md](docs/BUILD.md) for full build details.
 
 On first launch the app detects your screen resolution and loads a matching profile if one exists:
 
-| Resolution | Aspect Ratio | Status |
-|---|---|---|
-| 5120x2160 | 21:9 DQHD Ultrawide | ✅ Configured |
-| 3840x2160 | 16:9 4K UHD | ✅ Configured |
-| 3440x1440 | 21:9 Ultrawide QHD | ✅ Configured |
-| 2560x1440 | 16:9 QHD | ✅ Configured |
-| 2560x1080 | 21:9 Ultrawide FHD | ✅ Configured |
-| 1920x1080 | 16:9 Full HD | ✅ Configured |
+| Resolution | Aspect Ratio        | Status       |
+| ---------- | -------------------- | ------------ |
+| 5120x2160  | 21:9 DQHD Ultrawide  | ✅ Configured |
+| 3840x2160  | 16:9 4K UHD          | ✅ Configured |
+| 3440x1440  | 21:9 Ultrawide QHD   | ✅ Configured |
+| 2560x1440  | 16:9 QHD             | ✅ Configured |
+| 2560x1080  | 21:9 Ultrawide FHD   | ✅ Configured |
+| 1920x1080  | 16:9 Full HD         | ✅ Configured |
 
-If your resolution isn't listed, run the [Calibration tool](docs/CALIBRATION.md):
+If your resolution isn't listed, run the [Calibration tool](https://github.com/Soygen/ARLO/blob/master/docs/CALIBRATION.md):
 
 ```
 uv run arc-calibrate
@@ -231,11 +244,11 @@ uv run arc-calibrate
 
 ## Configuration
 
-All settings live in the `.env` file. See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for details on scan regions, overlay position, display time, and debug mode.
+All settings live in the `.env` file. See [docs/CONFIGURATION.md](https://github.com/Soygen/ARLO/blob/master/docs/CONFIGURATION.md) for details on scan regions, overlay position, display time, and debug mode.
 
 **Debugging:** In `.env` set `DEBUG_MODE=true` for verbose logs and `SHOW_CAPTURE_AREA=true` to show the trigger and tooltip regions on screen. Restart ARLO after changing `.env`.
 
-**Quitting:** If you started ARLO from a terminal, press **Ctrl+C**. You can also **right-click the status box** (the “Scanning…” / “ARLO Status” window) to quit, or run `pkill -f arc-helper` in a terminal.
+**Quitting:** If you started ARLO from a terminal, press **Ctrl+C**. You can also **right-click the status box** (the "Scanning…" / "ARLO Status" window) to quit, or run `pkill -f arc-helper` in a terminal.
 
 ---
 
@@ -260,7 +273,8 @@ ARLO/
 │   ├── overlay.py                  # Tkinter overlay (action + price + stack)
 │   ├── calibrate.py                # GUI calibration tool
 │   ├── resolution_profiles.py      # Resolution presets
-│   └── resolutions.json            # Pre-configured resolution profiles
+│   ├── resolutions.json            # Pre-configured resolution profiles
+│   └── screen/                     # Screen capture backends (mss / Wayland portal)
 ├── docs/
 │   ├── ITEMS.md                    # Item database & updater docs
 │   ├── CALIBRATION.md              # Calibration guide
@@ -276,13 +290,16 @@ ARLO/
 ## Contributing
 
 ### Item Database
+
 Run `uv run python update_db.py --dry-run` to preview the API data. If you spot incorrect auto-generated actions, edit `items.csv` directly and use `--merge` on future updates to preserve your fixes.
 
 ### Resolution Profiles
+
 If you calibrate for a resolution that isn't pre-configured, add it to `resolutions.json` and submit a PR.
 
 ### Bug Reports
-Please include your screen resolution, debug images from the `debug/` folder (enable `DEBUG_MODE=true` in `.env`), and `arc_helper.log`.
+
+Please include your screen resolution, debug images from the `debug/` folder (enable `DEBUG_MODE=true` in `.env`), and `arc_helper.log`. On Linux, please also note whether you're running X11 or Wayland (`echo $XDG_SESSION_TYPE`).
 
 ---
 
