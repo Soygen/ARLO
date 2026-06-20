@@ -56,7 +56,7 @@ The overlay popup displays:
 - Arc Raiders running in **borderless windowed** or **windowed** mode (not exclusive fullscreen)
 
 ### Running from Source
-- Windows 10/11, or Linux (X11)
+- Windows 10/11, or Linux (X11 or Wayland)
 - Python 3.11+
 - [uv](https://github.com/astral-sh/uv) package manager
 - [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki) — on Linux: `sudo apt install tesseract-ocr` / `nix-env -i tesseract`
@@ -120,7 +120,30 @@ The project includes a `flake.nix` so you can build the Python dependency `evdev
 
 To run without entering the shell each time: `nix develop --command bash -c 'uv run arc-helper'`.
 
-**Note:** On Linux, ARLO uses X11 for screen capture (mss). Use an X11 session (e.g. "Plasma (X11)" at login) rather than Wayland.
+### Linux: Wayland
+
+On a Wayland session ARLO captures the screen through the desktop portal
+(xdg-desktop-portal + PipeWire) instead of X11. Requirements:
+
+- System packages (Arch): `sudo pacman -S --needed cairo pkgconf gcc gstreamer gst-plugins-base gst-plugin-pipewire`
+  (Debian/Ubuntu: `sudo apt install libcairo2-dev libgirepository1.0-dev pkg-config gcc gstreamer1.0-pipewire gstreamer1.0-plugins-base`)
+- `xdg-desktop-portal` plus your desktop's backend (`xdg-desktop-portal-kde`,
+  `-gnome` or `-wlr`) — preinstalled on KDE/GNOME.
+- Python deps: `uv sync --all-extras` (builds PyGObject).
+- Hold-to-scan hotkey: reading the keyboard needs your user in the `input`
+  group: `sudo usermod -aG input $USER` (log out and back in). Without it the
+  hotkey is disabled but everything else works. The key is `HOTKEY_KEY` in
+  `.env` (default `KEY_RIGHTCTRL` — hold Right Ctrl).
+
+On first launch your desktop shows a screen-share dialog once; pick your
+monitor. The approval is remembered (`.screencast_restore_token`).
+
+Notes and limitations:
+- The game must run under XWayland (Proton's default) for cursor-relative
+  tooltip detection; cursor position over native Wayland windows is stale.
+- Force a backend with `SCREEN_BACKEND=x11|wayland` in `.env`.
+- Diagnostic: `uv run python -m arc_helper.screen.diag` prints the backend,
+  resolution, scale and cursor, and saves a test capture to `diag_frame.png`.
 
 ---
 

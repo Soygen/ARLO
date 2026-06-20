@@ -3,13 +3,9 @@ OCR module for ARLO.
 Screen capture and text extraction using Tesseract.
 """
 
-import ctypes
 import re
 import string
-import sys
-import typing
 
-import mss
 import numpy as np
 import pytesseract
 from PIL import Image
@@ -20,22 +16,14 @@ from .config import RegionMixin
 from .config import get_screen_resolution
 from .config import get_settings
 from .config import logger
+from .screen import Point
+from .screen import ScreenCaptureUnavailable
+from .screen import get_backend
 
 
 def grab_screen(bbox: tuple[int, int, int, int]) -> Image.Image:
-    """Capture a screen region using mss (X11 on Linux, native on Windows)."""
-    left, top, right, bottom = bbox
-    with mss.mss() as sct:
-        monitor = {"top": top, "left": left, "width": right - left, "height": bottom - top}
-        screenshot = sct.grab(monitor)
-        return Image.frombytes("RGB", screenshot.size, screenshot.rgb)
-
-
-class Point(BaseModel):
-    """Screen coordinates."""
-
-    x: int
-    y: int
+    """Capture a screen region via the active screen backend."""
+    return get_backend().grab(bbox)
 
 
 class OCRResult(BaseModel):
@@ -48,19 +36,7 @@ class OCRResult(BaseModel):
 
 def get_cursor_position() -> Point:
     """Get current cursor position on screen in physical pixels."""
-    if sys.platform == "win32":
-        # Ensure we're DPI aware to get physical coordinates
-        ctypes.windll.user32.SetProcessDPIAware()
-
-        class POINT(ctypes.Structure):
-            _fields_: typing.ClassVar = [("x", ctypes.c_long), ("y", ctypes.c_long)]
-
-        pt = POINT()
-        ctypes.windll.user32.GetCursorPos(ctypes.byref(pt))
-        return Point(x=pt.x, y=pt.y)
-    from pynput import mouse as pynput_mouse
-    pos = pynput_mouse.Controller().position
-    return Point(x=int(pos[0]), y=int(pos[1]))
+    return get_backend().cursor_position()
 
 
 class OCREngine:
@@ -68,6 +44,14 @@ class OCREngine:
 
     # The trigger word we're looking for
     TRIGGER_WORD = "INVENTORY"
+
+    # Item names render as uppercase letters and Roman numerals. Restricting
+    # OCR to this set stops "II" being misread as "Il"/"1l" and the trailing
+    # numeral from collapsing to "I" (which silently picks the wrong tier).
+    # No space: pytesseract splits the config on spaces, so a space in the
+    # whitelist breaks it. Words run together ("HULLCRACKERIV"); the database
+    # lookup is space-insensitive, so that still resolves correctly.
+    NAME_WHITELIST = string.ascii_uppercase
 
     def __init__(self):
         """Initialize OCR engine."""
@@ -94,6 +78,8 @@ class OCREngine:
         """Capture a screen region."""
         try:
             return grab_screen(region.bbox)
+        except ScreenCaptureUnavailable:
+            raise  # terminal: must reach the scanner's error handling, not become a black frame
         except OSError as e:
             logger.error(f"Screen grab failed for region {region.bbox}: {e}")
             # Return a dummy image to avoid crashing
@@ -147,6 +133,8 @@ class OCREngine:
 
         try:
             image = grab_screen((left, top, right, bottom))
+        except ScreenCaptureUnavailable:
+            raise  # terminal: must reach the scanner's error handling
         except OSError as e:
             logger.error(
                 f"Screen grab failed at bbox ({left}, {top}, {right}, {bottom}): {e}"
@@ -436,24 +424,63 @@ class OCREngine:
         if self.debug_mode:
             processed.save(self.debug_dir / "tooltip_capture_processed.png")
 
-        # Extract all text from the tooltip area
+        # Extract the item name from the tooltip area
         try:
-            # Use PSM 6 for block of text, then parse out the item name
-            text = pytesseract.image_to_string(processed, config="--psm 6")
-
-            logger.debug(f"Raw tooltip OCR:\n{text}")
-
-            # Parse the text to find the item name
-            item_name = self.parse_item_name_from_tooltip(text)
-
-            if item_name:
-                logger.debug(f"Extracted item name: '{item_name}'")
-                return item_name
-
+            item_name = self._read_item_name(processed)
         except pytesseract.TesseractError as e:
             logger.error(f"OCR Error: {e}")
+            return None
 
-        return None
+        if item_name:
+            logger.debug(f"Extracted item name: '{item_name}'")
+        return item_name
+
+    def _read_item_name(self, processed: Image.Image) -> str | None:
+        """Read the item name from a preprocessed tooltip via two OCR passes.
+
+        The plain pass locates the name block (the leading mostly-uppercase
+        lines, set off from the lower-case description by case). A second
+        uppercase-whitelisted pass supplies the text with Roman numerals
+        intact - a plain pass reads "II" as "Il" or drops it to "I", which
+        silently selects the wrong item tier.
+        """
+        plain = pytesseract.image_to_string(processed, config="--psm 6")
+        logger.debug(f"Raw tooltip OCR:\n{plain}")
+
+        line_count = self._count_name_lines(plain)
+        if line_count == 0:
+            return None
+
+        whitelisted = pytesseract.image_to_string(
+            processed,
+            config=f"--psm 6 -c tessedit_char_whitelist={self.NAME_WHITELIST}",
+        )
+        name_lines = [ln.strip() for ln in whitelisted.split("\n") if ln.strip()]
+        return self._clean_text(" ".join(name_lines[:line_count])) or None
+
+    @staticmethod
+    def _upper_ratio(text: str) -> float:
+        """Fraction of alphabetic characters that are uppercase."""
+        alpha = [c for c in text if c.isalpha()]
+        return sum(c.isupper() for c in alpha) / len(alpha) if alpha else 0.0
+
+    @classmethod
+    def _count_name_lines(cls, text: str) -> int:
+        """Count the leading mostly-uppercase lines that form the item name.
+
+        Stops at the first lower-case line (the description), tolerating a
+        stray mis-cased character (e.g. "II" read as "Il") via a ratio.
+        """
+        count = 0
+        started = False
+        for raw_line in text.split("\n"):
+            line = cls._clean_text(raw_line)
+            if len(line) >= 2 and cls._upper_ratio(line) >= 0.6:
+                count += 1
+                started = True
+            elif started or len(line) >= 2:
+                break
+        return count
 
     def parse_item_name_from_tooltip(self, text: str) -> str | None:
         """

@@ -14,6 +14,16 @@ from pydantic import Field
 from .config import get_settings
 
 
+def _match_key(name: str) -> str:
+    """Lowercase, alphanumeric-only key for OCR-tolerant name matching.
+
+    OCR frequently drops spaces ("IL TORO II" -> "ILTOROII") or appends stray
+    punctuation, so collapsing to alphanumerics lets those still match the
+    stored name. Roman-numeral tiers (I/V) survive, so variants stay distinct.
+    """
+    return "".join(c for c in name.lower() if c.isalnum())
+
+
 class Item(BaseModel):
     """Item model matching database schema."""
 
@@ -81,6 +91,17 @@ class Database:
                 (clean_name,),
             )
             row = cursor.fetchone()
+
+            # Whitespace/punctuation-insensitive exact match. OCR often drops
+            # spaces ("ILTOROII") or adds stray characters; this still resolves
+            # to the stored "Il Toro II" without the looseness of LIKE/fuzzy.
+            if not row:
+                target = _match_key(clean_name)
+                if target:
+                    for candidate in conn.execute("SELECT * FROM items"):
+                        if _match_key(candidate["name"]) == target:
+                            row = candidate
+                            break
 
             # If no exact match, try LIKE match
             if not row:

@@ -3,13 +3,12 @@ ARLO - Main Application.
 Coordinates OCR scanning and overlay display.
 """
 
-import ctypes
+import queue
 import sys
 import threading
 import time
 import tkinter as tk
 import traceback
-from contextlib import suppress
 from dataclasses import dataclass
 from dataclasses import field
 from enum import Enum
@@ -19,6 +18,7 @@ from threading import Thread
 
 from dotenv import load_dotenv
 
+from arc_helper.clickthrough import make_click_through
 from arc_helper.config import APP_DIR
 from arc_helper.config import SettingsManager
 from arc_helper.config import get_settings
@@ -26,44 +26,16 @@ from arc_helper.config import logger
 from arc_helper.database import Database
 from arc_helper.database import Item
 from arc_helper.database import get_database
+from arc_helper.hotkey import HotkeyMonitor
+from arc_helper.hotkey import get_hotkey_monitor
 from arc_helper.ocr import OCREngineManager
 from arc_helper.ocr import get_ocr_engine
 from arc_helper.overlay import OverlayWindow
 from arc_helper.overlay import StatusWindow
 from arc_helper.resolution_profiles import get_profile_manager
+from arc_helper.screen import ScreenCaptureUnavailable
 
 load_dotenv(Path(__file__).with_name(".env"), override=False)
-
-# Linux: pynput keyboard listener state for Ctrl+Shift hotkey (started/stopped with Scanner)
-_linux_keys_pressed: set = set()
-_linux_key_listener = None
-
-
-def _linux_key_listener_start() -> None:
-    """Start background listener for modifier keys (Linux only)."""
-    global _linux_key_listener
-    if _linux_key_listener is not None:
-        return
-
-    from pynput import keyboard
-
-    def on_press(key):
-        _linux_keys_pressed.add(key)
-
-    def on_release(key):
-        _linux_keys_pressed.discard(key)
-
-    _linux_key_listener = keyboard.Listener(on_press=on_press, on_release=on_release)
-    _linux_key_listener.start()
-
-
-def _linux_key_listener_stop() -> None:
-    """Stop the modifier-key listener (Linux only)."""
-    global _linux_key_listener
-    if _linux_key_listener is not None:
-        _linux_key_listener.stop()
-        _linux_key_listener = None
-    _linux_keys_pressed.clear()
 
 
 class ScannerState(Enum):
@@ -88,6 +60,7 @@ class DebugOverlay:
         self.window.attributes("-alpha", 0.3)  # Semi-transparent
         self.window.overrideredirect(boolean=True)
         self.window.config(bg="red")
+        make_click_through(self.window)
 
         # Update position periodically
         self._update_position()
@@ -95,14 +68,15 @@ class DebugOverlay:
     def _update_position(self):
         """Update overlay position to follow cursor."""
         try:
-            from src.arc_helper.ocr import get_cursor_position
+            from arc_helper.ocr import get_cursor_position
+            from arc_helper.screen import phys_to_tk
 
             cursor = get_cursor_position()
 
-            x = cursor.x + self.settings.tooltip_capture.offset_x
-            y = cursor.y + self.settings.tooltip_capture.offset_y
-            w = self.settings.tooltip_capture.width
-            h = self.settings.tooltip_capture.height
+            x = phys_to_tk(cursor.x + self.settings.tooltip_capture.offset_x)
+            y = phys_to_tk(cursor.y + self.settings.tooltip_capture.offset_y)
+            w = phys_to_tk(self.settings.tooltip_capture.width)
+            h = phys_to_tk(self.settings.tooltip_capture.height)
 
             self.window.geometry(f"{w}x{h}+{x}+{y}")
         except Exception:  # noqa: BLE001
@@ -143,6 +117,13 @@ class Scanner:
     db: Database = field(default_factory=get_database)
     state: ScannerState = ScannerState.IDLE
     stats: ScannerStats = field(default_factory=ScannerStats)
+    hotkey: HotkeyMonitor = field(default_factory=get_hotkey_monitor)
+
+    # UI updates are posted here for the main (GUI) thread to apply. tkinter
+    # is not thread-safe, and on Linux/Tcl root.after() called from this
+    # background thread silently never fires - so we marshal via a queue that
+    # Application drains on a main-thread timer.
+    ui_queue: "queue.Queue[tuple]" = field(default_factory=queue.Queue)
 
     # Cooldown tracking
     _last_shown_item: str = ""
@@ -163,8 +144,7 @@ class Scanner:
 
         self._running = True
         self.state = ScannerState.IDLE
-        if sys.platform != "win32":
-            _linux_key_listener_start()
+        self.hotkey.start()
         self._scan_thread = Thread(target=self._scan_loop, daemon=True)
         self._scan_thread.start()
         logger.info("Scanner started")
@@ -173,10 +153,9 @@ class Scanner:
         """Stop the scanner."""
         self._running = False
         self.state = ScannerState.STOPPED
-        if sys.platform != "win32":
-            _linux_key_listener_stop()
         if self._scan_thread:
             self._scan_thread.join(timeout=2.0)
+        self.hotkey.stop()
         logger.info("Scanner stopped")
 
     def pause(self) -> None:
@@ -186,27 +165,6 @@ class Scanner:
     def resume(self) -> None:
         """Resume scanning."""
         self.state = ScannerState.IDLE
-
-    @staticmethod
-    def _is_hotkey_held() -> bool:
-        """Check if Ctrl+Shift are both held down."""
-        if sys.platform == "win32":
-            try:
-                user32 = ctypes.windll.user32
-                # VK_CONTROL = 0x11, VK_SHIFT = 0x10
-                # GetAsyncKeyState: high bit (0x8000) set = key is currently down
-                ctrl = user32.GetAsyncKeyState(0x11) & 0x8000
-                shift = user32.GetAsyncKeyState(0x10) & 0x8000
-                return bool(ctrl and shift)
-            except (AttributeError, OSError):
-                return False
-        # Linux: use pynput listener state (Key.ctrl, Key.ctrl_l, Key.ctrl_r, etc.)
-        from pynput.keyboard import Key
-        ctrl_keys = {Key.ctrl, Key.ctrl_l, Key.ctrl_r}
-        shift_keys = {Key.shift, Key.shift_l, Key.shift_r}
-        has_ctrl = any(k in _linux_keys_pressed for k in ctrl_keys)
-        has_shift = any(k in _linux_keys_pressed for k in shift_keys)
-        return has_ctrl and has_shift
 
     def _scan_loop(self) -> None:
         """Main scanning loop running in background thread."""
@@ -223,7 +181,7 @@ class Scanner:
                     break
 
                 # Check hotkey override (Ctrl+Shift)
-                hotkey_now = self._is_hotkey_held()
+                hotkey_now = self.hotkey.is_held()
 
                 # Phase 1: Check for trigger (INVENTORY) or hotkey
                 if self.state == ScannerState.IDLE:
@@ -283,6 +241,11 @@ class Scanner:
                     # Wait before next tooltip scan
                     time.sleep(settings.scan.tooltip_scan_interval)
 
+            except ScreenCaptureUnavailable as e:
+                logger.error(f"Screen capture lost permanently: {e}")
+                self._update_status("error")
+                self.state = ScannerState.STOPPED
+                break  # latch: no point scanning without capture
             except Exception as e:  # noqa: BLE001
                 logger.error(f"Scanner error: {e}")
                 self._update_status("error")
@@ -323,27 +286,12 @@ class Scanner:
         self._last_shown_time = current_time
 
     def _show_overlay(self, item_name: str, recommendation: Item | None) -> None:
-        """Show overlay on main thread."""
-        self.root.after(0, lambda: self.overlay.show(item_name, recommendation))
+        """Queue an overlay update for the main (GUI) thread to apply."""
+        self.ui_queue.put(("overlay", item_name, recommendation))
 
     def _update_status(self, status: str) -> None:
-        """Update status display on main thread."""
-
-        def update():
-            if status == "scanning":
-                self.status.set_scanning()
-            elif status == "active":
-                self.status.set_active()
-            elif status == "hotkey":
-                self.status.set_hotkey()
-            elif status == "error":
-                self.status.set_error("Error")
-
-        try:
-            self.root.after(0, update)
-        except RuntimeError:
-            # Main loop may already be stopped during shutdown
-            pass
+        """Queue a status update for the main (GUI) thread to apply."""
+        self.ui_queue.put(("status", status))
 
 
 class Application:
@@ -370,16 +318,43 @@ class Application:
         if self.settings.show_capture_area:
             self.debug_overlay = DebugOverlay(self.root, self.settings)
 
-        # Create scanner
+        # Create scanner. The scanner thread posts UI updates to this queue;
+        # the main thread drains it in _pump_ui_queue (tkinter is single-thread).
+        self.ui_queue: queue.Queue[tuple] = queue.Queue()
         self.scanner = Scanner(
             root=self.root,
             overlay=self.overlay,
             status=self.status,
             db=self.db,
+            ui_queue=self.ui_queue,
         )
 
         # Bind close handler
         self.root.protocol("WM_DELETE_WINDOW", self.quit)
+
+    def _apply_status(self, status: str) -> None:
+        """Apply a status update to the StatusWindow (main thread only)."""
+        if status == "scanning":
+            self.status.set_scanning()
+        elif status == "active":
+            self.status.set_active()
+        elif status == "hotkey":
+            self.status.set_hotkey()
+        elif status == "error":
+            self.status.set_error("Error")
+
+    def _pump_ui_queue(self) -> None:
+        """Drain scanner UI messages on the main thread, then reschedule."""
+        try:
+            while True:
+                msg = self.ui_queue.get_nowait()
+                if msg[0] == "status":
+                    self._apply_status(msg[1])
+                elif msg[0] == "overlay":
+                    self.overlay.show(msg[1], msg[2])
+        except queue.Empty:
+            pass
+        self.root.after(50, self._pump_ui_queue)
 
     def run(self) -> None:
         """Start the application."""
@@ -412,12 +387,18 @@ class Application:
         )
         logger.info("=" * 50)
         logger.info("Looking for INVENTORY screen...")
-        logger.info("Hold Ctrl+Shift to force tooltip scanning (vendor screens, etc.)")
+        logger.info(
+            "Hold the hotkey to force tooltip scanning (Ctrl+Shift; "
+            f"{get_settings().hotkey_key} on Wayland)"
+        )
         logger.info("Press Ctrl+C in terminal to quit")
         logger.info("=" * 50)
 
         # Start scanner
         self.scanner.start()
+
+        # Start the main-thread UI pump (must be scheduled from the main thread)
+        self._pump_ui_queue()
 
         # Run Tk mainloop
         try:
@@ -429,6 +410,9 @@ class Application:
         """Clean shutdown."""
         logger.info("\nShutting down...")
         self.scanner.stop()
+        from arc_helper.screen import reset_backend
+
+        reset_backend()  # release the portal session / PipeWire stream
         self.root.quit()
         self.root.destroy()
 

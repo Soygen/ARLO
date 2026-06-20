@@ -16,6 +16,7 @@ import pytesseract
 from PIL import Image
 from PIL import ImageTk
 
+from arc_helper.clickthrough import make_click_through
 from arc_helper.config import APP_DIR
 from arc_helper.config import OverlaySettings
 from arc_helper.config import ScanSettings
@@ -28,8 +29,10 @@ from arc_helper.config import get_screen_resolution
 from arc_helper.config import get_settings
 from arc_helper.config import logger
 from arc_helper.database import get_database
+from arc_helper.ocr import get_cursor_position
 from arc_helper.ocr import get_ocr_engine
 from arc_helper.ocr import grab_screen
+from arc_helper.screen import phys_to_tk
 
 if sys.platform == "win32":
     try:
@@ -114,6 +117,7 @@ class RegionSelector:
         self.overlay.attributes("-alpha", 0.4)
         self.overlay.overrideredirect(boolean=True)
         self.overlay.config(bg=self.color)
+        make_click_through(self.overlay)
 
         self._update_overlay()
 
@@ -121,7 +125,8 @@ class RegionSelector:
         """Update overlay position and size."""
         if self.overlay and self.overlay.winfo_exists():
             self.overlay.geometry(
-                f"{self.width.get()}x{self.height.get()}+{self.x.get()}+{self.y.get()}"
+                f"{phys_to_tk(self.width.get())}x{phys_to_tk(self.height.get())}"
+                f"+{phys_to_tk(self.x.get())}+{phys_to_tk(self.y.get())}"
             )
 
     def hide_overlay(self) -> None:
@@ -222,6 +227,7 @@ class TooltipCaptureConfig:
         self.overlay.attributes("-alpha", 0.3)
         self.overlay.overrideredirect(boolean=True)
         self.overlay.config(bg="green")
+        make_click_through(self.overlay)
 
         self.is_tracking = True
         self._track_cursor()
@@ -269,10 +275,13 @@ class TooltipCaptureConfig:
         #     offset_x = self.offset_x.get()
         offset_x = self.offset_x.get()
 
-        left = x + offset_x
-        top = y + self.offset_y.get()
+        left = x + phys_to_tk(offset_x)
+        top = y + phys_to_tk(self.offset_y.get())
 
-        self.overlay.geometry(f"{self.width.get()}x{self.height.get()}+{left}+{top}")
+        self.overlay.geometry(
+            f"{phys_to_tk(self.width.get())}x{phys_to_tk(self.height.get())}"
+            f"+{left}+{top}"
+        )
 
     def stop_tracking(self) -> None:
         """Stop tracking and hide overlay."""
@@ -289,11 +298,11 @@ class TooltipCaptureConfig:
         """Capture the area at current cursor position."""
 
         try:
-            root = self.parent.winfo_toplevel()
-            cursor_x = root.winfo_pointerx()
-            cursor_y = root.winfo_pointery()
-        except tk.TclError:
+            cursor = get_cursor_position()
+        except OSError as e:
+            logger.warning(f"Cursor lookup failed: {e}")
             return None
+        cursor_x, cursor_y = cursor.x, cursor.y
 
         _screen_width, _ = get_screen_resolution()
 
@@ -314,7 +323,11 @@ class TooltipCaptureConfig:
         right = left + self.width.get()
         bottom = top + self.height.get()
 
-        image = grab_screen((left, top, right, bottom))
+        try:
+            image = grab_screen((left, top, right, bottom))
+        except OSError as e:
+            logger.warning(f"Capture failed: {e}")
+            return None
         return image, cursor_x, cursor_y
 
 
@@ -559,7 +572,12 @@ class CalibrationTool:
         bbox = selector.get_bbox()
         logger.info(f"Testing bbox: {bbox}")  # Debug
 
-        image = grab_screen(bbox)
+        try:
+            image = grab_screen(bbox)
+        except OSError as e:
+            logger.warning(f"Capture failed: {e}")
+            self.result_label.config(text="✗ Capture failed (see log)", foreground="red")
+            return
         logger.info(f"Captured image: {image.size}, mode: {image.mode}")  # Debug
 
         self._show_preview(image)
