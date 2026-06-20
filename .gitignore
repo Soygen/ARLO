@@ -15,3 +15,5 @@ dist
 !.env.example
 .last_wiki_update
 .vs/
+.screencast_restore_token
+diag_frame.png

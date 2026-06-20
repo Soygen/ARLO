@@ -6,9 +6,11 @@ Displays item recommendations as a styled popup with action colors.
 import tkinter as tk
 from typing import Callable
 
+from .clickthrough import make_click_through
 from .config import get_dpi_scale
 from .config import get_settings
 from .database import Item
+from .screen import phys_to_tk
 
 # Action colors
 ACTION_COLORS: dict[str, str] = {
@@ -47,6 +49,8 @@ class OverlayWindow:
         self.overlay_y = self.settings.overlay.y
 
         self._setup_ui()
+        # The popup must never swallow game clicks
+        make_click_through(self.window)
 
         self._hide_after_id: str | None = None
         self._current_item: str | None = None
@@ -209,7 +213,9 @@ class OverlayWindow:
             self.notes_label.config(text="Item not in database")
 
         # Position and show
-        self.window.geometry(f"+{self.overlay_x}+{self.overlay_y}")
+        self.window.geometry(
+            f"+{phys_to_tk(self.overlay_x)}+{phys_to_tk(self.overlay_y)}"
+        )
         self.window.deiconify()
         self.window.lift()
 
