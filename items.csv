@@ -292,7 +292,7 @@ Kettle III,Recycle,"12x Metal Parts, 1x Simple Gun Parts",,3000,
 Kettle IV,Recycle,"2x Mechanical Components, 2x Simple Gun Parts",,5000,
 Kinetic Converter,Keep,"1x Mod Components, 2x Duct Tape",Equippable Mods,7000,1
 Laboratory Reagents,Keep until upgrade is complete; recycle once done,"16x Chemicals, 3x Crude Explosives",3x for Explosives Station III Upgrade,2000,3
-Lance's Mixtape (5th Edition),Sell,,,10000,3
+Lance's Mixtape (5th Edition),Sell,,Projects Expedition 5 (3x),10000,3
 Laser Trap: Lure,Use,,Quick Use consumable,,3
 Launcher Ammo,Keep,,Ammo,250,
 Leaper Pulse Unit,KEEP FOR EXPEDITION MATS; Recycle after,"3x Arc Alloy, 2x Advanced Mechanical Components",4x for Utility Station III Upgrade; 3x Expedition Stage 4,5000,
@@ -379,7 +379,7 @@ Projector,Recycle if short on materials; Sell otherwise,"2x Wires, 1x Processor"
 Pulse Mine,Use,6x Chemicals,Quick Use consumable,470,3
 Pulse Mine Blueprint,Sell,,,5000,
 Queen Reactor,"Keep for high-tier crafting; if excess, sell","1x Power Rod, 1x Magnetic Accelerator",Projects Trophy Display (3x),11000,
-Radio,Recycle if short on materials; Sell otherwise,"1x Speaker Component, 1x Sensors",,1000,3
+Radio,Recycle if short on materials; Sell otherwise,"1x Speaker Component, 1x Sensors",Projects Expedition 5 (2x),1000,3
 Radio Relay,Recycle if short on materials; Sell otherwise,"2x Speaker Componets, 2x Sensors",,3000,3
 Radio Renegade (Outfit),Sell,,,,
 Raider Hatch Key,Keep,,Unlocks locked areas,2000,1
