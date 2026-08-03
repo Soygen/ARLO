@@ -39,6 +39,7 @@ ARC Performance Steel,Recycle,12x Metal Parts,Projects Trophy Display (10x),1000
 ARC Powercell,Keep,,5x for Refiner I; Medical Lab: Shield Rechargers,270,5
 ARC Synthetic Resin,Recycle if short on materials; Sell otherwise,14x Plastic Parts,Projects Trophy Display (10x),1000,3
 ARC Thermo Lining,Recycle if short on materials; Sell otherwise,16x Fabric,Projects High-Gain Antenna (15x),1000,3
+Arpeggio Blueprint,Sell,,,5000,
 Arpeggio I,Sell,,,5500,
 Arpeggio II,Sell,,,8000,
 Arpeggio III,Sell,,,11500,
@@ -154,6 +155,7 @@ Damaged ARC Powercell,Recycle,1x ARC Alloy,,293,5
 Damaged Fireball Burner,Recycle,1x ARC Alloy,,270,3
 Damaged Heat Sink,Keep until upgrade is complete; sell once done,"6x Metal Parts, 2x Wires",2x for Utility Station II Upgrade,1000,3
 Damaged Hornet Driver,Recycle,2x ARC Alloy,,640,
+Damaged Leaper Pulse Unit,Recycle,3x ARC Alloy,,,
 Damaged Rocketeer Driver,Sell,3x ARC Alloy,,2000,3
 Damaged Tick Pod,Recycle,1x ARC Alloy,,270,3
 Damaged Wasp Driver,Recycle,1x ARC Alloy,,270,3
@@ -171,6 +173,7 @@ Dolabra,Sell,,,27500,
 Dolabra Blueprint,Sell,,,5000,
 Doodly Duck,Sell,,,3000,15
 Door Blocker,Use,2x Metal Parts,Quick Use consumable,270,
+Door Blocker Blueprint,Sell,,,5000,
 Dried-Out ARC Resin,Recycle,9x Plastic Parts,,640,3
 Duct Tape,Keep,3x Fabric,10x Flickering Flames Stage 3,300,15
 Durable Cloth,Keep,6x Fabric,"5x for Medical Lab II Upgrade; 35x Expedition Stage 2, 5x Flickering Flames Stage 1",640,10
@@ -390,6 +393,7 @@ Rascal Blueprint,Sell,,,5000,
 Rascal II ,Sell,,,,
 Rascal III,Sell,,,,
 Rascal IV,Sell,,,,
+Rattler Blueprint,Sell,,,5000,
 Rattler I,Recycle,8x Metal Parts,,1750,
 Rattler II,Recycle,12x Metal Parts,,3000,
 Rattler III,Recycle,"3x Mechanical Components, 1x Simple Gun Parts",,5000,
@@ -397,7 +401,7 @@ Rattler IV,Recycle,"4x Mechanical Components, 2x Simple Gun Parts",,7000,
 Recorder,Sell,10x Plastic Parts,Quick Use consumable,1000,1
 Red (Radio Renegade Color),Sell,,,,
 Red Coral Jewelry,Sell,,Projects Avian Alarm (3x),5000,3
-Red Light Stick,Use,1x Chemicals,Quick Use consumable,150,
+Red Light Stick,Use,1x Chemicals,Quick Use consumable,150,5
 Red Light Stick Blueprint,Sell,,,5000,
 Reinforced Reception Security Code,Keep,,Unlocks locked areas,,
 Remote Control,Recycle if short on materials; Sell otherwise,"7x Plastic Parts, 1x Sensors",,1000,3
@@ -487,7 +491,7 @@ Spectrum Analyzer,Recycle if short on materials; Sell otherwise,"1x Sensors, 1x 
 Spotter Relay,Sell,"2x Electrical Components, 1x ARC Alloy",Projects Trophy Display (10x),1000,3
 Spring Cushion,Recycle if short on materials; Sell otherwise,"2x Durable Cloth, 2x Steel Springs",,2000,3
 Stable Stock I,Keep,6x Rubber Parts,Equippable Mods,640,
-Stable Stock II,Keep,"1x Duct Tape, 1x Mechanical Components",Equippable Mods,2000,
+Stable Stock II,Keep,"1x Duct Tape, 1x Mechanical Components",Equippable Mods,2000,1
 Stable Stock II Blueprint,Sell,,,5000,
 Stable Stock III,Keep,"1x Mod Components, 2x Duct Tape",Equippable Mods,5000,
 Stable Stock III Blueprint,Sell,,,5000,
