@@ -243,6 +243,11 @@ Gas Mine,Use,"1x Chemicals, 1x Rubber Parts",Quick Use consumable,270,3
 Gas Mine Blueprint,Sell,,,5000,
 Geiger Counter,Recycle if short on materials; Sell otherwise,"3x Battery, 1x Exodus Modules",Projects Trophy Display (3x),3500,3
 Gentle Duck,Sell,,,1000,15
+Glitched ARC Circuitry,Keep until uses complete; recycle after,"1x Exodus Modules, 6x ARC Alloy",Projects Phantom Targets (10x),5000,
+Glitched ARC Light Ring,Keep until uses complete; recycle after,"1x Advanced Electrical Components, 3x ARC Alloy",Projects Phantom Targets (10x),3000,
+Glitched ARC Phased Array,Keep until uses complete; recycle after,"2x Sensors, 3x ARC Alloy",Projects Phantom Targets (10x),2000,
+Glitched ARC Power Converter,Keep until uses complete; recycle after,3x ARC Alloy,Projects Phantom Targets (10x),640,
+Glitched ARC Transmitter,Keep until uses complete; recycle after,"1x ARC Alloy, 1x Electrical Components",Projects Phantom Targets (10x),1000,
 Goggles (Radio Renegade Variant),Sell,,,,
 Gothic Graffiti (Aviator Color),Sell,,,,
 Great Mullein,Keep,2x Assorted Seeds,Quests Doctor's Orders (1x),300,15
@@ -516,7 +521,7 @@ Tactical Mk. 2,Keep,"1x Electrical Components, 1x Magnet",Equippable Augment,200
 Tactical Mk. 3 (Healing),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,
 Tactical MK. 3 (Revival),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,
 Tactical Mk. 3 (Revival) Blueprint,Sell,,,5000,
-Tactical Mk. 3 (Smoke),Keep,,Equippable Augment,5000,
+Tactical Mk. 3 (Smoke),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,
 Tactical Mk.3 (Defensive),Keep,,Equippable Augment,5000,
 Tactical MK.3 (Defensive) Blueprint,Sell,,,5000,
 Tactical MK.3 (Healing) Blueprint,Sell,,,5000,
