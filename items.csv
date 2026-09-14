@@ -39,6 +39,7 @@ ARC Performance Steel,Recycle,12x Metal Parts,Projects Trophy Display (10x),1000
 ARC Powercell,Keep,,5x for Refiner I; Medical Lab: Shield Rechargers,270,5
 ARC Synthetic Resin,Recycle if short on materials; Sell otherwise,14x Plastic Parts,Projects Trophy Display (10x),1000,3
 ARC Thermo Lining,Recycle if short on materials; Sell otherwise,16x Fabric,Projects High-Gain Antenna (15x),1000,3
+Arcade Duck,Sell,,,7000,15
 Arpeggio I,Sell,,,5500,
 Arpeggio II,Sell,,,8000,
 Arpeggio III,Sell,,,11500,
@@ -234,6 +235,7 @@ Fossilized Lightning,Sell,3x Explosive Compound,,4000,1
 Free Loadout Augment,Keep,"6x Plastic Parts, 6x Rubber Parts",Equippable Augment,100,
 Frequency Modulation Box,Recycle if short on materials; Sell otherwise,"1x Advanced Electrical Components, 1x Speaker Component",Projects Expedition 1 (5x),3000,3
 Fried Motherboard,Keep until upgrade is complete; Sell once done,"5x Plastic Parts, 2x Electrical Components",3x for Utility Station III Upgrade,2000,3
+Frosty Duck,Sell,,,3000,15
 Fruit Mix,Use,,Quick Use consumable,1800,5
 Frying Pan,Recycle,8x Metal Parts,Projects Flickering Flames (2x),640,3
 Garlic Press,Recycle if short on materials; Sell otherwise,12x Metal Parts,,1000,3
@@ -258,7 +260,7 @@ Hairpin II,Recycle,"4x Metal Parts, 4x Rubber Parts",,1000,
 Hairpin III,Recycle,"6x Metal Parts, 1x Simple Gun Parts",,2000,
 Hairpin IV,Recycle,"1x Mechanical Components, 1x Simple Gun Parts",,2900,
 Happy Jig (Emote),Sell,,,,
-Headphones,Sell,"7x Rubber Parts, 1x Speaker Components",,1000,3
+Headphones,Sell,"7x Rubber Parts, 1x Speaker Components",Projects Ascending The Mountain (2x),1000,3
 Heavy Ammo,Keep,,Ammo,12,40
 Heavy Fuze Grenade,Use,"1x Oil, 2x Rubber Parts",Quick Use consumable,1600,3
 Heavy Gun Parts,Keep,2x Simple Gun Parts,Topside Material - crafting ingredient,700,5
@@ -341,6 +343,7 @@ Mini Centrifuge,Recycle if short on materials; Sell otherwise,"1x Advanced Mecha
 Mod Components,Keep,"1x Mechanical Components, 1x Steel Spring",Refined Material - crafting ingredient,1750,5
 Moss,Keep for defib; recycle after,3x Assorted Seeds,Medical Lab: Defibrillator,500,10
 Motor,Keep until upgrade is complete; sell once done,"2x Oil, 2x Mechanical Components",3x for Refiner III Upgrade,2000,3
+MRI Duck,Sell,,,10000,15
 Mushroom,Keep until upgrade is complete; sell once done,,12x for Scrappy Level V Upgrade,1000,10
 Music Album,Sell,,Projects Flickering Flames (2x),3000,3
 Music Box,Sell,,,5000,3
@@ -425,7 +428,7 @@ Riven Tides Hotel Keycard No. 208,Keep,,Unlocks locked areas,100,
 Riven Tides Hotel Keycard No. 311,Keep,,Unlocks locked areas,100,
 Riven Tides Hotel Keycard No. 404,Keep,,Unlocks locked areas,100,
 Riven Tides Secure Storage Keycard,Keep,,Unlocks locked areas,100,
-Rocket Thruster,"Recycle if low on Metal Parts, otherwise sell","6x Metal Parts, 2x Synthesized Fuel",,2000,3
+Rocket Thruster,"Recycle if low on Metal Parts, otherwise sell","6x Metal Parts, 2x Synthesized Fuel",Projects Ascending The Mountain (1x),2000,3
 Rocketeer Driver,Keep until upgrade is complete; sell once done,"3x ARC Alloy, 2x Advanced Electrical Components",3x for Explosive Station III Upgrade,5000,3
 Roots,Sell,1x Assorted Seeds,Projects Avian Alarm (4x),640,10
 Rope,Keep,5x Fabric,Topside Material - crafting ingredient,500,5
@@ -438,7 +441,7 @@ Ruined Accordion,Sell,"18x Rubber Parts, 3x Steel Spring",,2000,3
 Ruined Augment,Recycle,"2x Plastic Parts, 2x Rubber Parts",,270,1
 Ruined Baton,Recycle,"6x Metal Parts, 3x Rubber Parts",,640,3
 Ruined Handcuffs,Recycle,8x Metal Parts,,640,3
-Ruined Parachute,Recycle,10x Fabric,,640,3
+Ruined Parachute,Recycle,10x Fabric,Projects Ascending The Mountain (2x),640,3
 Ruined Riot Shield,Recycle if short on materials; Sell otherwise,"10x Plastic Parts, 6x Rubber Parts",,1000,3
 Ruined Tactical Vest,Recycle,"5x Fabric, 1x Magnet",,640,3
 Rusted Bolts,Recycle,8x Metal Parts,Projects Trophy Display (3x) Weather Monitor System (3x),640,3
