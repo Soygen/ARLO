@@ -50,6 +50,8 @@ Aviator (Outfit),Sell,,,,
 Bag (Radio Renegade Variant),Sell,,,,
 Banana (Backpack Charm),Sell,,,,
 Bandage,Use,2x Fabric,Quick Use consumable,250,5
+Banjo,Sell,,,,
+Bantam,Sell,,,,
 Barricade Kit,Use,4x Metal Parts,Quick Use consumable,640,3
 Barricade Kit Blueprint,Sell,,,5000,
 Bastion Cell,Keep until upgrades are complete; sell once done,"2x ARC Alloy, 2x Advanced Mechanical Components",6x for Gear Bench III Upgrade,3000,3
@@ -103,6 +105,7 @@ Burletta III,Recycle,"3x Mechanical Components, 3x Simple Gun Parts",,7000,
 Burletta IV,Recycle,"4x Mechanical Components, 4x Simple Gun Parts",,10000,
 Burned ARC Circuitry,Recycle,2x ARC Alloy,,640,3
 Burnt-Out Candles,Sell,,,640,16
+Camera,Sell,,,,
 Camera Lens,Recycle,8x Plastic Parts,Projects Weather Monitor System (3x),640,5
 Candle Holder,Keep; recycle after stage 2 is complete,8x Metal Parts,3x Flickering Flames Stage 2,640,3
 Candleberries,Keep,2x Assorted Seeds,All Stages of Flickering Flames (260x Total),460,10
@@ -177,7 +180,7 @@ Dried-Out ARC Resin,Recycle,9x Plastic Parts,,640,3
 Duct Tape,Keep,3x Fabric,10x Flickering Flames Stage 3,300,15
 Durable Cloth,Keep,6x Fabric,"5x for Medical Lab II Upgrade; 35x Expedition Stage 2, 5x Flickering Flames Stage 1",640,10
 Electrical Components,Keep,"3x Plastics Parts, 3x Rubber Parts",10x Gear Bench II and Utility Station II Upgrades; 30x Expedition Stage 2,640,10
-Elephant Obelisk,Keep until uses complete; sell after,,Projects Converging Paths (1x),9996,
+Elephant Obelisk,Keep until uses complete; sell after,,Projects Converging Paths (1x),10000,
 Empty Wine Bottle,Keep; sell after stage 1 is complete,,1x Flickering Flames Stage 1,1000,5
 Energy Clip,Keep,,Ammo,200,5
 Equalizer,Sell,,,27500,
@@ -232,7 +235,7 @@ Flashy Duck,Sell,,,3000,15
 Flow Controller,Recycle if short on materials; Sell otherwise,"1x Advanced Mechanical Components, 1x Sensors",Quests Snap And Salvage (1x),3000,3
 Flushing Terminal Key,Sell,,,,
 Fossilized Lightning,Sell,3x Explosive Compound,,4000,1
-Free Loadout Augment,Keep,"6x Plastic Parts, 6x Rubber Parts",Equippable Augment,100,
+Free Loadout Augment,Keep,"6x Plastic Parts, 6x Rubber Parts",Equippable Augment,660,
 Frequency Modulation Box,Recycle if short on materials; Sell otherwise,"1x Advanced Electrical Components, 1x Speaker Component",Projects Expedition 1 (5x),3000,3
 Fried Motherboard,Keep until upgrade is complete; Sell once done,"5x Plastic Parts, 2x Electrical Components",3x for Utility Station III Upgrade,2000,3
 Frosty Duck,Sell,,,3000,15
@@ -252,6 +255,7 @@ Glitched ARC Power Converter,Keep until uses complete; recycle after,3x ARC Allo
 Glitched ARC Transmitter,Keep until uses complete; recycle after,"1x ARC Alloy, 1x Electrical Components",Projects Phantom Targets (10x),1000,
 Goggles (Radio Renegade Variant),Sell,,,,
 Gothic Graffiti (Aviator Color),Sell,,,,
+Grappling Hook,Sell,,,,
 Great Mullein,Keep,2x Assorted Seeds,Quests Doctor's Orders (1x),300,15
 Green Light Stick,Use,1x Chemicals,Quick Use consumable,150,5
 Green Light Stick Blueprint,Sell,,,5000,
@@ -260,6 +264,7 @@ Hairpin II,Recycle,"4x Metal Parts, 4x Rubber Parts",,1000,
 Hairpin III,Recycle,"6x Metal Parts, 1x Simple Gun Parts",,2000,
 Hairpin IV,Recycle,"1x Mechanical Components, 1x Simple Gun Parts",,2900,
 Happy Jig (Emote),Sell,,,,
+Harmonica,Sell,,,,
 Headphones,Sell,"7x Rubber Parts, 1x Speaker Components",Projects Ascending The Mountain (2x),1000,3
 Heavy Ammo,Keep,,Ammo,12,40
 Heavy Fuze Grenade,Use,"1x Oil, 2x Rubber Parts",Quick Use consumable,1600,3
@@ -379,7 +384,7 @@ Poster of Natural Wonder,Sell,,,2000,3
 Pottery,Sell,,,2000,3
 Power Bank,Recycle if short on materials; Sell otherwise,"2x Battery, 2x Wires",,1000,3
 Power Cable,Recycle,4x Wires,3x for Gear Bench II Upgrade,1000,3
-Power Rod,"Keep for high-tier crafting; if excess, sell","1x Advanced Electrical Components, 1x ARC Circuitry",Quests Tribute To Toledo (1x),4997,3
+Power Rod,"Keep for high-tier crafting; if excess, sell","1x Advanced Electrical Components, 1x ARC Circuitry",Quests Tribute To Toledo (1x),5000,3
 Powered Descender,Recycle,"1x Advanced Electrical Components, 1x ARC Circuitry",,10000,
 Powered Descender Blueprint,Sell,,,5000,
 Prickly Pear,Keep until upgrade is complete; sell once done,3x Assorted Seeds,8x for Scrappy Level IV Upgrade,640,10
@@ -507,6 +512,7 @@ Stella Montis Assembly Admin Key,Keep,,Unlocks locked areas,100,1
 Stella Montis Medical Storage Key,Keep,,Unlocks locked areas,100,1
 Stella Montis Security Checkpoint Key,Keep,,Unlocks locked areas,100,1
 Sterilized Bandage,Use,"1x Antiseptic, 1x Fabric",Quick Use consumable,2000,3
+Stiletto,Sell,,,,
 Stitcher I,Recycle,"3x Metal Parts, 2x Rubber Parts",,800,
 Stitcher II,Recycle,"6x Metal Parts, 6x Rubber Parts",,2000,
 Stitcher III,Recycle,"12x Metal Parts, 1x Simple Gun Parts",,3000,
@@ -540,6 +546,7 @@ Tempest I,Recycle,"2x Advanced Mechanical Components, 2x Medium Gun Parts",,1300
 Tempest II,Recycle,"3x Advanced Mechanical Components, 3x Medium Gun Parts",,17000,
 Tempest III,Recycle,"4x Advanced Mechanical Components, 4x Medium Gun Parts",,22000,
 Tempest IV,Recycle,"5x Advanced Mechanical Components, 4x Medium Gun Parts",,27000,
+Tether Launcher,Sell,,,,
 Thermostat,Sell,"7x Rubber Parts, 1x Sensors",,1000,3
 Tick Pod,Keep until upgrade is complete; sell or recycle once done,"2x Arc Alloy, 2x Chemicals",8x for Medical Lab II Upgrade,640,3
 Toaster,Keep until upgrade is complete; recycle otherwise,"5x Plastic Parts, 3x Wires",3x for Refiner II Upgrade,1000,3
@@ -595,6 +602,7 @@ White Indigo (Warden Color),Sell,,,,
 Wires,Keep,2x Rubber Parts,30x Expedition Stage 2,200,15
 Wolfpack,Use,"1x ARC Motion Core, 1x Explosive Compound",Quick Use consumable,6000,1
 Wolfpack Blueprint,Sell,,,5000,
+Yank Grenade,Sell,,,,
 Yellow (Radio Renegade Color),Sell,,,,
 Yellow Light Stick,Use,1x Chemicals,Quick Use consumable,150,5
 Yellow Light Stick Blueprint,Sell,,,5000,
