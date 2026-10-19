@@ -26,6 +26,7 @@ Amplification Module MK. II,Keep,,Topside Material - crafting ingredient,7000,1
 Amplification Module MK. III,Keep,,Topside Material - crafting ingredient,7000,1
 Amplification Module MK. IV,Keep,,Topside Material - crafting ingredient,7000,1
 Amplification Module MK. V,Keep,,Topside Material - crafting ingredient,7000,1
+Amplified Anvil,Sell,,,20800,1
 Amplified Anvil (Anvil Splitter),Sell,,,20800,1
 Amplified Anvil (X-Rounds),Sell,,,20800,1
 Amplified Aphelion,Sell,,,35200,1
@@ -162,7 +163,7 @@ Azimuth (Outfit),Sell,,,,
 Bag (Radio Renegade Variant),Sell,,,,
 Banana (Backpack Charm),Sell,,,,
 Bandage,Use,2x Fabric,Quick Use consumable,250,5
-Banjo,Sell,,Quick Use consumable,2000,1
+Banjo,Sell,,Quick Use consumable,1000,1
 Banjo Blueprint,Sell,,,,1
 Banshee (Outfit),Sell,,,,
 Bantam Blueprint,Sell,,,5000,1
@@ -310,9 +311,9 @@ Clinic Medical Cabinet,Sell,,,,
 Clinic Medical Cabinet Design,Sell,,,5000,1
 Coffee Pot,Sell,,Projects Expedition 3 (1x),1000,3
 Coins,Sell,,,,
-Colorful Shoes,Sell,,,3000,3
 Colorful Shoes,Sell,,,10000,1
 Colorful Shoes,Sell,,,7000,1
+Colorful Shoes,Sell,,,3000,3
 Combat Mk. 1,Keep,"3x Plastic Parts, 3x Rubber Parts",Equippable Augment,640,1
 Combat Mk. 2,Keep,"1x Electrical Components, 1x Magnet",Equippable Augment,2000,1
 Combat Mk. 3 (Aggressive),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,1
@@ -578,7 +579,7 @@ Impure ARC Coolant,Recycle,12x Chemicals,,640,3
 Industrial Battery,Recycle if short on materials; Sell otherwise,"7x Chemicals, 2x Battery",3x for Gear Bench III Upgrade; 1x Flickering Flames Stage 2,1000,3
 Industrial Charger,Recycle if short on materials; Sell otherwise,"5x Metal Parts, 1x Voltage Converter",Projects Expedition 3 (3x),1000,3
 Industrial Magnet,Recycle if short on materials; Sell otherwise,"4x Metal Parts, 2x Magnet",,1000,3
-Insulation Roll,Sell,,,3000,3
+Insulation Roll,Sell,2x Durable Cloth,,3000,3
 Integrated Binoculars,Use,,Quick Use consumable,,1
 Integrated Defibrillator,Use,,Quick Use consumable,,1
 Integrated Shield Recharger,Use,,Quick Use consumable,,1
