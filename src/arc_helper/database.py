@@ -24,6 +24,33 @@ def _match_key(name: str) -> str:
     return "".join(c for c in name.lower() if c.isalnum())
 
 
+def names_match(a: str, b: str, *, cutoff: float = 0.85) -> bool:
+    """True if two item-name strings are the same item under OCR noise.
+
+    Used to keep the overlay sticky while hovering: brief OCR typos should not
+    count as a different item and redraw/flicker the popup. Prefix pairs
+    (e.g. "RASCAL I" vs "RASCAL III") are rejected so Roman-numeral tiers
+    stay distinct even though they score high on raw similarity.
+    """
+    if not a or not b:
+        return False
+    if a.strip().lower() == b.strip().lower():
+        return True
+    ka, kb = _match_key(a), _match_key(b)
+    if not ka or not kb:
+        return False
+    if ka == kb:
+        return True
+    # Different tiers / trailing OCR drop often look like a prefix pair
+    if ka.startswith(kb) or kb.startswith(ka):
+        return False
+    ratio = difflib.SequenceMatcher(None, ka, kb).ratio()
+    # Short names: allow a single substitution (WIRES↔WIRE5 ≈ 0.8)
+    if max(len(ka), len(kb)) <= 6:
+        return ratio >= 0.8
+    return ratio >= cutoff
+
+
 class Item(BaseModel):
     """Item model matching database schema."""
 
