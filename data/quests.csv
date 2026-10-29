@@ -1,0 +1,127 @@
+id,name,trader_name,xp,prerequisites,required_items
+a-bad-feeling,A Bad Feeling,Celeste,0,off-the-raider,
+a-balanced-harvest,A Balanced Harvest,Celeste,0,eyes-in-the-sky,
+a-better-use,A Better Use,TianWen,0,the-right-tool,
+a-dead-end,A Dead End,Shani,0,groundbreaking,dusty-film-reel:1:Dusty Film Reel
+a-first-foothold,A First Foothold,Apollo,0,off-the-raider,
+a-lay-of-the-land,A Lay of the Land,Shani,0,esr-analyzer,lidar-scanner:1:LiDAR Scanner
+a-new-type-of-plant,A New Type of Plant,Lance,0,building-a-library,possibly-toxic-plant:1:Possibly Toxic Plant
+a-path-not-yours,A Path Not Yours,Cassio,0,taking-stock,broken-compass:1:Broken Compass
+a-prime-specimen,A Prime Specimen,Shani,0,the-clean-dream,
+a-reveal-in-ruins,A Reveal In Ruins,Lance,0,,esr-analyzer:1:ESR Analyzer
+a-rising-tide,A Rising Tide,Celeste,0,a-dead-end,
+a-symbol-of-unification,A Symbol of Unification,Celeste,0,unexpected-initiative,raider-flag:1:Raider Flag
+a-toxic-trail,A Toxic Trail,Shani,0,life-of-a-pharmacist,
+a-warm-place-to-rest,A Warm Place To Rest,Apollo,0,switching-the-supply,
+a-wrench-in-the-works,A Wrench in the Works,Celeste,0,safe-harbor,
+after-rain-comes,After Rain Comes,Celeste,0,eyes-in-the-sky,battery:2:Battery|wires-recipe:5:Wires
+armored-transports,Armored Transports,TianWen,0,with-a-trace;a-new-type-of-plant,
+back-on-top,Back on Top,TianWen,0,the-majors-footlocker;eyes-in-the-sky;celestes-journals,
+bait-fetch-blast,"Bait, Fetch, Blast",Apollo,0,tracks-of-the-beast,bully-fragmenter:1:Bully Fragmenter
+battening-down,Battening Down,Apollo,0,off-the-raider,
+bees,Bees!,Celeste,0,flickering-threat,
+belly-of-the-beast,Belly of the Beast,Shani,0,tracks-of-the-beast;sizing-things-up,
+boarding-the-frigate,Boarding the Frigate,Shani,10000,off-the-raider,
+bombing-run,Bombing Run,Shani,0,combat-recon,
+broken-monument,Broken Monument,TianWen,0,what-we-left-behind,first-wave-compass:1:First Wave Compass|first-wave-rations:1:First Wave Rations|first-wave-tape:1:First Wave Tape
+building-a-library,Building a Library,Apollo,0,digging-up-dirt,
+celestes-childhood-drawings,Celeste’s Childhood Drawings,Lance,5000,shoring-up-defenses,
+celestes-journals,Celeste’s Journals,Celeste,0,a-symbol-of-unification,celestes-journal:2:Celeste's Journal
+celestes-teenage-rebellion,Celeste's Teenage Rebellion,Celeste,0,celestes-childhood-drawings,
+clamoring-for-attention,Clamoring for Attention,Shani,0,dormant-barons,battery:1:Battery|wires-recipe:3:Wires
+clean-hands,Clean Hands,Cassio,5000,off-the-raider,
+clearer-skies,Clearer Skies,Shani,0,picking-up-the-pieces,arc-alloy:3:ARC Alloy
+cold-storage,Cold Storage,Shani,0,in-my-image,old-world-books:1:Old World Books
+collision-course,Collision Course,TianWen,0,safe-passage,comet-igniter:1:Comet Igniter
+combat-recon,Combat Recon,Shani,0,into-the-fray;out-of-the-shadows,
+communication-hideout,Communication Hideout,Shani,0,lost-in-transmission,
+deciphering-the-data,Deciphering The Data,Shani,0,paving-the-way,
+digging-up-dirt,Digging Up Dirt,Celeste,0,tribute-to-toledo,
+disrupting-the-frigate,Disrupting the Frigate,Celeste,0,boarding-the-frigate,
+divided,Divided,Cassio,0,a-path-not-yours;ruins-and-reverberations,
+doctors-orders,Doctor's Orders,Lance,0,greasing-her-palms,antiseptic:2:Antiseptic|durable-cloth:1:Durable Cloth|great-muullein:1:Great Mullein|syringe:1:Syringe
+dormant-barons,Dormant Barons,Shani,0,greasing-her-palms;the-trifecta,
+down-to-earth,Down to Earth,Shani,0,hatch-repairs,
+dust-on-the-wires,Dust on the Wires,Shani,0,the-trifecta,scout-patrol-note:1:Scout Patrol Note
+echoes-of-victory-ridge,Echoes of Victory Ridge,Celeste,0,keeping-the-memory,major-aivas-patch:1:Major Aiva's Patch
+empathetic-prototypes,Empathetic Prototypes,Lance,0,someone-elses-shoes,project-pathos-empathy-core:1:Project Pathos Empathy Core
+espresso,Espresso,Apollo,0,bees,espresso-machine-parts:1:Espresso Machine Parts
+esr-analyzer,A Reveal in Ruins,Lance,0,medical-merchandise,
+exploring-pendola-pass,Exploring Pendola Pass,Celeste,5000,off-the-raider,zipline:3:Zipline
+eyes-in-the-sky,Eyes in the Sky,Shani,0,a-lay-of-the-land,
+eyes-on-the-prize,Eyes on the Prize,TianWen,0,market-correction,wires-recipe:3:Wires
+flickering-threat,Flickering Threat,Celeste,0,power-out,wires-recipe:4:Wires
+fragmented-logs,Fragmented Logs,Shani,0,a-dead-end;dust-on-the-wires,electrical-components:1:Electrical Components
+furtive-meetings,Furtive Meetings,Shani,0,fragmented-logs,secret-meeting-info:1:Secret Meeting Info
+greasing-her-palms,Greasing Her Palms,Celeste,0,a-better-use,
+groundbreaking,Groundbreaking,Apollo,0,deciphering-the-data,
+hatch-repairs,Hatch Repairs,Shani,0,a-bad-feeling,
+home-to-roost,Home to Roost,Shani,5000,a-wrench-in-the-works,
+in-my-image,In My Image,Lance,0,a-bad-feeling,
+industrial-espionage,Industrial Espionage,TianWen,0,eyes-on-the-prize,burletta-i:1:Burletta I
+into-the-fray,Into the Fray,Shani,0,water-troubles;communication-hideout,leaper-pulse-unit:1:Leaper Pulse Unit
+keeping-an-eye-out,Keeping an Eye Out,Celeste,0,the-clean-dream,
+keeping-the-memory,Keeping the Memory,Celeste,0,straight-record,
+last-entry,Last Entry,Shani,0,furtive-meetings,official-shutdown-documentation:1:Official Shutdown Documentation|seed-vault-box-key:1:Seed Vault Box Key
+life-of-a-pharmacist,Life of a Pharmacist,Lance,0,espresso,
+line-in-the-sand,Line in the Sand,Celeste,0,last-entry,
+lost-in-transmission,Lost in Transmission,Shani,0,our-presence-up-there,
+marked-for-death,Marked for Death,TianWen,0,broken-monument,
+market-correction,Market Correction,TianWen,0,marked-for-death,
+medical-merchandise,Medical Merchandise,Lance,0,doctors-orders,
+mixed-signals,Mixed Signals,Shani,0,dormant-barons,surveyor-vault:1:Surveyor Vault
+movie-night,Movie Night,Apollo,0,with-a-view,portable-television:1:Portable TV|stack-of-movie-tapes:1:Stack Of Movie Tapes
+nothing-gained,Nothing Gained,Apollo,0,nothing-ventured,matriarch-reactor:1:Matriarch Reactor|queen-reactor:1:Queen Reactor
+nothing-ventured,Nothing Ventured,Apollo,0,,arc-circuitry:6:ARC Circuitry|arc-motion-core:6:ARC Motion Core|comet-igniter:3:Comet Igniter|rocketeer-driver:3:Rocketeer Driver
+off-the-radar,Off The Radar,Shani,0,,
+off-the-raider,Off The Radar,Shani,0,clearer-skies;trash-into-treasure,
+on-deaf-ears,On Deaf Ears,Lance,0,worth-your-salt;snap-and-salvage,
+on-the-map,On The Map,Lance,0,on-deaf-ears,
+our-presence-up-there,Our Presence up There,Shani,0,back-on-top,
+out-of-the-shadows,Out of the Shadows,Shani,0,a-symbol-of-unification;sparks-fly,rocketeer-part:1:Rocketeer Driver
+outstanding-balance,Outstanding Balance,TianWen,0,the-clean-dream,dodgers-note:1:Dodger's Note
+paving-the-way,Paving the Way,Apollo,0,into-the-fray,
+picking-up-the-pieces,Picking Up The Pieces,Shani,0,,
+power-out,Power Out,Celeste,0,prescriptions-of-the-past,
+prescriptions-of-the-past,Prescriptions of the Past,Lance,0,a-warm-place-to-rest,
+reduced-to-rubble,Reduced to Rubble,Shani,0,a-first-foothold,
+ruins-and-reverberations,Ruins and Reverberations,Celeste,0,wires-crossed,spotter-relay:1:Spotter Relay
+safe-harbor,Safe Harbor,TianWen,0,line-in-the-sand,precision-gimbal:1:Precision Gimbal
+safe-passage,Safe Passage,Apollo,0,a-bad-feeling,
+settled-in-full,Settled in Full,TianWen,0,outstanding-balance,bastion-cell:1:Bastion Cell
+shoring-up-defenses,Shoring Up Defenses,Apollo,0,off-the-raider,arc-alloy:1:ARC Alloy
+sizing-things-up,Sizing Things Up,Celeste,5000,off-the-raider,arc-conductive-coupler:1:ARC Conductive Coupler
+snap-and-salvage,Snap and Salvage,TianWen,0,cold-storage,flow-controller:1:Flow Controller|magnetron:1:Magnetron
+someone-elses-shoes,Someone Else's Shoes,Celeste,5000,home-to-roost,
+source-of-the-contamination,Source of the Contamination,Celeste,0,water-troubles,
+sparks-fly,Sparks Fly,Apollo,0,what-goes-around,
+stable-housing,Stable Housing,TianWen,0,with-a-view,project-heartwood-blueprints:1:Project Heartwood Blueprints
+straight-record,Straight Record,Celeste,0,broken-monument,
+switching-the-supply,Switching the Supply,Celeste,0,source-of-the-contamination,
+taking-stock,Taking Stock,Cassio,0,clean-hands,industrial-battery:3:Industrial Battery
+test-case,Test Case,Apollo,0,the-league,fireball-burner:1:Fireball Burner|firefly-burner:1:Firefly Burner|hornet-driver:1:Hornet Driver
+the-clean-dream,The Clean Dream,Apollo,0,with-a-trace,
+the-first-nomads,The First Nomads,Shani,0,,
+the-league,The League,Apollo,0,sparks-fly,bicycle-pump:1:Bicycle Pump|deflated-football:1:Deflated Football
+the-majors-footlocker,The Major’s Footlocker,TianWen,0,a-symbol-of-unification,major-aivas-mementos:1:Major Aiva's Mementos
+the-right-tool,The Right Tool,TianWen,0,a-bad-feeling,
+the-root-of-the-matter,The Root of the Matter,Celeste,0,untended-garden,experimental-seed-sample:1:Experimental Seed Sample
+the-stench-of-corruption,The Stench of Corruption,Shani,0,a-toxic-trail,flushing-terminal-key:1:Flushing Terminal Key
+the-trifecta,The Trifecta,Shani,0,down-to-earth,hornet-driver:2:Hornet Driver|snitch-scanner:2:Snitch Scanner|wasp-driver:2:Wasp Driver
+to-the-skies,To The Skies,Apollo,8000,off-the-raider,arc-performance-steel:1:ARC Performance Steel|arc-synthetic-resin:1:ARC Synthetic Resin|arc-thermo-lining:1:ARC Thermo Lining|pop-trigger:1:Pop Trigger
+tracks-of-the-beast,Tracks of the Beast,Shani,0,exploring-pendola-pass,
+trash-into-treasure,Trash Into Treasure,Shani,0,picking-up-the-pieces,battery:1:Battery|wires-recipe:6:Wires
+tribute-to-toledo,Tribute to Toledo,Celeste,0,life-of-a-pharmacist,power-rod:1:Power Rod
+turnabout,Turnabout,Celeste,0,digging-up-dirt,
+unexpected-initiative,Unexpected Initiative,TianWen,0,industrial-espionage;echoes-of-victory-ridge,fertilizer:1:Fertilizer|moisture-meter:1:Moisture Meter|nutrient-meter:1:Nutrient Meter|water-pump:1:Water Pump
+untended-garden,Untended Garden,Celeste,0,a-balanced-harvest,
+waking-the-grid,Waking the Grid,Shani,0,dust-on-the-wires,
+water-troubles,Water Troubles,Celeste,0,after-rain-comes;the-root-of-the-matter,
+what-goes-around,What Goes Around,Apollo,0,safe-passage,fireball-burner:1:Fireball Burner
+what-we-left-behind,What We Left Behind,TianWen,0,dormant-barons,
+when-everything-falls,When Everything Falls,Shani,0,empathetic-prototypes,
+where-everything-falls,Where Everything Falls,Shani,0,,
+wires-crossed,Wires Crossed,Celeste,0,exploring-pendola-pass,sentinel-firing-core:1:Sentinel Firing Core|snitch-scanner:1:Snitch Scanner|surveyor-vault:1:Surveyor Vault
+with-a-trace,With A Trace,Shani,0,reduced-to-rubble,
+with-a-view,With a View,Shani,0,snap-and-salvage,ion-sputter:1:Ion Sputter|rotary-encoder:1:Rotary Encoder
+worth-your-salt,Worth Your Salt,Celeste,0,groundbreaking,

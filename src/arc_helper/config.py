@@ -244,7 +244,7 @@ class Settings(BaseSettings):
     tesseract_path: str | None = Field(default_factory=get_tesseract_path)
 
     # Database in app directory
-    database_path: Path = Field(default_factory=lambda: APP_DIR / "items.db")
+    database_path: Path = Field(default_factory=lambda: APP_DIR / "arlo.db")
 
     # Screen capture backend: auto | x11 | wayland (Linux only)
     screen_backend: str = Field(

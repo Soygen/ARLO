@@ -34,6 +34,7 @@ wayland = [
 arc-helper = "arc_helper.main:main"
 arc-calibrate = "arc_helper.calibrate:main"
 arc-update-db = "update_db:main"
+arc-import-progress = "arc_helper.progress:main"
 
 [build-system]
 requires = ["hatchling"]

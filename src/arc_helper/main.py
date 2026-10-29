@@ -32,8 +32,17 @@ from arc_helper.ocr import OCREngineManager
 from arc_helper.ocr import get_ocr_engine
 from arc_helper.overlay import OverlayWindow
 from arc_helper.overlay import StatusWindow
+from arc_helper.progress import ProgressProfile
+from arc_helper.progress import apply_progress
+from arc_helper.progress import load_progress
+from arc_helper.projects import ProjectCatalog
+from arc_helper.projects import get_project_catalog
+from arc_helper.quests import QuestCatalog
+from arc_helper.quests import get_quest_catalog
 from arc_helper.resolution_profiles import get_profile_manager
 from arc_helper.screen import ScreenCaptureUnavailable
+from arc_helper.traders import TraderCatalog
+from arc_helper.traders import get_trader_catalog
 
 load_dotenv(Path(__file__).with_name(".env"), override=False)
 
@@ -118,6 +127,11 @@ class Scanner:
     state: ScannerState = ScannerState.IDLE
     stats: ScannerStats = field(default_factory=ScannerStats)
     hotkey: HotkeyMonitor = field(default_factory=get_hotkey_monitor)
+    # Optional MetaForge/Embark-derived progress; filters finished keep_for uses
+    progress: ProgressProfile | None = None
+    quest_catalog: QuestCatalog | None = None
+    project_catalog: ProjectCatalog | None = None
+    trader_catalog: TraderCatalog | None = None
 
     # UI updates are posted here for the main (GUI) thread to apply. tkinter
     # is not thread-safe, and on Linux/Tcl root.after() called from this
@@ -267,8 +281,16 @@ class Scanner:
         self.stats.last_item = item_name
         self.stats.last_item_time = current_time
 
-        # Look up in database
+        # Look up in database, then strip finished quest/workshop/project uses
         recommendation = self.db.lookup(item_name)
+        if recommendation is not None:
+            recommendation = apply_progress(
+                recommendation,
+                self.progress,
+                self.quest_catalog,
+                self.project_catalog,
+                self.trader_catalog,
+            )
 
         if recommendation:
             self.stats.items_found_in_db += 1
@@ -305,6 +327,34 @@ class Application:
         # Initialize database
         self.db = get_database()
 
+        # Optional player progress (MetaForge account-sync → progress.json)
+        self.progress = load_progress()
+        if self.progress is not None:
+            logger.info(
+                "Progress profile loaded (%s quests done, %s workshop stations)",
+                len(self.progress.completed_quests),
+                len(self.progress.workshop_levels),
+            )
+        else:
+            logger.info("No progress.json — showing full keep recommendations")
+
+        # Structured catalogs for remaining-need totals and buy hints
+        self.quest_catalog = get_quest_catalog()
+        self.project_catalog = get_project_catalog()
+        self.trader_catalog = get_trader_catalog()
+        if self.quest_catalog is not None:
+            logger.info(
+                "Quest catalog loaded (%s quests)",
+                self.quest_catalog.count(),
+            )
+        if self.project_catalog is not None:
+            logger.info(
+                "Project catalog loaded (%s projects)",
+                self.project_catalog.count(),
+            )
+        if self.trader_catalog is not None:
+            logger.info("Trader catalog loaded")
+
         # Create main Tk root (hidden)
         self.root = tk.Tk()
         self.root.withdraw()  # Hide main window
@@ -326,6 +376,10 @@ class Application:
             overlay=self.overlay,
             status=self.status,
             db=self.db,
+            progress=self.progress,
+            quest_catalog=self.quest_catalog,
+            project_catalog=self.project_catalog,
+            trader_catalog=self.trader_catalog,
             ui_queue=self.ui_queue,
         )
 
