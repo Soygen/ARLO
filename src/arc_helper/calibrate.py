@@ -223,7 +223,7 @@ class TooltipCaptureConfig:
             self.stop_tracking()
 
         self.overlay = tk.Toplevel()
-        self.overlay.attributes("-topmost", True)  # noqa: FBT003
+        self.overlay.attributes("-topmost", True)  # ruff: ignore[boolean-positional-value-in-call]
         self.overlay.attributes("-alpha", 0.3)
         self.overlay.overrideredirect(boolean=True)
         self.overlay.config(bg="green")
@@ -351,7 +351,7 @@ class CalibrationTool:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("ARLO - Calibration")
-        self.root.attributes("-topmost", True)  # noqa: FBT003
+        self.root.attributes("-topmost", True)  # ruff: ignore[boolean-positional-value-in-call]
         self.root.geometry("600x800")
 
         # Load current settings
@@ -673,7 +673,7 @@ class CalibrationTool:
                 self.result_label.config(
                     text="✗ No item name detected", foreground="red"
                 )
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # ruff: ignore[blind-except]
             logger.info(f"OCR Error: {e}")  # Debug
             self.result_label.config(text=f"✗ OCR Error: {e}", foreground="red")
 
@@ -765,7 +765,7 @@ class CalibrationTool:
                 f"Loaded items from {Path(filepath).name}\n\n"
                 f"Database now contains {self.db.count()} items.",
             )
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # ruff: ignore[blind-except]
             messagebox.showerror("Error", f"Failed to load CSV:\n\n{e}")
 
     def _view_items(self) -> None:
@@ -783,7 +783,7 @@ class CalibrationTool:
         view_window = tk.Toplevel(self.root)
         view_window.title("Item Database")
         view_window.geometry("850x400")
-        view_window.attributes("-topmost", True)  # noqa: FBT003
+        view_window.attributes("-topmost", True)  # ruff: ignore[boolean-positional-value-in-call]
 
         # Create treeview with scrollbar
         tree_frame = ttk.Frame(view_window)

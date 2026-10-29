@@ -18,7 +18,7 @@ class Point(BaseModel):
     y: int
 
 
-class ScreenCaptureUnavailable(OSError):  # noqa: N818
+class ScreenCaptureUnavailable(OSError):  # ruff: ignore[error-suffix-on-exception-name]
     """Screen capture is permanently unavailable (e.g. share revoked).
 
     Raised instead of plain OSError so callers that substitute dummy

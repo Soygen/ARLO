@@ -16,19 +16,21 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
+          python-version-file: .python-version
 
-      - name: Install dependencies
-        run: |
-          pip install requests beautifulsoup4
+      - name: Install scraper dependencies
+        run: uv sync --frozen --only-group update-db --no-install-project
 
       - name: Run wiki scraper (merge mode)
-        run: python update_db.py --merge
+        run: uv run --frozen --no-sync python update_db.py --merge
 
       - name: Check for changes
         id: check_changes

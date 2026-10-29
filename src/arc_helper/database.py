@@ -216,7 +216,7 @@ class Database:
             with missing_file.open("a", newline="", encoding="utf-8") as f:
                 writer = csv.writer(f)
                 writer.writerow([name])
-        except Exception:  # noqa: BLE001
+        except Exception:  # ruff: ignore[blind-except]
             pass  # Fail silently to not interrupt the user
 
     @staticmethod

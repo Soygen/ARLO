@@ -4,7 +4,6 @@ Uses Pydantic Settings for type-safe configuration via environment variables.
 """
 
 import ctypes
-import os
 import sys
 from contextlib import suppress
 from pathlib import Path
