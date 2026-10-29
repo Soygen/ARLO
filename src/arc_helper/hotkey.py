@@ -34,7 +34,7 @@ class WindowsCtrlShiftMonitor:
     def stop(self) -> None:
         pass
 
-    def is_held(self) -> bool:  # noqa: PLR6301
+    def is_held(self) -> bool:  # ruff: ignore[no-self-use]
         try:
             user32 = ctypes.windll.user32
             # VK_CONTROL = 0x11, VK_SHIFT = 0x10; high bit = currently down

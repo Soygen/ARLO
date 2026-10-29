@@ -15,10 +15,10 @@ import gi
 
 gi.require_version("Gio", "2.0")
 gi.require_version("GLib", "2.0")
-from gi.repository import Gio  # noqa: E402
-from gi.repository import GLib  # noqa: E402
+from gi.repository import Gio  # ruff: ignore[module-import-not-at-top-of-file]
+from gi.repository import GLib  # ruff: ignore[module-import-not-at-top-of-file]
 
-from arc_helper.config import logger  # noqa: E402
+from arc_helper.config import logger  # ruff: ignore[module-import-not-at-top-of-file]
 
 PORTAL_BUS = "org.freedesktop.portal.Desktop"
 PORTAL_OBJECT = "/org/freedesktop/portal/desktop"
@@ -106,7 +106,7 @@ class ScreenCastSession:
 
         select_options: dict[str, GLib.Variant] = {
             "types": GLib.Variant("u", SOURCE_TYPE_MONITOR),
-            "multiple": GLib.Variant("b", False),  # noqa: FBT003
+            "multiple": GLib.Variant("b", False),  # ruff: ignore[boolean-positional-value-in-call]
             "cursor_mode": GLib.Variant("u", CURSOR_MODE_HIDDEN),
             "persist_mode": GLib.Variant("u", PERSIST_UNTIL_REVOKED),
         }

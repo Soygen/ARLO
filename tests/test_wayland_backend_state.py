@@ -14,17 +14,17 @@ def test_grab_before_start_raises_no_frame():
 
 def test_terminal_error_short_circuits_grab():
     backend = WaylandBackend()
-    backend._terminal_error = "gone"  # noqa: SLF001
+    backend._terminal_error = "gone"  # ruff: ignore[private-member-access]
     with pytest.raises(ScreenCaptureUnavailable, match="gone"):
         backend.grab((0, 0, 10, 10))
 
 
 def test_second_restart_attempt_is_terminal():
     backend = WaylandBackend()
-    backend._restarted = True  # noqa: SLF001
+    backend._restarted = True  # ruff: ignore[private-member-access]
     with pytest.raises(ScreenCaptureUnavailable, match="Restart ARLO"):
-        backend._attempt_restart()  # noqa: SLF001
-    assert backend._terminal_error is not None  # noqa: SLF001
+        backend._attempt_restart()  # ruff: ignore[private-member-access]
+    assert backend._terminal_error is not None  # ruff: ignore[private-member-access]
 
 
 def test_stop_before_start_is_safe():
