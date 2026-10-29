@@ -715,6 +715,7 @@ Examples:
         db_count = rebuild_database(ITEMS_CSV, ITEMS_DB)
         print(f"  Rebuilt {ITEMS_DB} with {db_count} items")
 
+    _mark_updated()
     print("\nDone!")
 
 
