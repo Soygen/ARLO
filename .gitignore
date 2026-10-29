@@ -16,4 +16,7 @@ dist
 .last_wiki_update
 .vs/
 .screencast_restore_token
+progress.json
 diag_frame.png
+scripts/embark_poc_out/
+*.embark_token.json

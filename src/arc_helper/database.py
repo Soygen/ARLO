@@ -25,7 +25,10 @@ def _match_key(name: str) -> str:
 
 
 class Item(BaseModel):
-    """Item model matching database schema."""
+    """Item model matching database schema.
+
+    ``quest_needed`` is runtime-only (progress filter); not stored in arlo.db.
+    """
 
     name: str = Field(..., min_length=1, max_length=200)
     action: str = Field(..., min_length=1, max_length=100)
@@ -33,6 +36,18 @@ class Item(BaseModel):
     keep_for: str | None = Field(default=None, max_length=500)
     sell_price: int | None = Field(default=None)
     stack_size: int | None = Field(default=None)
+    quest_needed: int | None = Field(
+        default=None,
+        description="Total qty still needed across incomplete catalog quests",
+    )
+    project_needed: int | None = Field(
+        default=None,
+        description="Total qty still needed across incomplete catalog projects",
+    )
+    buy_from: str | None = Field(
+        default=None,
+        description="Trader buy hint, e.g. 'Celeste (1)'",
+    )
 
 
 class Database:

@@ -33,13 +33,19 @@ jobs:
       - name: Check for changes
         id: check_changes
         run: |
-          git diff --quiet items.csv items.db || echo "changed=true" >> "$GITHUB_OUTPUT"
+          git diff --quiet data/ \
+            || echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Commit and push changes
         if: steps.check_changes.outputs.changed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add items.csv items.db
-          git commit -m "Auto-update item database from wiki [$(date -u +%Y-%m-%d)]"
+          git add data/
+          # Drop legacy root-level catalog files if still present
+          git rm -f --ignore-unmatch \
+            items.csv items.db quests.csv quests.db \
+            projects.csv projects.db traders.csv traders.db arlo.db \
+            missing_items.csv
+          git commit -m "Auto-update data/ catalog [$(date -u +%Y-%m-%d)]"
           git push

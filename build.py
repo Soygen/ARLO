@@ -73,8 +73,22 @@ def build():
     logger.info("Copying configuration files...")
     shutil.copy(ROOT / ".env.example", OUTPUT / ".env.example")
     shutil.copy(ROOT / ".env.example", OUTPUT / ".env")
-    shutil.copy(ROOT / "items.csv", OUTPUT / "items.csv")
-    shutil.copy(ROOT / "items.db", OUTPUT / "items.db")
+    data_src = ROOT / "data"
+    data_dest = OUTPUT / "data"
+    if data_src.is_dir():
+        logger.info("Copying data/ catalog...")
+        data_dest.mkdir(exist_ok=True)
+        for name in (
+            "items.csv",
+            "quests.csv",
+            "projects.csv",
+            "traders.csv",
+            "arlo.db",
+            "missing_items.csv",
+        ):
+            src = data_src / name
+            if src.exists():
+                shutil.copy(src, data_dest / name)
     shutil.copy(ROOT / "update_db.py", OUTPUT / "update_db.py")
     shutil.copy(
         ROOT / "src" / "arc_helper" / "resolutions.json", OUTPUT / "resolutions.json"

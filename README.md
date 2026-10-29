@@ -197,7 +197,7 @@ make update-db-dry      # Dry run preview
 The included workflow at `.github/workflows/update-db.yml` can also sync the database automatically:
 
 - Runs weekly on Mondays at 6:00 UTC in merge mode
-- Auto-commits updated `items.csv` and `items.db` if changes are detected
+- Auto-commits updates under `data/` if changes are detected
 - Can be triggered manually from the **Actions** tab on GitHub
 
 No secrets or extra configuration needed.
@@ -257,8 +257,7 @@ All settings live in the `.env` file. See [docs/CONFIGURATION.md](https://github
 ```
 ARLO/
 ├── update_db.py                    # MetaForge API updater (with wiki fallback)
-├── items.csv                       # Item data (auto-generated or hand-edited)
-├── items.db                        # SQLite database (built from CSV)
+├── data/                           # Catalog CSVs + arlo.db (items, quests, projects, traders)
 ├── pyproject.toml                  # Package config & dependencies
 ├── makefile                        # Convenience targets
 ├── build.py                        # PyInstaller build script
@@ -291,7 +290,7 @@ ARLO/
 
 ### Item Database
 
-Run `uv run python update_db.py --dry-run` to preview the API data. If you spot incorrect auto-generated actions, edit `items.csv` directly and use `--merge` on future updates to preserve your fixes.
+Run `uv run python update_db.py --dry-run` to preview the API data. If you spot incorrect auto-generated actions, edit `data/items.csv` directly and use `--merge` on future updates to preserve your fixes.
 
 ### Resolution Profiles
 

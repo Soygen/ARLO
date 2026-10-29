@@ -1,18 +1,19 @@
 ## Item Database
 
-Items are stored in `items.db` (SQLite database) with the following columns: `name`, `action`, `recycle_for`, `keep_for`, `sell_price`, and `stack_size`. The database updates automatically from the [MetaForge API](https://metaforge.app/arc-raiders) on every app launch, with the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot) as a fallback.
+Catalog data lives under `data/`: one SQLite file `data/arlo.db` (tables for items, quests, projects, traders) plus readable CSVs (`data/items.csv`, `data/quests.csv`, `data/projects.csv`, `data/traders.csv`) for diffs and manual edits. The items table columns are `name`, `action`, `recycle_for`, `keep_for`, `sell_price`, and `stack_size`. Quest/project requirement tables power remaining-need totals after a progress import; trader tables power overlay `Buy:` hints. The catalog updates automatically from the [MetaForge API](https://metaforge.app/arc-raiders) on every app launch, with the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot) as a fallback.
 
 ### Automatic Updates on Launch
 
 Every time `ARLO.exe` (or `uv run arc-helper`) starts, it checks for item database updates. This is throttled to once per 24 hours so it doesn't slow down repeated launches. The update runs in merge mode, meaning your manual action overrides are always preserved.
 
-The updater pulls data from three MetaForge sources:
+The updater pulls data from MetaForge and the Arc Raiders Wiki:
 
 - **Items API** (`/api/arc-raiders/items`) - Item names, categories, sell prices, stack sizes, rarity
 - **Recycle components** (Supabase `arc_item_recycle_components`) - What each item recycles into
-- **Quests API** (`/api/arc-raiders/quests`) - Which items are needed for which quests
+- **Quests API** (`/api/arc-raiders/quests` + `/quest-tree`) - Quest catalog, prerequisites, turn-ins → `data/quests.csv` + quest tables in `data/arlo.db`
+- **Wiki** (`Loot`, `Quests`, `Workshop`, `Projects`, `Traders`) - Loot Uses for workshop lines; Quests page enriches/falls back turn-ins; Projects/Traders directories feed `data/projects.csv` / `data/traders.csv` and matching tables in `data/arlo.db` (overlay `Buy:` hints)
 
-If MetaForge is unreachable, the updater automatically falls back to scraping the Arc Raiders Wiki. If both are down, the app starts normally with whatever database it already has.
+If MetaForge is unreachable, the updater falls back to the wiki. If both are down, the app starts with whatever databases it already has.
 
 The throttle timestamp is stored in `.last_wiki_update` in the app directory. Delete this file to force an update on the next launch.
 
@@ -86,7 +87,7 @@ In merge mode the updater will:
 If you fork this repo, the included GitHub Actions workflow at `.github/workflows/update-db.yml` can sync the database on a schedule:
 
 - Runs weekly on Mondays at 6:00 UTC in merge mode
-- Auto-commits updated `items.csv` and `items.db` if changes are detected
+- Auto-commits updates under `data/` if changes are detected
 - Can be triggered manually from the **Actions** tab on GitHub
 
 No secrets or configuration needed - just push the workflow file and it works.
@@ -95,7 +96,7 @@ No secrets or configuration needed - just push the workflow file and it works.
 
 ### Manual CSV Management
 
-You can also edit `items.csv` directly. The CSV has the following columns:
+You can also edit `data/items.csv` directly. The CSV has the following columns:
 
 ```csv
 name,action,recycle_for,keep_for,sell_price,stack_size
@@ -118,7 +119,7 @@ The `sell_price` and `stack_size` columns are optional for backwards compatibili
 
 ### Managing the Database via Calibration Tool
 
-1. Edit `items.csv` in Excel, Google Sheets, or any text editor
+1. Edit `data/items.csv` in Excel, Google Sheets, or any text editor
 2. Run `Calibrate.exe` (or `uv run arc-calibrate`)
 3. In the "Item Database" section at the bottom:
    - Click **"Load CSV..."** to import your updated CSV file

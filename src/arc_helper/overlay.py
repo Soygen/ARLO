@@ -247,12 +247,21 @@ class OverlayWindow:
             self.action_label.config(text=f"\u2192 {action_str}", fg=color)
             self.accent_bar.config(bg=color)
 
-            # Info line
+            # Info line (sell / stack / remaining need / buy from trader)
             info_parts: list[str] = []
             if recommendation.sell_price is not None:
                 info_parts.append(f"Sell: {recommendation.sell_price:,}\u20a1")
             if recommendation.stack_size is not None:
                 info_parts.append(f"Stack: {recommendation.stack_size}")
+            need_total = 0
+            if recommendation.quest_needed:
+                need_total += recommendation.quest_needed
+            if recommendation.project_needed:
+                need_total += recommendation.project_needed
+            if need_total > 0:
+                info_parts.append(f"Need: {need_total}")
+            if recommendation.buy_from:
+                info_parts.append(f"Buy: {recommendation.buy_from}")
             self.info_label.config(text="    \u00b7    ".join(info_parts))
 
             # Detail: keep reason and/or recycle yield, with HR when both exist
