@@ -706,9 +706,9 @@ Examples:
     if args.dry_run:
         print("\n[DRY RUN] Preview of first 20 items:\n")
         print(f"  {'Name':<35} {'Action':<40} {'Sell':>7} {'Stack':>5}  {'Recycle For':<25}")
-        print(f"  {'-'*35} {'-'*40} {'-'*7} {'-'*5}  {'-'*25}")
+        print(f"  {'-' * 35} {'-' * 40} {'-' * 7} {'-' * 5}  {'-' * 25}")
         for row in rows[:20]:
-            print(f"  {row['name']:<35} {row['action']:<40} {row.get('sell_price',''):>7} {row.get('stack_size',''):>5}  {row['recycle_for']:<25}")
+            print(f"  {row['name']:<35} {row['action']:<40} {row.get('sell_price', ''):>7} {row.get('stack_size', ''):>5}  {row['recycle_for']:<25}")
         print(f"\n  ... and {len(rows) - 20} more items")
         return
 
@@ -809,7 +809,7 @@ def auto_update(*, force: bool = False) -> bool:
         print(f"  Database updated: {stats.items_written} items ({new_count} new, {stats.items_preserved} preserved)")
         return True
 
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # ruff: ignore[blind-except]
         print(f"  Database update skipped (error: {e})")
         return False
 

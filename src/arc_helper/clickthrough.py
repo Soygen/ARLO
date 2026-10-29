@@ -18,7 +18,7 @@ def make_click_through(window: tk.Misc) -> None:
             _windows_click_through(window)
         else:
             _x11_click_through(window)
-    except Exception as e:  # noqa: BLE001 - cosmetic feature, never fatal
+    except Exception as e:  # ruff: ignore[blind-except] - cosmetic feature, never fatal
         logger.warning(f"Could not make overlay click-through: {e}")
 
 
