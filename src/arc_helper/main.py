@@ -156,7 +156,7 @@ class Scanner:
         self._wayland_stable = get_backend().name == "wayland"
         if self._wayland_stable:
             logger.info(
-                "Wayland overlay stability: keep-alive on empty OCR, "
+                "Wayland overlay stability: hide after display time with no item, "
                 "trigger miss hysteresis"
             )
         self.hotkey.start()
@@ -249,9 +249,10 @@ class Scanner:
 
                     if item_name:
                         self._handle_detected_item(item_name)
-                    elif self._wayland_stable and self._last_shown_item:
-                        # Wayland: empty OCR is common; not an item change
-                        self.ui_queue.put(("overlay_keep",))
+                    else:
+                        # Wayland: one empty frame is normal. A gap as long as
+                        # OVERLAY_DISPLAY_TIME means the tooltip is gone.
+                        self._handle_empty_tooltip()
 
                     # Wait before next tooltip scan
                     time.sleep(settings.scan.tooltip_scan_interval)
@@ -292,6 +293,24 @@ class Scanner:
             return False
         self._trigger_miss_streak += 1
         return self._trigger_miss_streak >= self._TRIGGER_MISS_LIMIT
+
+
+    def _handle_empty_tooltip(self) -> None:
+        """No item under the cursor.
+
+        On Wayland a single empty read is not an item change, so the popup
+        stays through brief OCR misses. Once the gap reaches
+        ``OVERLAY_DISPLAY_TIME``, hide it — including after leaving the game,
+        when the inventory trigger can still false-match.
+        """
+        if not (self._wayland_stable and self._last_shown_item):
+            return
+        settings = get_settings()
+        if time.time() - self._last_shown_time >= settings.overlay.display_time:
+            self._last_shown_item = ""
+            self.ui_queue.put(("overlay_hide",))
+            return
+        self.ui_queue.put(("overlay_keep",))
 
     def _handle_detected_item(self, item_name: str) -> None:
         """Handle a detected item name."""

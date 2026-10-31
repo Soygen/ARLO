@@ -5,6 +5,7 @@ Screen capture and text extraction using Tesseract.
 
 import re
 import string
+from difflib import SequenceMatcher
 
 import numpy as np
 import pytesseract
@@ -203,32 +204,31 @@ class OCREngine:
         cream_cols = np.where(col_cream_percentage > 0.3)[0]
 
         if len(cream_rows) == 0 or len(cream_cols) == 0:
-            result = Image.new("L", (image.width * 2, image.height * 2), 255)
-            return result
+            return Image.new("L", (image.width * 2, image.height * 2), 255)
 
-        y_min, y_max = cream_rows[0], cream_rows[-1]
-        x_min, x_max = cream_cols[0], cream_cols[-1]
+        y_min, y_max = int(cream_rows[0]), int(cream_rows[-1])
+        x_min, x_max = int(cream_cols[0]), int(cream_cols[-1])
 
-        # First crop - to the cream region
-        cropped = img_array[y_min:y_max, x_min:x_max]
-        cropped_mask = mask[y_min:y_max, x_min:x_max]
+        # Inclusive end indices — exclusive slices drop the last cream row/col
+        # and collapse a single-column region to width 0.
+        cropped = img_array[y_min : y_max + 1, x_min : x_max + 1]
+        cropped_mask = mask[y_min : y_max + 1, x_min : x_max + 1]
 
-        # Find columns that are mostly cream (guard against empty crop)
-        n_rows = cropped_mask.shape[0]
-        if n_rows == 0:
-            result = Image.new("L", (image.width * 2, image.height * 2), 255)
-            return result
+        n_rows, n_cols = cropped_mask.shape[:2]
+        if n_rows == 0 or n_cols == 0:
+            return Image.new("L", (image.width * 2, image.height * 2), 255)
         col_cream_pct = np.sum(cropped_mask, axis=0) / n_rows
         tight_cols = np.where(col_cream_pct > 0.5)[0]
 
         if len(tight_cols) == 0:
-            result = Image.new("L", (image.width * 2, image.height * 2), 255)
-            return result
+            return Image.new("L", (image.width * 2, image.height * 2), 255)
 
-        tight_x_min, tight_x_max = tight_cols[0], tight_cols[-1]
+        tight_x_min, tight_x_max = int(tight_cols[0]), int(tight_cols[-1])
 
         # Tight crop - removes the colored borders
-        tight_cropped = cropped[:, tight_x_min:tight_x_max]
+        tight_cropped = cropped[:, tight_x_min : tight_x_max + 1]
+        if tight_cropped.shape[0] == 0 or tight_cropped.shape[1] == 0:
+            return Image.new("L", (image.width * 2, image.height * 2), 255)
 
         # Detect "colored" pixels - specifically looking for saturated colors (tags)
         # Tags are colorful (blue, green, etc.) - they have high saturation
@@ -258,8 +258,8 @@ class OCREngine:
         is_dark = np.all(tight_cropped < 100, axis=2)
 
         # Vectorized masking: rows without significant color AND dark pixels
-        mask = (~row_has_significant_color[:, np.newaxis]) & is_dark
-        result[mask] = 0
+        text_mask = (~row_has_significant_color[:, np.newaxis]) & is_dark
+        result[text_mask] = 0
 
         # Convert to PIL
         result_image = Image.fromarray(result, mode="L")
@@ -271,7 +271,7 @@ class OCREngine:
 
         # Debug: save intermediate images
         if self.debug_mode:
-            Image.fromarray(mask.astype(np.uint8) * 255).save(
+            Image.fromarray(text_mask.astype(np.uint8) * 255).save(
                 self.debug_dir / "tooltip_mask.png"
             )
             Image.fromarray(cropped).save(self.debug_dir / "tooltip_cropped.png")
@@ -547,24 +547,32 @@ class OCREngine:
             return None
 
     @staticmethod
-    def _fuzzy_match(text: str, target: str, threshold: float = 0.7) -> bool:
+    def _fuzzy_match(text: str, target: str, threshold: float = 0.8) -> bool:
         """
         Check if text approximately matches target.
-        Uses simple character overlap ratio.
-        """
-        if not text:
-            return False
 
-        # Check if target appears as substring
-        if target in text:
+        The trigger region is a small patch at the top of the screen, so OCR
+        there often reads unrelated UI once you leave the game. A shared-letter
+        score treated words like EVERYTHING and DIRECTORY as INVENTORY and kept
+        the tooltip up. Require the word itself, allowing a character or two
+        of OCR error.
+        """
+        cleaned = re.sub(r"[^A-Z]", "", text.upper())
+        if not cleaned or not target:
+            return False
+        if target in cleaned:
             return True
 
-        # Check character overlap
-        text_chars = set(text)
-        target_chars = set(target)
-        overlap = len(text_chars & target_chars) / len(target_chars)
-
-        return overlap >= threshold
+        # Short reads are the whole string. Longer reads are scanned with a
+        # window so junk beside the word does not dilute the score.
+        window = len(target)
+        if len(cleaned) <= window + 2:
+            return SequenceMatcher(None, cleaned, target).ratio() >= threshold
+        for start in range(0, len(cleaned) - window + 1):
+            chunk = cleaned[start : start + window]
+            if SequenceMatcher(None, chunk, target).ratio() >= threshold:
+                return True
+        return False
 
 
 class OCREngineManager:
