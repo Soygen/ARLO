@@ -1,10 +1,11 @@
-"""Structured wiki project catalog (tables in data/arlo.db / projects.csv)."""
+"""Structured wiki project catalog (tables in arlo.db / data/projects.csv)."""
 
 from __future__ import annotations
 
 import re
 import sqlite3
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 
 from .config import APP_DIR
@@ -22,7 +23,17 @@ def _norm_name(value: str) -> str:
 
 
 def _default_db_path() -> Path:
-    return APP_DIR / "data" / "arlo.db"
+    return APP_DIR / "arlo.db"
+
+
+def _parse_iso_date(value: str | None) -> date | None:
+    text = (value or "").strip()
+    if not text:
+        return None
+    try:
+        return date.fromisoformat(text[:10])
+    except ValueError:
+        return None
 
 
 @dataclass(frozen=True)
@@ -39,6 +50,8 @@ class ProjectCatalog:
 
     def __init__(self, db_path: Path | None = None):
         self.db_path = db_path if db_path is not None else _default_db_path()
+        self._schedule_cache: dict[str, date | None] | None = None
+        self._name_to_id: dict[str, str] | None = None
 
     @property
     def available(self) -> bool:
@@ -59,13 +72,85 @@ class ProjectCatalog:
         conn.row_factory = sqlite3.Row
         return conn
 
+    def _has_schedule_columns(self, conn: sqlite3.Connection) -> bool:
+        cols = {
+            row[1]
+            for row in conn.execute("PRAGMA table_info(projects)").fetchall()
+        }
+        return "ends_on" in cols
+
+    def _load_schedule(self) -> None:
+        if self._schedule_cache is not None:
+            return
+        ends: dict[str, date | None] = {}
+        names: dict[str, str] = {}
+        if not self.available:
+            self._schedule_cache = ends
+            self._name_to_id = names
+            return
+        with self._connect() as conn:
+            if self._has_schedule_columns(conn):
+                rows = conn.execute(
+                    "SELECT id, name, ends_on FROM projects"
+                ).fetchall()
+                for row in rows:
+                    ends[row["id"]] = _parse_iso_date(row["ends_on"])
+                    names[_norm_name(row["name"])] = row["id"]
+            else:
+                rows = conn.execute("SELECT id, name FROM projects").fetchall()
+                for row in rows:
+                    ends[row["id"]] = None
+                    names[_norm_name(row["name"])] = row["id"]
+        self._schedule_cache = ends
+        self._name_to_id = names
+
+    def is_active(
+        self,
+        project_id_or_name: str,
+        *,
+        today: date | None = None,
+    ) -> bool:
+        """True when the project has no end date or has not expired yet.
+
+        Unknown labels (e.g. wiki-only ``Expedition 5``) fail open as active.
+        """
+        today = today or date.today()
+        self._load_schedule()
+        assert self._schedule_cache is not None
+        assert self._name_to_id is not None
+        key = (project_id_or_name or "").strip()
+        if not key:
+            return True
+        pid = key if key in self._schedule_cache else None
+        if pid is None:
+            pid = self._name_to_id.get(_norm_name(key))
+        if pid is None:
+            # Prefix: "Expedition 5" → catalog id "expedition"
+            compact = _norm_name(key)
+            for name, cand in self._name_to_id.items():
+                if compact == name or compact.startswith(name + " "):
+                    pid = cand
+                    break
+        if pid is None:
+            return True
+        end = self._schedule_cache.get(pid)
+        if end is None:
+            return True
+        return today <= end
+
     def count(self) -> int:
         if not self.available:
             return 0
         with self._connect() as conn:
             return int(conn.execute("SELECT COUNT(*) FROM projects").fetchone()[0])
 
-    def requirements_for_item(self, item_name: str) -> list[ProjectRequirement]:
+    def requirements_for_item(
+        self,
+        item_name: str,
+        *,
+        today: date | None = None,
+        include_expired: bool = False,
+    ) -> list[ProjectRequirement]:
         if not self.available or not (item_name or "").strip():
             return []
         with self._connect() as conn:
@@ -80,7 +165,7 @@ class ProjectCatalog:
                 """,
                 (item_name.strip(),),
             ).fetchall()
-        return [
+        reqs = [
             ProjectRequirement(
                 project_id=row["project_id"],
                 project_name=row["project_name"],
@@ -90,17 +175,23 @@ class ProjectCatalog:
             )
             for row in rows
         ]
+        if include_expired:
+            return reqs
+        return [
+            r for r in reqs if self.is_active(r.project_id, today=today)
+        ]
 
     def remaining_for_item(
         self,
         item_name: str,
         *,
         project_items: dict[str, dict[str, str]],
+        today: date | None = None,
     ) -> list[ProjectRequirement]:
-        """Drop requirements whose mapped progress for this item is COMPLETED."""
+        """Drop expired projects and requirements marked COMPLETED."""
         remaining: list[ProjectRequirement] = []
         item_slug = _slugify(item_name)
-        for req in self.requirements_for_item(item_name):
+        for req in self.requirements_for_item(item_name, today=today):
             bucket = project_items.get(_norm_name(req.project_name))
             if bucket and bucket.get(item_slug) == "COMPLETED":
                 continue
@@ -119,11 +210,12 @@ class ProjectCatalog:
         item_name: str,
         *,
         project_items: dict[str, dict[str, str]],
+        today: date | None = None,
     ) -> int:
         return sum(
             r.quantity
             for r in self.remaining_for_item(
-                item_name, project_items=project_items
+                item_name, project_items=project_items, today=today
             )
         )
 

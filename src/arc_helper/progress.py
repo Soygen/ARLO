@@ -31,7 +31,7 @@ from .traders import TraderCatalog
 def _default_path() -> Path:
     from .config import APP_DIR
 
-    return APP_DIR / "progress.json"
+    return APP_DIR / "account-sync.json"
 
 
 class ProgressProfile(BaseModel):
@@ -142,6 +142,14 @@ def import_account_sync(raw: dict[str, Any] | str | Path) -> ProgressProfile:
             continue
         profile.workshop_levels[_workshop_display_key(str(key))] = lvl
 
+    # Outpost room expansions (Chalet, etc.) — not the same as levels.outpost.
+    # MetaForge lists unlocked modules under workshop.outpost.rooms; keep_for
+    # uses ``Outpost Room N`` so progress filters completed expansions.
+    outpost_block = workshop_block.get("outpost") or {}
+    rooms = outpost_block.get("rooms") if isinstance(outpost_block, dict) else None
+    if isinstance(rooms, list):
+        profile.workshop_levels["outpost room"] = len(rooms)
+
     # Projects / mappedProgress --------------------------------------------
     projects_block = (resources.get("projects") or {}).get("data") or {}
     mapped = projects_block.get("mappedProgress") or {}
@@ -174,8 +182,17 @@ def import_account_sync(raw: dict[str, Any] | str | Path) -> ProgressProfile:
     return profile
 
 
+def _is_account_sync(data: object) -> bool:
+    """True for a raw ``account-sync`` body (the pasteable form)."""
+    return isinstance(data, dict) and isinstance(data.get("resources"), dict)
+
+
 def load_progress(path: Path | None = None) -> ProgressProfile | None:
-    """Load ``progress.json``; return None if missing or unreadable."""
+    """Load ``account-sync.json``; return None if missing or unreadable.
+
+    The file may be the raw MetaForge ``account-sync`` response (paste the
+    body as-is) or the older flattened profile written by an earlier import.
+    """
     target = path if path is not None else _default_path()
     try:
         text = target.read_text(encoding="utf-8")
@@ -187,6 +204,10 @@ def load_progress(path: Path | None = None) -> ProgressProfile | None:
         data = json.loads(text)
     except json.JSONDecodeError:
         return None
+    if _is_account_sync(data):
+        return import_account_sync(data)
+    if not isinstance(data, dict):
+        return None
     # sets come back as lists from JSON
     if "completed_quests" in data and isinstance(data["completed_quests"], list):
         data["completed_quests"] = set(data["completed_quests"])
@@ -195,8 +216,19 @@ def load_progress(path: Path | None = None) -> ProgressProfile | None:
     return ProgressProfile.model_validate(data)
 
 
+def save_account_sync(raw: dict[str, Any], path: Path | None = None) -> Path:
+    """Write the raw ``account-sync`` body so it can be replaced by a paste."""
+    target = path if path is not None else _default_path()
+    target.write_text(json.dumps(raw, indent=2) + "\n", encoding="utf-8")
+    try:
+        target.chmod(0o600)
+    except OSError:
+        pass
+    return target
+
+
 def save_progress(profile: ProgressProfile, path: Path | None = None) -> Path:
-    """Persist profile as JSON (sets → sorted lists). Returns the path written."""
+    """Persist a flattened profile (sets → sorted lists). Returns the path written."""
     target = path if path is not None else _default_path()
     payload = profile.model_dump()
     payload["completed_quests"] = sorted(profile.completed_quests)
@@ -244,15 +276,16 @@ def has_progress_keep(keep_for: str) -> bool:
 
 def _parse_entries(section_body: str) -> list[tuple[str, int]]:
     """Split a section body into ``(label, qty)`` pairs via ``(Nx)`` boundaries."""
-    return [
-        (m.group(1).strip(), int(m.group(2)))
-        for m in _ENTRY_RE.finditer(section_body or "")
-        if m.group(1).strip()
-    ]
+    out: list[tuple[str, int]] = []
+    for m in _ENTRY_RE.finditer(section_body or ""):
+        label = m.group(1).strip().strip(",;").strip()
+        if label:
+            out.append((label, int(m.group(2))))
+    return out
 
 
 def _format_entries(entries: list[tuple[str, int]]) -> str:
-    return " ".join(f"{label} ({qty}x)" for label, qty in entries)
+    return ", ".join(f"{label} ({qty}x)" for label, qty in entries)
 
 
 def _quest_done(profile: ProgressProfile, quest_label: str) -> bool:
@@ -345,27 +378,65 @@ def _filter_quest_entries(
     return kept, None
 
 
+def _needed_from_entries(
+    kept_by_kind: dict[str, list[tuple[str, int]]],
+) -> tuple[int | None, int | None]:
+    """Sum listed (Nx) qtys so overlay Need matches the keep_for lines."""
+    quest = sum(qty for _, qty in kept_by_kind.get("Quests", []))
+    other = sum(
+        qty
+        for kind in ("Workshop", "Projects")
+        for _, qty in kept_by_kind.get(kind, [])
+    )
+    return (quest if quest > 0 else None, other if other > 0 else None)
+
+
+def _needed_from_keep_for(keep_for: str) -> tuple[int | None, int | None]:
+    """Parse keep_for sections into quest vs workshop/project Need totals."""
+    text = (keep_for or "").strip()
+    if not text:
+        return None, None
+    kept_by_kind: dict[str, list[tuple[str, int]]] = {}
+    for chunk in _SECTION_SPLIT.split(text):
+        head = _SECTION_HEAD.match(chunk.strip().strip(";").strip())
+        if not head:
+            continue
+        kind = head.group(1).capitalize()
+        if kind.lower() == "quests":
+            kind = "Quests"
+        elif kind.lower() == "workshop":
+            kind = "Workshop"
+        elif kind.lower() == "projects":
+            kind = "Projects"
+        else:
+            continue
+        entries = _parse_entries(head.group(2))
+        if entries:
+            kept_by_kind.setdefault(kind, []).extend(entries)
+    return _needed_from_entries(kept_by_kind)
+
+
 def _filter_keep_for(
     keep_for: str,
     profile: ProgressProfile,
     *,
     item_name: str,
     catalog: QuestCatalog | None = None,
-) -> tuple[str, int | None]:
+    project_catalog: ProjectCatalog | None = None,
+) -> tuple[str, int | None, int | None]:
     text = (keep_for or "").strip()
     if not text:
-        return "", None
+        return "", None, None
 
     chunks = [c for c in _SECTION_SPLIT.split(text) if c.strip()]
     preamble: list[str] = []
-    rebuilt: list[str] = []
-    quest_needed: int | None = None
+    kept_by_kind: dict[str, list[tuple[str, int]]] = {}
     saw_quests = False
 
     for chunk in chunks:
-        head = _SECTION_HEAD.match(chunk.strip())
+        head = _SECTION_HEAD.match(chunk.strip().strip(";").strip())
         if not head:
-            preamble.append(chunk.strip())
+            preamble.append(chunk.strip().strip(";").strip())
             continue
         kind = head.group(1).capitalize()
         if kind.lower() == "quests":
@@ -378,7 +449,7 @@ def _filter_keep_for(
         entries = _parse_entries(head.group(2))
         if kind == "Quests":
             saw_quests = True
-            kept, quest_needed = _filter_quest_entries(
+            kept, _catalog_total = _filter_quest_entries(
                 entries,
                 profile,
                 item_name=item_name,
@@ -389,13 +460,20 @@ def _filter_keep_for(
             for label, qty in entries:
                 if kind == "Workshop" and _workshop_done(profile, label):
                     continue
-                if kind == "Projects" and _project_clause_done(
-                    profile, label, item_name=item_name
-                ):
-                    continue
+                if kind == "Projects":
+                    if (
+                        project_catalog is not None
+                        and project_catalog.available
+                        and not project_catalog.is_active(label)
+                    ):
+                        continue
+                    if _project_clause_done(
+                        profile, label, item_name=item_name
+                    ):
+                        continue
                 kept.append((label, qty))
         if kept:
-            rebuilt.append(f"{kind}: {_format_entries(kept)}")
+            kept_by_kind.setdefault(kind, []).extend(kept)
 
     # Item may have catalog requirements even when keep_for had no Quests: section
     if (
@@ -404,24 +482,31 @@ def _filter_keep_for(
         and catalog.available
         and catalog.requirements_for_item(item_name)
     ):
-        kept, quest_needed = _filter_quest_entries(
+        kept, _catalog_total = _filter_quest_entries(
             [],
             profile,
             item_name=item_name,
             catalog=catalog,
         )
         if kept:
-            rebuilt.insert(0, f"Quests: {_format_entries(kept)}")
+            kept_by_kind["Quests"] = kept + kept_by_kind.get("Quests", [])
+
+    rebuilt: list[str] = []
+    for kind in ("Quests", "Workshop", "Projects"):
+        entries = kept_by_kind.get(kind)
+        if entries:
+            rebuilt.append(f"{kind}: {_format_entries(entries)}")
 
     parts = [p for p in (*preamble, *rebuilt) if p]
-    return " ".join(parts), quest_needed
+    quest_needed, other_needed = _needed_from_entries(kept_by_kind)
+    return "; ".join(parts), quest_needed, other_needed
 
 
 def _rewrite_action(action: str, recycle_for: str | None, keep_for: str) -> str:
-    """When all progress clauses are gone, collapse keep-until wording."""
+    """When all progress clauses are gone, collapse keep / keep-until wording."""
     if has_progress_keep(keep_for):
         return action
-    al = (action or "").lower()
+    al = (action or "").lower().strip()
     sells = "sell after" in al or "sell once" in al
     recycles = (
         "recycle after" in al
@@ -429,6 +514,9 @@ def _rewrite_action(action: str, recycle_for: str | None, keep_for: str) -> str:
         or "recycle or sell" in al
         or "sell or recycle" in al
     )
+    # Bare "Keep" (workshop/project only, no dispose hint) → sell or recycle
+    if al == "keep":
+        return "Recycle" if (recycle_for or "").strip() else "Sell"
     if sells and not recycles:
         return "Sell"
     if recycles:
@@ -447,59 +535,69 @@ def apply_progress(
 ) -> Item:
     """Return a copy of ``item`` with finished progress stripped from keep_for.
 
-    When ``catalog`` is provided, quest requirements come from ``data/arlo.db``
-    (minus completed), and ``quest_needed`` is set to the remaining total qty.
-    ``project_catalog`` / ``trader_catalog`` fill ``project_needed`` and
-    ``buy_from``. Unrecognized clauses fail open (kept).
+    When ``catalog`` is provided, quest clauses are filtered via ``arlo.db``.
+    Expired temporary projects (via ``project_catalog`` schedule) are dropped
+    even without a progress profile. ``quest_needed`` / ``project_needed`` sum
+    remaining keep_for (Nx) quantities so overlay ``Need:`` matches the list.
+    ``trader_catalog`` fills ``buy_from``. Unrecognized clauses fail open.
     """
     buy_from = None
     if trader_catalog is not None and trader_catalog.available:
         buy_from = trader_catalog.buy_hint(item.name)
 
-    empty_projects: dict[str, dict[str, str]] = {}
-    if profile is None:
-        updates: dict[str, object] = {}
-        if catalog is not None and catalog.available:
-            total = catalog.total_needed(item.name, set())
+    # Empty profile still drops expired projects / leaves quests+workshop intact
+    filter_profile = profile if profile is not None else ProgressProfile()
+    filtered, quest_needed, project_needed = _filter_keep_for(
+        item.keep_for or "",
+        filter_profile,
+        item_name=item.name,
+        catalog=catalog if profile is not None else None,
+        project_catalog=project_catalog,
+    )
+
+    # No keep_for sections: fall back to structured catalog totals
+    if not (item.keep_for or "").strip():
+        if (
+            quest_needed is None
+            and catalog is not None
+            and catalog.available
+        ):
+            done = profile.completed_quests if profile is not None else set()
+            total = catalog.total_needed(item.name, done)
             if total > 0:
-                updates["quest_needed"] = total
-        if project_catalog is not None and project_catalog.available:
+                quest_needed = total
+        if (
+            project_needed is None
+            and project_catalog is not None
+            and project_catalog.available
+        ):
+            items = profile.project_items if profile is not None else {}
             pt = project_catalog.total_needed(
-                item.name, project_items=empty_projects
+                item.name, project_items=items
             )
             if pt > 0:
-                updates["project_needed"] = pt
-        if buy_from:
-            updates["buy_from"] = buy_from
-        return item.model_copy(update=updates) if updates else item
+                project_needed = pt
 
-    filtered, quest_needed = _filter_keep_for(
-        item.keep_for or "",
-        profile,
-        item_name=item.name,
-        catalog=catalog,
-    )
-    if quest_needed is None and catalog is not None and catalog.available:
-        quest_needed = catalog.total_needed(item.name, profile.completed_quests) or None
-
-    project_needed: int | None = None
-    if project_catalog is not None and project_catalog.available:
-        project_needed = project_catalog.total_needed(
-            item.name, project_items=profile.project_items
-        ) or None
-
-    updates = {}
+    updates: dict[str, object] = {}
     if filtered != (item.keep_for or "").strip():
         updates["keep_for"] = filtered or None
         updates["action"] = _rewrite_action(
             item.action, item.recycle_for, filtered
         )
     if quest_needed is not None:
-        updates["quest_needed"] = quest_needed if quest_needed > 0 else None
-    elif catalog is not None and catalog.requirements_for_item(item.name):
+        updates["quest_needed"] = quest_needed
+    elif (item.keep_for or "").strip() or (
+        catalog is not None
+        and catalog.available
+        and catalog.requirements_for_item(item.name)
+    ):
         updates["quest_needed"] = None
     if project_needed is not None:
-        updates["project_needed"] = project_needed if project_needed > 0 else None
+        updates["project_needed"] = project_needed
+    elif (item.keep_for or "").strip() or (
+        project_catalog is not None and project_catalog.available
+    ):
+        updates["project_needed"] = None
     if buy_from:
         updates["buy_from"] = buy_from
 
@@ -516,7 +614,10 @@ def apply_progress(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="arc-import-progress",
-        description="Import MetaForge account-sync JSON into progress.json",
+        description=(
+            "Save a MetaForge account-sync response as account-sync.json. "
+            "You can also paste that response straight into account-sync.json."
+        ),
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
 
@@ -531,7 +632,7 @@ def main(argv: list[str] | None = None) -> int:
         "--output",
         type=Path,
         default=None,
-        help="Output path (default: progress.json next to the app)",
+        help="Output path (default: account-sync.json next to the app)",
     )
     imp.add_argument(
         "-q",
@@ -546,7 +647,7 @@ def main(argv: list[str] | None = None) -> int:
         "--input",
         type=Path,
         default=None,
-        help="progress.json path (default: app progress.json)",
+        help="account-sync.json path (default: app account-sync.json)",
     )
 
     args = parser.parse_args(argv)
@@ -555,8 +656,20 @@ def main(argv: list[str] | None = None) -> int:
         if not args.file.is_file():
             print(f"error: file not found: {args.file}", file=sys.stderr)
             return 1
-        profile = import_account_sync(args.file)
-        out = save_progress(profile, args.output)
+        try:
+            raw = json.loads(args.file.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            print(f"error: not valid JSON: {exc}", file=sys.stderr)
+            return 1
+        if not _is_account_sync(raw):
+            print(
+                "error: expected a MetaForge account-sync response "
+                "(top-level \"resources\")",
+                file=sys.stderr,
+            )
+            return 1
+        profile = import_account_sync(raw)
+        out = save_account_sync(raw, args.output)
         if args.quiet:
             print(out)
             return 0
@@ -571,7 +684,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "show":
         profile = load_progress(args.input)
         if profile is None:
-            print("No progress.json found", file=sys.stderr)
+            print("No account-sync.json found", file=sys.stderr)
             return 1
         payload = profile.model_dump()
         payload["completed_quests"] = sorted(profile.completed_quests)

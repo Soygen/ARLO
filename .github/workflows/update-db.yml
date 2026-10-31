@@ -33,7 +33,7 @@ jobs:
       - name: Check for changes
         id: check_changes
         run: |
-          git diff --quiet data/ \
+          git diff --quiet data/ arlo.db \
             || echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Commit and push changes
@@ -41,11 +41,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/
+          git add data/ arlo.db
           # Drop legacy root-level catalog files if still present
           git rm -f --ignore-unmatch \
             items.csv items.db quests.csv quests.db \
-            projects.csv projects.db traders.csv traders.db arlo.db \
+            projects.csv projects.db traders.csv traders.db \
             missing_items.csv
-          git commit -m "Auto-update data/ catalog [$(date -u +%Y-%m-%d)]"
+          git commit -m "Auto-update catalog [$(date -u +%Y-%m-%d)]"
           git push

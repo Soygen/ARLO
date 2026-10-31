@@ -140,7 +140,8 @@ def test_apply_progress_sets_quest_needed(tmp_path: Path):
     assert "Trash Into Treasure" not in (out.keep_for or "")
     assert "After Rain Comes" in (out.keep_for or "")
     assert "Clamoring for Attention" in (out.keep_for or "")
-    assert out.quest_needed == 5
+    # Need sums every remaining listed qty (catalog 5 + wiki-only 3)
+    assert out.quest_needed == 8
 
 
 def test_apply_progress_no_remaining_clears_quest_needed(tmp_path: Path):

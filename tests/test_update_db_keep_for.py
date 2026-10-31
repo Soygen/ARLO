@@ -1,10 +1,13 @@
 """Tests for keep_for formatting and merge behavior in update_db."""
 
 from update_db import GameItem
+from update_db import _workshop_rows_from_wikitext
+from update_db import apply_workshop_keep_map
 from update_db import build_csv_rows
 from update_db import format_keep_for
 from update_db import merge_action
 from update_db import merge_keep_for
+from update_db import outpost_room_expansion_keep_map
 
 
 def test_format_keep_for_wiki_only():
@@ -19,10 +22,11 @@ def test_format_keep_for_adds_projects_colon():
     )
 
 
-def test_format_keep_for_unescapes_html_entities():
-    assert format_keep_for("Projects: Soul&#39;s Offering (15x)", []) == (
-        "Projects: Soul's Offering (15x)"
-    )
+def test_format_keep_for_unescapes_html_entities_and_dedupes_projects():
+    assert format_keep_for(
+        "Projects: Soul&#39;s Offering (15x)",
+        project_uses=["Soul's Offering (15x)"],
+    ) == "Projects: Soul's Offering (15x)"
 
 
 def test_format_keep_for_quests_only():
@@ -45,6 +49,70 @@ def test_format_keep_for_skips_quest_already_in_wiki():
         "Quests The League (1x)",
         ["The League (1x)"],
     ) == "Quests: The League (1x)"
+
+
+def test_format_keep_for_merges_projects_into_one_section():
+    assert format_keep_for(
+        "Projects: Expedition 1 (5x) Expedition 2 (4x)",
+        project_uses=["Converging Paths (6x)", "Flickering Flames (3x)"],
+    ) == (
+        "Projects: Expedition 1 (5x), Expedition 2 (4x), "
+        "Converging Paths (6x), Flickering Flames (3x)"
+    )
+
+
+def test_workshop_itemgrid_prefers_price_over_buggy_qty():
+    """ItemGrid priceN wins when qty= was copied from a sibling material."""
+    wikitext = """
+|name1={{#replace: Apricot|{{Workshop upgrade|Scrappy|level=5|Apricot|qty=12}}}}
+|price1=×12
+|name2={{#replace: Mushroom|{{Workshop upgrade|Scrappy|level=5|Mushroom|qty=12}}}}
+|price2=×12
+|name3={{#replace: Very Comfortable Pillow|{{Workshop upgrade|Scrappy|level=5|Very Comfortable Pillow|qty=12}}}}
+|price3=×3
+"""
+    rows = _workshop_rows_from_wikitext(wikitext)
+    by_item = {name: qty for _s, _l, name, qty in rows}
+    assert by_item["Apricot"] == 12
+    assert by_item["Mushroom"] == 12
+    assert by_item["Very Comfortable Pillow"] == 3
+
+
+def test_workshop_list_and_itemgrid_merge_grid_overrides_list():
+    """List macros plus ItemGrid: grid/price overwrites the same upgrade."""
+    wikitext = """
+* {{Workshop upgrade|Scrappy|level=5|Very Comfortable Pillow|qty=12}}
+* {{Workshop upgrade|Gunsmith|level=2|Wasp Driver|qty=8}}
+|name1={{#replace: Very Comfortable Pillow|{{Workshop upgrade|Scrappy|level=5|Very Comfortable Pillow|qty=12}}}}
+|price1=×3
+"""
+    rows = _workshop_rows_from_wikitext(wikitext)
+    by_key = {(s, l, n): q for s, l, n, q in rows}
+    assert by_key[("Scrappy", 5, "Very Comfortable Pillow")] == 3
+    assert by_key[("Gunsmith", 2, "Wasp Driver")] == 8
+
+
+def test_outpost_room_expansion_keep_map_covers_chalet_mats():
+    keep = outpost_room_expansion_keep_map()
+    assert "Outpost Room 2 (3x)" in keep["epoxy bucket"]
+    assert "Outpost Room 2 (3x)" in keep["hand drill"]
+    assert "Outpost Room 2 (35x)" in keep["planks"]
+    assert "Outpost Room 1 (3x)" in keep["steel cable"]
+
+
+def test_apply_workshop_keep_map_replaces_loot_workshop_line():
+    uses = {
+        "very comfortable pillow": "Workshop: Scrappy 5 (12x)",
+        "olives": "Workshop: Scrappy 4 (6x); Projects: Foo (1x)",
+    }
+    workshop = {
+        "very comfortable pillow": ["Scrappy 5 (3x)"],
+        "olives": ["Scrappy 4 (6x)"],
+    }
+    out = apply_workshop_keep_map(uses, workshop)
+    assert out["very comfortable pillow"] == "Workshop: Scrappy 5 (3x)"
+    assert "Projects: Foo (1x)" in out["olives"]
+    assert "Scrappy 4 (6x)" in out["olives"]
 
 
 def test_merge_action_upgrades_bare_recycle_when_keep_for_has_project():
@@ -92,6 +160,19 @@ def test_generate_action_weapon_and_blueprint():
         "Keep",
         "",
         "Learn, sell, or trade to other players",
+    )
+
+
+def test_generate_action_assorted_seeds():
+    from update_db import generate_action
+
+    seeds = GameItem(
+        name="Assorted Seeds", category="Nature", sell_price=100, stack_size=100
+    )
+    assert generate_action(seeds) == (
+        "Sell or keep for user trading",
+        "",
+        "",
     )
 
 

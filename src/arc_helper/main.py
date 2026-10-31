@@ -327,7 +327,7 @@ class Application:
         # Initialize database
         self.db = get_database()
 
-        # Optional player progress (MetaForge account-sync → progress.json)
+        # Optional player progress. account-sync.json is the raw account-sync body.
         self.progress = load_progress()
         if self.progress is not None:
             logger.info(
@@ -336,7 +336,7 @@ class Application:
                 len(self.progress.workshop_levels),
             )
         else:
-            logger.info("No progress.json — showing full keep recommendations")
+            logger.info("No account-sync.json — showing full keep recommendations")
 
         # Structured catalogs for remaining-need totals and buy hints
         self.quest_catalog = get_quest_catalog()
