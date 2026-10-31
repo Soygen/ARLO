@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import html
 import re
 import sqlite3
 import sys
@@ -264,7 +265,9 @@ def _normalize_category(item_type: str) -> str:
         "topside_material": "Topside Material", "recyclable": "Recyclable",
         "trinket": "Trinket", "nature": "Nature", "quick_use": "Quick Use",
         "key": "Key", "ammunition": "Ammunition", "ammo": "Ammunition",
-        "shield": "Shield", "augment": "Augment", "mods": "Mods", "mod": "Mods",
+        "shield": "Shield", "augment": "Augment",
+        "mods": "Mods", "mod": "Mods", "modification": "Mods",
+        "weapon": "Weapon", "blueprint": "Blueprint",
     }
     return mapping.get(item_type.lower().strip(), item_type.title() if item_type else "")
 
@@ -465,16 +468,11 @@ def fetch_items_hybrid() -> list[GameItem]:
         rarity = raw.get("rarity", "")
         recycles_to = recycle_map.get(name, "")
 
-        # Wiki uses (workshop upgrades, expeditions, projects)
-        wiki_use_str = wiki_uses.get(name.lower(), "")
-
-        # MetaForge quest uses
-        quest_uses = quest_map.get(name.lower(), [])
-        quest_str = "Quests: " + ", ".join(quest_uses) if quest_uses else ""
-
-        # Combine: wiki uses first (workshop/expedition), then quests
-        uses_parts = [p for p in [wiki_use_str, quest_str] if p]
-        combined_uses = "; ".join(uses_parts)
+        # Wiki uses (workshop upgrades, expeditions, projects) + MetaForge quests
+        combined_uses = format_keep_for(
+            wiki_uses.get(name.lower(), ""),
+            quest_map.get(name.lower(), []),
+        )
 
         items.append(GameItem(
             name=name,
@@ -488,6 +486,103 @@ def fetch_items_hybrid() -> list[GameItem]:
 
     print(f"\n  Processed {len(items)} items (MetaForge + Wiki enrichment)")
     return items
+
+
+# =============================================================================
+# Keep-for formatting / merge
+# =============================================================================
+
+def normalize_keep_labels(keep_for: str) -> str:
+    """Decode HTML entities and ensure Projects/Quests/Workshop trailing colons."""
+    text = (keep_for or "").strip()
+    if not text:
+        return ""
+    text = html.unescape(text)
+    text = text.replace("[[", "").replace("]]", "")
+    text = re.sub(r"\bQuests(?!:)\s+", "Quests: ", text)
+    text = re.sub(r"\bProjects(?!:)\s+", "Projects: ", text)
+    text = re.sub(r"\bWorkshop(?!:)\s+", "Workshop: ", text)
+    return text
+
+
+def format_keep_for(wiki_uses: str = "", quest_uses: list[str] | None = None) -> str:
+    """Build a consistent keep_for string from wiki uses + MetaForge quests.
+
+    MetaForge quests are always ``Quests: Name (Nx), ...``. Wiki workshop /
+    project / expedition text is normalized with ``Projects:`` / ``Workshop:``
+    colons. Quest entries already named in the wiki cell are skipped.
+    """
+    parts: list[str] = []
+    wiki = normalize_keep_labels(wiki_uses or "")
+    if wiki:
+        parts.append(wiki)
+
+    quests = quest_uses or []
+    if quests:
+        wiki_lower = wiki.lower()
+        filtered: list[str] = []
+        for entry in quests:
+            quest_name = re.sub(r"\s*\(\d+x\)\s*$", "", entry).strip()
+            if quest_name and quest_name.lower() not in wiki_lower:
+                filtered.append(entry)
+        if filtered:
+            parts.append("Quests: " + ", ".join(filtered))
+
+    return "; ".join(parts)
+
+
+def merge_keep_for(old: str, new: str) -> str:
+    """Prefer freshly scraped keep_for when present; otherwise keep the old note."""
+    new = normalize_keep_labels(new or "")
+    old = normalize_keep_labels(old or "")
+    return new if new else old
+
+
+_BARE_DISPOSE_ACTIONS = frozenset({
+    "recycle",
+    "sell",
+    "trash",
+    "recycle if short on materials; sell otherwise",
+})
+
+# keep_for values that mean a real progression hold (not "Quick Use consumable")
+_PROGRESS_KEEP_RE = re.compile(
+    r"quests?|projects?|workshop|upgrade|expedition|scrappy|"
+    r"flickering\s+flames|\bstage\b",
+    re.IGNORECASE,
+)
+
+
+def is_bare_dispose_action(action: str) -> bool:
+    """True for plain Recycle/Sell actions with no keep-until wording."""
+    return action.strip().lower() in _BARE_DISPOSE_ACTIONS
+
+
+def has_progress_keep(keep_for: str) -> bool:
+    """True when keep_for names a quest, project, workshop, or upgrade use."""
+    return bool(_PROGRESS_KEEP_RE.search(keep_for or ""))
+
+
+def merge_action(old_action: str, new_action: str, keep_for: str) -> str:
+    """Preserve hand-tuned actions, but fix Recycle/Sell that contradict keep advice."""
+    old_action = (old_action or "").strip()
+    new_action = (new_action or "").strip()
+    new_lower = new_action.lower()
+    # Bare Recycle/Sell + quest/project/workshop keep_for → use generated keep-until
+    if (
+        has_progress_keep(keep_for)
+        and is_bare_dispose_action(old_action)
+        and new_action
+        and not is_bare_dispose_action(new_action)
+    ):
+        return new_action
+    # Bare Sell/Recycle → Keep when category rules now say Keep (weapons, blueprints, …)
+    if (
+        is_bare_dispose_action(old_action)
+        and new_lower.startswith("keep")
+    ):
+        return new_action
+    return old_action or new_action
 
 
 # =============================================================================
@@ -508,8 +603,14 @@ def generate_action(item: GameItem) -> tuple[str, str, str]:
         return ("Keep", recycle_for, keep_for) if has_uses else ("Use", recycle_for, "Quick Use consumable")
     if category == "Ammunition":
         return "Keep", "", "Ammo"
-    if category in {"Shield", "Augment", "Mods"}:
+    if category in {"Shield", "Augment", "Mods", "Weapon"}:
         return "Keep", recycle_for, f"Equippable {category}"
+    if category == "Blueprint":
+        return (
+            "Keep",
+            recycle_for,
+            "Learn, sell, or trade to other players",
+        )
     if category in MATERIAL_CATEGORIES:
         return ("Keep", recycle_for, keep_for) if has_uses else ("Keep", recycle_for, f"{category} - crafting ingredient")
     if category == "Nature":
@@ -569,11 +670,14 @@ def build_csv_rows(
 
         if merge and existing and key in existing:
             old = existing[key]
+            merged_keep = merge_keep_for(old["keep_for"], keep_for)
             rows.append({
                 "name": item.name,
-                "action": old["action"],
+                # Preserve hand-tuned actions, except bare Recycle/Sell that
+                # contradict a real quest/project/workshop keep_for.
+                "action": merge_action(old["action"], action, merged_keep),
                 "recycle_for": old["recycle_for"] or recycle_for,
-                "keep_for": old["keep_for"] or keep_for,
+                "keep_for": merged_keep,
                 "sell_price": sell_price,
                 "stack_size": stack_size,
             })
@@ -581,7 +685,8 @@ def build_csv_rows(
         else:
             rows.append({
                 "name": item.name, "action": action,
-                "recycle_for": recycle_for, "keep_for": keep_for,
+                "recycle_for": recycle_for,
+                "keep_for": normalize_keep_labels(keep_for),
                 "sell_price": sell_price, "stack_size": stack_size,
             })
             if existing and key not in (existing or {}):
@@ -734,16 +839,13 @@ def fetch_items_from_metaforge_only() -> list[GameItem]:
         if not name:
             continue
         stat_block = raw.get("stat_block") or {}
-        quest_uses = quest_map.get(name.lower(), [])
-        quest_str = "Quests: " + ", ".join(quest_uses) if quest_uses else ""
-
         items.append(GameItem(
             name=name, rarity=raw.get("rarity", ""),
             recycles_to=recycle_map.get(name, ""),
             sell_price=raw.get("value", 0) or 0,
             stack_size=stat_block.get("stackSize", 0) or 0,
             category=_normalize_category(raw.get("item_type", "")),
-            uses=quest_str,
+            uses=format_keep_for("", quest_map.get(name.lower(), [])),
         ))
     print(f"  Processed {len(items)} items from MetaForge")
     return items

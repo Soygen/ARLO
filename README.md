@@ -42,7 +42,7 @@ The overlay popup displays:
 - **Item name** at the top
 - **Action** color-coded (green = keep, gold = sell, turquoise = recycle, pink = use)
 - **Sell price** and **stack size** on the info line
-- **Details** - what it recycles into, or why you're keeping it
+- **Details** - why you're keeping it (quests / workshop / projects) and recycle yield (`♻`), when both apply
 
 ---
 
