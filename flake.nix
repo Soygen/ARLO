@@ -7,10 +7,19 @@
     let
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
       # Kernel headers and compiler for building the evdev Python package (pynput dependency)
-      # X11 libs so mss (X11 backend) finds libX11/libXfixes/libXrandr at runtime
+      # X11 libs for screen capture. mss 10.2's default Linux backend is XCB
+      # (libxcb, libxcb-randr, libxcb-render, libxcb-shm, libxcb-xfixes).
+      # pynput/python-xlib and click-through still need the Xlib libs.
       # glib/cairo so uv can build PyGObject; GStreamer + pipewire for Wayland capture
+      # Same nixpkgs Python as glib/GStreamer. A uv-downloaded CPython is
+      # patched to whatever glibc was current at install time, then breaks
+      # after `nix flake update` (GLIBC_2.xx not found when importing gi).
+      # nixpkgs Python omits Tk; the overlay imports tkinter at startup.
+      pythonTkinter = pkgs.python313Packages.tkinter;
       buildInputs = with pkgs; [
         uv
+        python313
+        pythonTkinter
         tesseract
         linuxHeaders
         gcc
@@ -18,6 +27,7 @@
         libx11
         libxfixes
         libxrandr
+        libxcb
         glib
         libffi
         cairo
@@ -30,8 +40,10 @@
         libx11
         libxfixes
         libxrandr
+        libxcb
         glib
         cairo
+        stdenv.cc.cc.lib
       ]);
       giTypelibPath = pkgs.lib.makeSearchPath "lib/girepository-1.0" (with pkgs; [
         glib.out
@@ -53,6 +65,9 @@
         LD_LIBRARY_PATH = libPath;
         GI_TYPELIB_PATH = giTypelibPath;
         GST_PLUGIN_SYSTEM_PATH_1_0 = gstPluginPath;
+        UV_PYTHON = "${pkgs.python313}/bin/python3";
+        UV_PYTHON_DOWNLOADS = "never";
+        PYTHONPATH = "${pythonTkinter}/${pkgs.python313.sitePackages}";
       };
     };
 }
