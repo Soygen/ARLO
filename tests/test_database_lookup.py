@@ -14,6 +14,12 @@ def _db(tmp_path):
                 ("Anvil IV", "Recycle"),
                 ("Rascal I", "Sell"),
                 ("Rascal II", "Keep"),
+                ("Lance's Mixtape (5th edition)", "Keep"),
+                ("Looting Mk. 1", "Keep"),
+                ("Looting Mk. 2", "Keep"),
+                ("Looting Mk. 3 (Cautious)", "Keep"),
+                ("Tactical Mk. 1", "Keep"),
+                ("Combat Mk. 1", "Keep"),
             ],
         )
         conn.commit()
@@ -45,3 +51,31 @@ def test_distinct_tiers_stay_distinct(tmp_path):
 
 def test_unknown_returns_none(tmp_path):
     assert _db(tmp_path).lookup("NONEXISTENT WIDGET") is None
+
+
+def test_ocr_digit_letter_swap_mixtape(tmp_path):
+    # OCR: dropped apostrophe/spaces and read 5TH as STH
+    assert (
+        _db(tmp_path).lookup("LANCESMIXTAPESTH EDITION").name
+        == "Lance's Mixtape (5th edition)"
+    )
+
+
+def test_ocr_collapsed_looting_mk_defaults_to_shortest_tier(tmp_path):
+    # OCR drops spaces and the tier digit → match shortest Looting Mk.
+    assert _db(tmp_path).lookup("LOOTINGMK").name == "Looting Mk. 1"
+
+
+def test_ocr_looting_mk_with_tier(tmp_path):
+    assert _db(tmp_path).lookup("LOOTINGMK2").name == "Looting Mk. 2"
+    assert (
+        _db(tmp_path).lookup("LOOTINGMK3CAUTIOUS").name
+        == "Looting Mk. 3 (Cautious)"
+    )
+
+
+def test_ocr_collapsed_tactical_and_combat_mk(tmp_path):
+    assert _db(tmp_path).lookup("TACTICALMK").name == "Tactical Mk. 1"
+    assert _db(tmp_path).lookup("COMBATMK").name == "Combat Mk. 1"
+    # Trailing L is a common OCR misread of the tier digit 1
+    assert _db(tmp_path).lookup("COMBATMKL").name == "Combat Mk. 1"

@@ -96,6 +96,47 @@ def test_wayland_trigger_needs_consecutive_misses():
     assert scanner._inventory_closed(ocr, _settings()) is True  # noqa: SLF001
 
 
+def test_wayland_empty_ocr_keeps_popup_inside_display_time():
+    scanner = _make_scanner(wayland=True)
+    scanner._last_shown_item = "Wires"  # noqa: SLF001
+    scanner._last_shown_time = 1_000_000.0  # noqa: SLF001
+
+    with (
+        patch("arc_helper.main.get_settings", return_value=_settings()),
+        patch("arc_helper.main.time.time", return_value=1_000_000.4),
+    ):
+        scanner._handle_empty_tooltip()  # noqa: SLF001
+
+    assert _drain(scanner.ui_queue) == [("overlay_keep",)]
+    assert scanner._last_shown_item == "Wires"  # noqa: SLF001
+
+
+def test_wayland_empty_ocr_hides_after_display_time():
+    scanner = _make_scanner(wayland=True)
+    scanner._last_shown_item = "Wires"  # noqa: SLF001
+    scanner._last_shown_time = 1_000_000.0  # noqa: SLF001
+
+    with (
+        patch("arc_helper.main.get_settings", return_value=_settings()),
+        patch("arc_helper.main.time.time", return_value=1_000_001.0),
+    ):
+        scanner._handle_empty_tooltip()  # noqa: SLF001
+
+    assert _drain(scanner.ui_queue) == [("overlay_hide",)]
+    assert scanner._last_shown_item == ""  # noqa: SLF001
+
+
+def test_x11_empty_ocr_does_not_hide():
+    scanner = _make_scanner(wayland=False)
+    scanner._last_shown_item = "Wires"  # noqa: SLF001
+    scanner._last_shown_time = 1_000_000.0  # noqa: SLF001
+
+    with patch("arc_helper.main.time.time", return_value=1_000_010.0):
+        scanner._handle_empty_tooltip()  # noqa: SLF001
+
+    assert scanner.ui_queue.empty()
+
+
 def test_x11_trigger_closes_on_first_miss():
     scanner = _make_scanner(wayland=False)
     ocr = MagicMock()

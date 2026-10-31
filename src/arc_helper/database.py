@@ -24,6 +24,17 @@ def _match_key(name: str) -> str:
     return "".join(c for c in name.lower() if c.isalnum())
 
 
+# OCR often swaps these digits/letters (5TH→STH, Mk.1→MKL, …)
+_OCR_FOLD = str.maketrans(
+    {"0": "o", "1": "i", "l": "i", "5": "s", "8": "b"}
+)
+
+
+def _ocr_fold_key(name: str) -> str:
+    """``_match_key`` with common digit/letter confusions collapsed."""
+    return _match_key(name).translate(_OCR_FOLD)
+
+
 def names_match(a: str, b: str, *, cutoff: float = 0.85) -> bool:
     """True if two item-name strings are the same item under OCR noise.
 
@@ -39,16 +50,86 @@ def names_match(a: str, b: str, *, cutoff: float = 0.85) -> bool:
     ka, kb = _match_key(a), _match_key(b)
     if not ka or not kb:
         return False
-    if ka == kb:
+    if ka == kb or _ocr_fold_key(a) == _ocr_fold_key(b):
         return True
     # Different tiers / trailing OCR drop often look like a prefix pair
     if ka.startswith(kb) or kb.startswith(ka):
         return False
-    ratio = difflib.SequenceMatcher(None, ka, kb).ratio()
+    ratio = max(
+        difflib.SequenceMatcher(None, ka, kb).ratio(),
+        difflib.SequenceMatcher(
+            None, _ocr_fold_key(a), _ocr_fold_key(b)
+        ).ratio(),
+    )
     # Short names: allow a single substitution (WIRES↔WIRE5 ≈ 0.8)
     if max(len(ka), len(kb)) <= 6:
         return ratio >= 0.8
     return ratio >= cutoff
+
+
+def _pick_row_by_ocr_key(
+    clean_name: str, rows: list[sqlite3.Row]
+) -> sqlite3.Row | None:
+    """Resolve OCR noise against catalog names using alphanumeric keys.
+
+    Handles dropped spaces/punct (``LOOTINGMK``), digit↔letter swaps
+    (``…STH EDITION`` vs ``…5TH EDITION``), and truncated tier suffixes
+    (``LOOTINGMK`` → shortest ``Looting Mk. …`` when the digit was lost).
+    """
+    target = _match_key(clean_name)
+    folded = _ocr_fold_key(clean_name)
+    if not target:
+        return None
+
+    exact: list[sqlite3.Row] = []
+    folded_hits: list[sqlite3.Row] = []
+    prefix_hits: list[sqlite3.Row] = []
+
+    for row in rows:
+        ck = _match_key(row["name"])
+        if not ck:
+            continue
+        if ck == target:
+            exact.append(row)
+        elif _ocr_fold_key(row["name"]) == folded:
+            folded_hits.append(row)
+        elif ck.startswith(target) and 0 < len(ck) - len(target) <= 12:
+            # Query is a stem of the catalog name (tier/variant OCR-dropped)
+            prefix_hits.append(row)
+
+    if len(exact) == 1:
+        return exact[0]
+    if len(folded_hits) == 1:
+        return folded_hits[0]
+
+    # Fuzzy on keys (not raw display strings — those fail when spaces drop)
+    best: sqlite3.Row | None = None
+    best_ratio = 0.0
+    for row in rows:
+        ck = _match_key(row["name"])
+        if not ck:
+            continue
+        if (ck.startswith(target) or target.startswith(ck)) and ck != target:
+            continue
+        ratio = max(
+            difflib.SequenceMatcher(None, target, ck).ratio(),
+            difflib.SequenceMatcher(
+                None, folded, _ocr_fold_key(row["name"])
+            ).ratio(),
+        )
+        if ratio > best_ratio:
+            best_ratio = ratio
+            best = row
+    if best is not None and best_ratio >= 0.9:
+        return best
+
+    # Truncated stem with several tiered variants → prefer shortest catalog name
+    if prefix_hits:
+        prefix_hits.sort(
+            key=lambda r: (len(_match_key(r["name"])), len(r["name"]), r["name"])
+        )
+        return prefix_hits[0]
+    return None
 
 
 class Item(BaseModel):
@@ -119,18 +200,12 @@ class Database:
             )
             row = cursor.fetchone()
 
-            # Whitespace/punctuation-insensitive exact match. OCR often drops
-            # spaces ("ILTOROII") or adds stray characters; this still resolves
-            # to the stored "Il Toro II" without the looseness of LIKE/fuzzy.
+            # OCR-tolerant key match (dropped spaces, 5↔S, truncated Mk tier, …)
             if not row:
-                target = _match_key(clean_name)
-                if target:
-                    for candidate in conn.execute("SELECT * FROM items"):
-                        if _match_key(candidate["name"]) == target:
-                            row = candidate
-                            break
+                candidates = list(conn.execute("SELECT * FROM items"))
+                row = _pick_row_by_ocr_key(clean_name, candidates)
 
-            # If no exact match, try LIKE match
+            # Substring LIKE (helps when OCR keeps spaces but not full punctuation)
             if not row:
                 cursor = conn.execute(
                     """
@@ -143,20 +218,16 @@ class Database:
                 )
                 row = cursor.fetchone()
 
-            # If still no match, try fuzzy matching (handles OCR typos)
+            # Display-string fuzzy match as last resort
             if not row:
                 cursor = conn.execute("SELECT name FROM items")
                 all_names = [r[0] for r in cursor.fetchall()]
-
-                # Find closest match with at least 80% similarity
                 matches = difflib.get_close_matches(
                     clean_name, all_names, n=1, cutoff=0.8
                 )
-
                 if matches:
-                    match_name = matches[0]
                     cursor = conn.execute(
-                        "SELECT * FROM items WHERE name = ?", (match_name,)
+                        "SELECT * FROM items WHERE name = ?", (matches[0],)
                     )
                     row = cursor.fetchone()
 
