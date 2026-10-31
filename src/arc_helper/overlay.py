@@ -3,6 +3,7 @@ Overlay UI for ARLO (Arc Raiders Loot Overlay).
 Displays item recommendations as a styled popup with action colors.
 """
 
+import html
 import re
 import tkinter as tk
 from typing import Callable
@@ -36,10 +37,11 @@ RECYCLE_SYMBOL = "\u267b"  # ♻
 
 
 def normalize_keep_labels(keep_for: str) -> str:
-    """Ensure Projects/Quests/Workshop labels use a trailing colon."""
+    """Decode HTML entities and ensure Projects/Quests/Workshop trailing colons."""
     text = (keep_for or "").strip()
     if not text:
         return ""
+    text = html.unescape(text)
     text = text.replace("[[", "").replace("]]", "")
     text = re.sub(r"\bQuests(?!:)\s+", "Quests: ", text)
     text = re.sub(r"\bProjects(?!:)\s+", "Projects: ", text)

@@ -19,6 +19,12 @@ def test_format_keep_for_adds_projects_colon():
     )
 
 
+def test_format_keep_for_unescapes_html_entities():
+    assert format_keep_for("Projects: Soul&#39;s Offering (15x)", []) == (
+        "Projects: Soul's Offering (15x)"
+    )
+
+
 def test_format_keep_for_quests_only():
     assert format_keep_for("", ["The League (1x)", "Movie Night (1x)"]) == (
         "Quests: The League (1x), Movie Night (1x)"

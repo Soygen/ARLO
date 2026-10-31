@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import html
 import re
 import sqlite3
 import sys
@@ -492,10 +493,11 @@ def fetch_items_hybrid() -> list[GameItem]:
 # =============================================================================
 
 def normalize_keep_labels(keep_for: str) -> str:
-    """Ensure Projects/Quests/Workshop labels use a trailing colon."""
+    """Decode HTML entities and ensure Projects/Quests/Workshop trailing colons."""
     text = (keep_for or "").strip()
     if not text:
         return ""
+    text = html.unescape(text)
     text = text.replace("[[", "").replace("]]", "")
     text = re.sub(r"\bQuests(?!:)\s+", "Quests: ", text)
     text = re.sub(r"\bProjects(?!:)\s+", "Projects: ", text)
