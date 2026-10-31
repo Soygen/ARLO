@@ -1,5 +1,6 @@
 """Tests for wiki Projects/Traders catalog helpers."""
 
+from datetime import date
 from pathlib import Path
 
 from bs4 import BeautifulSoup
@@ -10,9 +11,13 @@ from arc_helper.progress import apply_progress
 from arc_helper.projects import ProjectCatalog
 from arc_helper.traders import TraderCatalog
 from update_db import _aggregate_requirements
+from update_db import _parse_project_infobox
 from update_db import _parse_wiki_item_quantities
 from update_db import _requirements_from_tabbers
 from update_db import _requirements_from_tables
+from update_db import format_keep_for
+from update_db import parse_wiki_date
+from update_db import project_is_active
 from update_db import write_projects_catalog
 from update_db import write_traders_catalog
 
@@ -167,3 +172,94 @@ def test_apply_progress_sets_buy_from_and_project_needed(tmp_path: Path):
 
 def test_parse_qty_smoke():
     assert _parse_wiki_item_quantities("3× Planks") == [("Planks", 3)]
+
+
+INFOBOX_HTML = """
+<div id="mw-content-text">
+  <table>
+    <tr><th>Type</th><td>Temporary</td></tr>
+    <tr><th>Duration</th><td>27 days</td></tr>
+    <tr><th>Start</th><td>March 31, 2026</td></tr>
+    <tr><th>End</th><td>April 27, 2026</td></tr>
+  </table>
+</div>
+"""
+
+
+def test_parse_project_infobox_dates():
+    soup = BeautifulSoup(INFOBOX_HTML, "html.parser")
+    info = _parse_project_infobox(soup)
+    assert info["project_type"] == "Temporary"
+    assert info["starts_on"] == "2026-03-31"
+    assert info["ends_on"] == "2026-04-27"
+    assert parse_wiki_date("March 31, 2026") == date(2026, 3, 31)
+
+
+def test_expired_projects_excluded_from_keep_map_and_need(tmp_path: Path):
+    projects = [
+        {
+            "id": "high-gain-antenna",
+            "name": "High-Gain Antenna",
+            "project_type": "Temporary",
+            "starts_on": "2026-03-31",
+            "ends_on": "2026-04-27",
+            "required_items": [
+                {
+                    "item_id": "arc-alloy",
+                    "quantity": 50,
+                    "item": {"id": "arc-alloy", "name": "ARC Alloy"},
+                }
+            ],
+        },
+        {
+            "id": "trophy-display",
+            "name": "Trophy Display",
+            "project_type": "",
+            "starts_on": "",
+            "ends_on": "",
+            "required_items": [
+                {
+                    "item_id": "arc-alloy",
+                    "quantity": 10,
+                    "item": {"id": "arc-alloy", "name": "ARC Alloy"},
+                }
+            ],
+        },
+    ]
+    assert not project_is_active(projects[0], today=date(2026, 10, 29))
+    assert project_is_active(projects[1], today=date(2026, 10, 29))
+
+    project_map = write_projects_catalog(
+        projects,
+        csv_path=tmp_path / "projects.csv",
+        db_path=tmp_path / "projects.db",
+        today=date(2026, 10, 29),
+    )
+    assert project_map["arc alloy"] == ["Trophy Display (10x)"]
+    assert "High-Gain" not in " ".join(project_map["arc alloy"])
+
+    catalog = ProjectCatalog(tmp_path / "projects.db")
+    assert not catalog.is_active("High-Gain Antenna", today=date(2026, 10, 29))
+    assert catalog.is_active("Trophy Display", today=date(2026, 10, 29))
+    assert catalog.total_needed(
+        "ARC Alloy", project_items={}, today=date(2026, 10, 29)
+    ) == 10
+
+    item = Item(
+        name="ARC Alloy",
+        action="Keep",
+        keep_for=(
+            "Projects: High-Gain Antenna (50x), Trophy Display (10x)"
+        ),
+    )
+    out = apply_progress(item, None, project_catalog=catalog)
+    assert "High-Gain" not in (out.keep_for or "")
+    assert "Trophy Display" in (out.keep_for or "")
+    assert out.project_needed == 10
+
+
+def test_format_keep_for_drops_inactive_wiki_projects():
+    assert format_keep_for(
+        "Projects: Expedition 1 (5x) High-Gain Antenna (15x)",
+        inactive_projects={"high-gain antenna"},
+    ) == "Projects: Expedition 1 (5x)"

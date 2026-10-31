@@ -1,4 +1,4 @@
-"""Structured MetaForge quest catalog (tables in data/arlo.db / quests.csv)."""
+"""Structured MetaForge quest catalog (tables in arlo.db / data/quests.csv)."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from .config import APP_DIR
 
 
 def _default_db_path() -> Path:
-    return APP_DIR / "data" / "arlo.db"
+    return APP_DIR / "arlo.db"
 
 
 @dataclass(frozen=True)

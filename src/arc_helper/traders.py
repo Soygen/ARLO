@@ -1,4 +1,4 @@
-"""Structured wiki trader inventories (tables in data/arlo.db / traders.csv)."""
+"""Structured wiki trader inventories (tables in arlo.db / data/traders.csv)."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from .config import APP_DIR
 
 
 def _default_db_path() -> Path:
-    return APP_DIR / "data" / "arlo.db"
+    return APP_DIR / "arlo.db"
 
 
 @dataclass(frozen=True)

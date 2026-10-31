@@ -1,19 +1,33 @@
 ## Item Database
 
-Catalog data lives under `data/`: one SQLite file `data/arlo.db` (tables for items, quests, projects, traders) plus readable CSVs (`data/items.csv`, `data/quests.csv`, `data/projects.csv`, `data/traders.csv`) for diffs and manual edits. The items table columns are `name`, `action`, `recycle_for`, `keep_for`, `sell_price`, and `stack_size`. Quest/project requirement tables power remaining-need totals after a progress import; trader tables power overlay `Buy:` hints. The catalog updates automatically from the [MetaForge API](https://metaforge.app/arc-raiders) on every app launch, with the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot) as a fallback.
+Catalog data is one SQLite file `arlo.db` at the app root (tables for items, quests, projects, traders) plus readable CSVs under `data/` (`items.csv`, `quests.csv`, `projects.csv`, `traders.csv`) for diffs and manual edits. The items table columns are `name`, `action`, `recycle_for`, `keep_for`, `sell_price`, and `stack_size`. Quest/project requirement tables power remaining-need totals after a progress import; trader tables power overlay `Buy:` hints. The catalog updates automatically on every app launch (throttled to 24h).
+
+### Source of truth
+
+Neither MetaForge nor the wiki is complete alone. Default hybrid mode picks per field:
+
+| Field | Source of truth | Notes |
+|-------|-----------------|-------|
+| Item name, category, rarity, sell price, stack size | **MetaForge** Items API | Wiki Loot only if MetaForge is down |
+| Quest catalog, prerequisites, turn-ins | **MetaForge** Quests API + quest-tree | Wiki Quests page enriches / fills gaps |
+| Recycle yields (`recycle_for`) | **MetaForge** recycle table, then **wiki** Loot for gaps | MetaForge has more weapon/tier rows; wiki has nature/trinket rows MetaForge omits (e.g. Olives) |
+| Workshop upgrade keep (`Workshop: Station N (Qx)`) | **Wiki** `Workshop` / `Scrappy` / `Outpost` | Not the Loot Uses column — it often copies a sibling material’s quantity |
+| Outpost room expansions (`Workshop: Outpost Room N (Qx)`) | **Curated** (MetaForge rooms page) | Wiki Workshop Upgrade tables are empty for Chalet / expansions; progress uses `workshop.outpost.rooms` count |
+| Project requirements + schedule | **Wiki** Projects directory | `Type` / `Start` / `End`; expired temporary projects stay in the catalog but are excluded from keep / `Need:` |
+| Trader shop inventories (`Buy:`) | **Wiki** Traders directory | |
 
 ### Automatic Updates on Launch
 
 Every time `ARLO.exe` (or `uv run arc-helper`) starts, it checks for item database updates. This is throttled to once per 24 hours so it doesn't slow down repeated launches. The update runs in merge mode, meaning your manual action overrides are always preserved.
 
-The updater pulls data from MetaForge and the Arc Raiders Wiki:
+Concrete endpoints / pages:
 
-- **Items API** (`/api/arc-raiders/items`) - Item names, categories, sell prices, stack sizes, rarity
-- **Recycle components** (Supabase `arc_item_recycle_components`) - What each item recycles into
-- **Quests API** (`/api/arc-raiders/quests` + `/quest-tree`) - Quest catalog, prerequisites, turn-ins → `data/quests.csv` + quest tables in `data/arlo.db`
-- **Wiki** (`Loot`, `Quests`, `Workshop`, `Projects`, `Traders`) - Loot Uses for workshop lines; Quests page enriches/falls back turn-ins; Projects/Traders directories feed `data/projects.csv` / `data/traders.csv` and matching tables in `data/arlo.db` (overlay `Buy:` hints)
+- **Items API** (`/api/arc-raiders/items`) — catalog, prices, stacks
+- **Recycle components** (Supabase `arc_item_recycle_components`) — primary recycles; wiki Loot fills missing rows
+- **Quests API** (`/api/arc-raiders/quests` + `/quest-tree`) → `data/quests.csv` + quest tables in `arlo.db`
+- **Wiki** (`Loot`, `Quests`, `Workshop`, `Scrappy`, `Outpost`, `Projects`, `Traders`) — workshop/project/trader side catalogs and recycle gap-fill as in the table above
 
-If MetaForge is unreachable, the updater falls back to the wiki. If both are down, the app starts with whatever databases it already has.
+If MetaForge is unreachable, the updater falls back to the wiki for items. If both are down, the app starts with whatever databases it already has.
 
 The throttle timestamp is stored in `.last_wiki_update` in the app directory. Delete this file to force an update on the next launch.
 

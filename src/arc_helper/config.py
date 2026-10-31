@@ -35,6 +35,7 @@ def get_app_dir() -> Path:
 
 
 APP_DIR = get_app_dir()
+DATA_DIR = APP_DIR / "data"
 
 
 def get_screen_resolution() -> tuple[int, int]:

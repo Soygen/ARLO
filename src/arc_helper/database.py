@@ -11,6 +11,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from pydantic import Field
 
+from .config import DATA_DIR
 from .config import get_settings
 
 
@@ -220,17 +221,42 @@ class Database:
         return count
 
     def log_missing_item(self, name: str) -> None:
-        """Log an unknown item to missing_items.csv for easy addition later."""
+        """Log an unknown item to missing_items.csv for easy addition later.
+
+        Writes under ``data/`` (not beside the DB) and de-duplicates so OCR
+        spam does not grow the file without bound.
+        """
         if not name:
             return
 
-        missing_file = self.db_path.parent / "missing_items.csv"
+        missing_file = DATA_DIR / "missing_items.csv"
 
         try:
-            # Append to file
-            with missing_file.open("a", newline="", encoding="utf-8") as f:
-                writer = csv.writer(f)
-                writer.writerow([name])
+            seen: set[str] = set()
+            unique: list[str] = []
+            raw_count = 0
+            if missing_file.is_file():
+                with missing_file.open(newline="", encoding="utf-8") as f:
+                    for row in csv.reader(f):
+                        if not row or not row[0].strip():
+                            continue
+                        raw_count += 1
+                        item = row[0].strip()
+                        if item in seen:
+                            continue
+                        seen.add(item)
+                        unique.append(item)
+
+            if name not in seen:
+                unique.append(name)
+            elif raw_count == len(unique):
+                return
+
+            missing_file.parent.mkdir(parents=True, exist_ok=True)
+            with missing_file.open("w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f, lineterminator="\n")
+                for item in unique:
+                    writer.writerow([item])
         except Exception:  # noqa: BLE001
             pass  # Fail silently to not interrupt the user
 

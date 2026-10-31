@@ -16,7 +16,7 @@ A screen overlay tool for [Arc Raiders](https://store.steampowered.com/app/20737
 - **Quest-aware recommendations** - Items needed for quests are flagged to keep, with quest names shown
 - **Smart action generation** - Items are auto-categorized (keep materials, sell trinkets, recycle junk) based on API data
 - **Merge mode** - New items are added without overwriting your manual action overrides
-- **Dual data sources** - MetaForge API as primary, Arc Raiders Wiki as fallback
+- **Hybrid catalog sync** - MetaForge for items/quests; wiki for workshop/projects/traders (see docs/ITEMS.md)
 - **GitHub Actions** - Optional scheduled workflow that auto-updates the database weekly
 
 ---
@@ -163,13 +163,12 @@ Notes and limitations:
 
 ### Automatic Updates
 
-The app fetches item data from the [MetaForge API](https://metaforge.app/arc-raiders) every time it starts, throttled to once per 24 hours. This pulls from three MetaForge data sources:
+The app refreshes the catalog every launch (throttled to once per 24 hours) in **hybrid** mode. Source of truth is per field — see [docs/ITEMS.md](docs/ITEMS.md#source-of-truth):
 
-- **Items API** - Names, categories, sell prices, stack sizes, rarity (440+ items)
-- **Recycle components** - What each item breaks down into when recycled
-- **Quests API** - Which items are needed for which quests
+- **MetaForge** — item catalog, prices, stacks, quests; primary recycle rows
+- **Wiki** — workshop upgrade quantities, projects (incl. expiry), traders; recycle gap-fill; quest enrichment
 
-If MetaForge is unreachable, the updater falls back to scraping the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot). If both are down, the app continues normally with whatever database it already has.
+If MetaForge is unreachable, items fall back to the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot). If both are down, the app continues with whatever database it already has.
 
 Updates always run in merge mode, so any manual action overrides you've made are preserved.
 
@@ -178,11 +177,12 @@ Updates always run in merge mode, so any manual action overrides you've made are
 You can also trigger a database update from the command line:
 
 ```
-uv run python update_db.py                # Full update from MetaForge API
+uv run python update_db.py                # Hybrid update (MetaForge + wiki)
 uv run python update_db.py --merge        # Keep your manual overrides
 uv run python update_db.py --dry-run      # Preview changes without writing
-uv run python update_db.py --source wiki  # Force wiki scraper instead of API
+uv run python update_db.py --source wiki  # Wiki-only (no MetaForge)
 ```
+
 
 Or use the makefile shortcuts:
 
@@ -257,7 +257,8 @@ All settings live in the `.env` file. See [docs/CONFIGURATION.md](https://github
 ```
 ARLO/
 ├── update_db.py                    # MetaForge API updater (with wiki fallback)
-├── data/                           # Catalog CSVs + arlo.db (items, quests, projects, traders)
+├── arlo.db                         # SQLite catalog (items, quests, projects, traders)
+├── data/                           # Readable catalog CSVs (items, quests, projects, traders)
 ├── pyproject.toml                  # Package config & dependencies
 ├── makefile                        # Convenience targets
 ├── build.py                        # PyInstaller build script
@@ -305,8 +306,8 @@ Please include your screen resolution, debug images from the `debug/` folder (en
 ## Credits
 
 - **[PabsArcTooltip](https://github.com/Pabosik/PabsArcTooltip)** - Original project by [Pabosik](https://github.com/Pabosik)
-- **[MetaForge](https://metaforge.app/arc-raiders)** - Primary item data source (API and community database)
-- **[Arc Raiders Wiki](https://arcraiders.wiki)** - Fallback item data source
+- **[MetaForge](https://metaforge.app/arc-raiders)** - Item catalog, prices, quests, primary recycles
+- **[Arc Raiders Wiki](https://arcraiders.wiki)** - Workshop/projects/traders, recycle gaps, item fallback
 - **[Tesseract OCR](https://github.com/tesseract-ocr/tesseract)** - Text recognition engine
 - **[PyInstaller](https://pyinstaller.org/)** - Executable packaging
 

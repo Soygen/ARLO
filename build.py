@@ -76,19 +76,21 @@ def build():
     data_src = ROOT / "data"
     data_dest = OUTPUT / "data"
     if data_src.is_dir():
-        logger.info("Copying data/ catalog...")
+        logger.info("Copying data/ catalog CSVs...")
         data_dest.mkdir(exist_ok=True)
         for name in (
             "items.csv",
             "quests.csv",
             "projects.csv",
             "traders.csv",
-            "arlo.db",
             "missing_items.csv",
         ):
             src = data_src / name
             if src.exists():
                 shutil.copy(src, data_dest / name)
+    if (ROOT / "arlo.db").exists():
+        logger.info("Copying arlo.db...")
+        shutil.copy(ROOT / "arlo.db", OUTPUT / "arlo.db")
     shutil.copy(ROOT / "update_db.py", OUTPUT / "update_db.py")
     shutil.copy(
         ROOT / "src" / "arc_helper" / "resolutions.json", OUTPUT / "resolutions.json"

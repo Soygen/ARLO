@@ -2,9 +2,24 @@
 """
 Hybrid Database Updater for ARLO (Arc Raiders Loot Overlay).
 
-Combines data from two sources for best results:
-  - MetaForge API: items, sell prices, stack sizes, recycle components, quests
-  - Arc Raiders Wiki: workshop upgrades, expedition requirements, project uses
+Source of truth by field (default ``--source hybrid``):
+
+  MetaForge (primary)
+    - Item catalog: name, category, rarity, sell price, stack size
+    - Quest catalog + turn-ins (``/quests``, ``/quest-tree``)
+    - Recycle components (Supabase) when present
+
+  Arc Raiders Wiki (primary for these; MetaForge does not publish them)
+    - Workshop upgrade requirements (``Workshop`` / ``Scrappy`` / ``Outpost``
+      pages — not the Loot Uses column, which mis-copies sibling quantities)
+    - Outpost room expansion requirements (curated from MetaForge; wiki has no
+      Chalet / Expansion tables yet)
+    - Project requirements + Type/Start/End (expired temps excluded from keep)
+    - Trader shop inventories (overlay ``Buy:`` hints)
+    - Quest turn-in enrichment / fallback when the API is incomplete
+    - Recycle gap-fill for items MetaForge omits (e.g. Olives → seeds)
+
+  Failover: if MetaForge is down, fall back to wiki Loot for items/recycles.
 
 Usage:
     python update_db.py                 # Full update (overwrites items.csv)
@@ -12,7 +27,7 @@ Usage:
     python update_db.py --dry-run       # Preview without writing files
     python update_db.py --csv-only      # Only update items.csv, skip DB rebuild
     python update_db.py --source wiki   # Force wiki-only mode
-    python update_db.py --source api    # Force MetaForge-only mode (no wiki)
+    python update_db.py --source api    # MetaForge items/quests; wiki side catalogs
 """
 
 from __future__ import annotations
@@ -26,6 +41,8 @@ import sys
 import time
 from dataclasses import dataclass
 from dataclasses import field
+from datetime import date
+from datetime import datetime
 from pathlib import Path
 
 try:
@@ -46,12 +63,8 @@ except ImportError:
 # =============================================================================
 
 METAFORGE_API_BASE = "https://metaforge.app/api/arc-raiders"
-METAFORGE_SUPABASE_URL = "https://unhbvkszwhczbjxgetgk.supabase.co/rest/v1"
-METAFORGE_SUPABASE_KEY = (
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
-    "eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVuaGJ2a3N6d2hjemJqeGdldGdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ5NjgwMjUsImV4cCI6MjA2MDU0NDAyNX0."
-    "gckCmxnlpwwJOGmc5ebLYDnaWaxr5PW31eCrSPR5aRQ"
-)
+METAFORGE_SUPABASE_URL = "https://sb.metaforge.app/rest/v1"
+METAFORGE_SUPABASE_KEY = "sb_publishable_C7SqVOoZBPFy4W0DxKcOGQ_emEIw-rj"
 
 WIKI_URL = "https://arcraiders.wiki/wiki/"
 WIKI_LOOT_PATH = "Loot"
@@ -230,9 +243,26 @@ def fetch_metaforge_recycle_map(all_items: list[dict]) -> dict[str, str]:
     for item_id, parts in recycle_raw.items():
         item_name = id_to_name.get(item_id, "")
         if item_name:
-            recycle_map[item_name] = ", ".join(f"{qty}x {id_to_name.get(cid, cid)}" for cid, qty in parts)
+            recycle_map[item_name] = ", ".join(
+                f"{qty}x {id_to_name.get(cid, cid)}" for cid, qty in parts
+            )
 
     print(f"  Loaded recycle data for {len(recycle_map)} items")
+
+    # MetaForge omits some nature/trinket recycles (e.g. Olives → 2x Assorted Seeds).
+    # Fill gaps from the wiki Loot table without overwriting API rows.
+    try:
+        wiki_recycle = fetch_wiki_recycle_map()
+        filled = 0
+        for name, recycles_to in wiki_recycle.items():
+            if name not in recycle_map and recycles_to:
+                recycle_map[name] = recycles_to
+                filled += 1
+        if filled:
+            print(f"  Filled {filled} missing recycle rows from wiki")
+    except Exception as e:
+        print(f"  Wiki recycle gap-fill skipped ({e})")
+
     return recycle_map
 
 
@@ -599,6 +629,186 @@ def fetch_wiki_page(path: str = WIKI_LOOT_PATH) -> str:
     return resp.text
 
 
+def fetch_wiki_wikitext(page: str) -> str:
+    """Fetch raw wikitext via the MediaWiki API (for structured templates)."""
+    resp = requests.get(
+        "https://arcraiders.wiki/w/api.php",
+        params={
+            "action": "parse",
+            "page": page,
+            "prop": "wikitext",
+            "format": "json",
+        },
+        timeout=30,
+        headers={"User-Agent": USER_AGENT},
+    )
+    resp.raise_for_status()
+    payload = resp.json()
+    if "error" in payload:
+        raise RuntimeError(payload["error"])
+    return payload["parse"]["wikitext"]["*"]
+
+
+# Simple list form: {{Workshop upgrade|Gunsmith|level=2|Wasp Driver|qty=8}}
+_WORKSHOP_UPGRADE_LIST_RE = re.compile(
+    r"\{\{\s*Workshop upgrade\s*\|\s*([^|}]+)\s*"
+    r"\|\s*level\s*=\s*(\d+)\s*"
+    r"\|\s*([^|}]+)\s*"
+    r"\|\s*qty\s*=\s*(\d+)\s*\}\}",
+    re.IGNORECASE,
+)
+
+# Scrappy ItemGrid form — ``priceN`` is the displayed qty and can disagree with qty=
+_WORKSHOP_ITEMGRID_RE = re.compile(
+    r"\|name(\d+)=\{\{#replace:\s*([^|{}]+)\|"
+    r"\{\{Workshop upgrade\|([^|]+)\|level=(\d+)\|([^|]+)\|qty=(\d+)\}\}\}\}"
+    r"(?:.*?\|price\1=×(\d+))?",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def _workshop_rows_from_wikitext(wikitext: str) -> list[tuple[str, int, str, int]]:
+    """Return ``(station, level, item_name, qty)`` rows from upgrade templates.
+
+    Collects list-form macros and ItemGrid macros. When both exist for the same
+    upgrade, ItemGrid wins; within ItemGrid, displayed ``priceN`` wins over
+    ``qty=`` (the Loot/Uses table and some qty= fields mis-copy sibling amounts).
+    """
+    # key: (station_lower, level, item_lower) -> (station, level, item, qty)
+    by_key: dict[tuple[str, int, str], tuple[str, int, str, int]] = {}
+    order: list[tuple[str, int, str]] = []
+
+    def _add(station: str, level: int, item: str, qty: int) -> None:
+        station = station.strip()
+        item = item.strip()
+        key = (station.lower(), level, item.lower())
+        if key not in by_key:
+            order.append(key)
+        by_key[key] = (station, level, item, qty)
+
+    for station, level_s, item, qty_s in _WORKSHOP_UPGRADE_LIST_RE.findall(
+        wikitext or ""
+    ):
+        _add(station, int(level_s), item, int(qty_s))
+
+    for m in _WORKSHOP_ITEMGRID_RE.finditer(wikitext or ""):
+        _idx, _label, station, level_s, item, qty_s, price_s = m.groups()
+        qty = int(price_s) if price_s else int(qty_s)
+        _add(station, int(level_s), item, qty)
+
+    return [by_key[k] for k in order]
+
+
+# Outpost room expansions — wiki has empty Workshop Upgrade tables for these
+# (e.g. Epoxy Bucket → Chalet / Expansion 2). Quantities from MetaForge
+# ``/arc-raiders/outpost/rooms`` (Expansions 1–3).
+_OUTPOST_ROOM_EXPANSIONS: list[tuple[int, list[tuple[str, int]]]] = [
+    (
+        1,
+        [
+            ("Steel Cable", 3),
+            ("Sheet Metal", 20),
+            ("Cable Stripper", 3),
+        ],
+    ),
+    (
+        2,
+        [
+            ("Epoxy Bucket", 3),
+            ("Planks", 35),
+            ("Hand Drill", 3),
+        ],
+    ),
+    (
+        3,
+        [
+            ("Sheet Metal", 40),
+            ("Laser Level", 3),
+            ("Insulation Roll", 3),
+        ],
+    ),
+]
+
+
+def outpost_room_expansion_keep_map() -> dict[str, list[str]]:
+    """Item → ``Outpost Room N (Qx)`` entries for hideout room expansions."""
+    keep_map: dict[str, list[str]] = {}
+    for level, materials in _OUTPOST_ROOM_EXPANSIONS:
+        for item_name, qty in materials:
+            keep_map.setdefault(item_name.lower(), []).append(
+                f"Outpost Room {level} ({qty}x)"
+            )
+    return keep_map
+
+
+def scrape_wiki_workshop_keep_map() -> dict[str, list[str]]:
+    """Build item → ``Station N (Qx)`` entries from workshop station pages.
+
+    Replaces Loot-table Workshop lines for every station (Gunsmith, Scrappy,
+    Outpost, …). ItemGrid ``priceN`` overrides buggy ``qty=`` when they differ.
+    Also merges curated Outpost Room expansion requirements (wiki gap).
+    """
+    print("Scraping wiki workshop upgrade requirements...")
+    rows: list[tuple[str, int, str, int]] = []
+    # Workshop hub covers crafting stations; Scrappy/Outpost live on own pages
+    for page in (WIKI_WORKSHOP_PATH, "Scrappy", "Outpost"):
+        try:
+            wt = fetch_wiki_wikitext(page)
+            page_rows = _workshop_rows_from_wikitext(wt)
+            print(f"  {page}: {len(page_rows)} upgrade requirements")
+            rows.extend(page_rows)
+        except Exception as e:
+            print(f"  {page} workshop scrape skipped ({e})")
+
+    keep_map: dict[str, list[str]] = {}
+    seen: set[tuple[str, str, int]] = set()
+    for station, level, item_name, qty in rows:
+        key = (item_name.lower(), station.lower(), level)
+        if key in seen:
+            continue
+        seen.add(key)
+        keep_map.setdefault(item_name.lower(), []).append(
+            f"{station} {level} ({qty}x)"
+        )
+
+    room_map = outpost_room_expansion_keep_map()
+    for item_key, entries in room_map.items():
+        keep_map.setdefault(item_key, []).extend(entries)
+    print(
+        f"  + {sum(len(v) for v in room_map.values())} outpost room expansion "
+        f"requirements ({len(room_map)} items)"
+    )
+    print(f"  Workshop keep map covers {len(keep_map)} items")
+    return keep_map
+
+
+def apply_workshop_keep_map(
+    uses_map: dict[str, str],
+    workshop_map: dict[str, list[str]],
+) -> dict[str, str]:
+    """Replace Loot-table Workshop lines with authoritative station upgrades."""
+    if not workshop_map:
+        return uses_map
+    out: dict[str, str] = {}
+    for key in set(uses_map) | set(workshop_map):
+        loot = normalize_keep_labels(uses_map.get(key, ""))
+        parts: list[str] = []
+        if loot:
+            for chunk in re.split(r"(?=(?:Workshop|Quests|Projects):)", loot):
+                chunk = chunk.strip().strip(";").strip()
+                if not chunk:
+                    continue
+                if re.match(r"^Workshop:", chunk, re.IGNORECASE):
+                    continue
+                parts.append(chunk)
+        ws = workshop_map.get(key)
+        if ws:
+            parts.insert(0, "Workshop: " + " ".join(ws))
+        if parts:
+            out[key] = "; ".join(parts)
+    return out
+
+
 def _slugify(value: str) -> str:
     """Match MetaForge quest ids / progress.slugify (apostrophes dropped)."""
     cleaned = (value or "").lower().replace("'", "").replace("'", "")
@@ -927,8 +1137,73 @@ def _aggregate_requirements(
     return [(n, totals[n]) for n in order]
 
 
+_WIKI_DATE_FORMATS = (
+    "%B %d, %Y",  # March 31, 2026
+    "%b %d, %Y",  # Mar 31, 2026
+    "%Y-%m-%d",
+)
+
+
+def parse_wiki_date(value: str) -> date | None:
+    """Parse a wiki project Start/End cell into a ``date``, if possible."""
+    text = re.sub(r"\s+", " ", (value or "").strip())
+    if not text:
+        return None
+    for fmt in _WIKI_DATE_FORMATS:
+        try:
+            return datetime.strptime(text, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
+def project_is_active(
+    project: dict,
+    *,
+    today: date | None = None,
+) -> bool:
+    """True when the project has no end date or ``today`` is on/before it."""
+    today = today or date.today()
+    end = parse_wiki_date(str(project.get("ends_on") or ""))
+    if end is None:
+        # Also accept ISO already-normalized values from CSV/DB
+        raw = str(project.get("ends_on") or "").strip()
+        if raw:
+            try:
+                end = date.fromisoformat(raw)
+            except ValueError:
+                end = None
+    if end is None:
+        return True
+    return today <= end
+
+
+def _parse_project_infobox(soup: BeautifulSoup) -> dict[str, str]:
+    """Read Type / Start / End from the project page infobox table."""
+    info = {"project_type": "", "starts_on": "", "ends_on": ""}
+    content = soup.select_one("#mw-content-text") or soup
+    for tr in content.select("tr"):
+        cells = [
+            c.get_text(" ", strip=True)
+            for c in tr.find_all(["th", "td"], recursive=False)
+        ]
+        if len(cells) < 2:
+            continue
+        key = cells[0].rstrip(":").strip().lower()
+        val = cells[1].strip()
+        if key == "type":
+            info["project_type"] = val
+        elif key == "start":
+            parsed = parse_wiki_date(val)
+            info["starts_on"] = parsed.isoformat() if parsed else val
+        elif key == "end":
+            parsed = parse_wiki_date(val)
+            info["ends_on"] = parsed.isoformat() if parsed else val
+    return info
+
+
 def scrape_wiki_project_page(name: str, href: str) -> dict:
-    """Scrape one project page into ``{id, name, required_items:[...]}``."""
+    """Scrape one project page into ``{id, name, schedule, required_items}``."""
     path = href.split("#", 1)[0].replace("/wiki/", "")
     url = wiki_url(path)
     print(f"  Project: {name}")
@@ -936,6 +1211,7 @@ def scrape_wiki_project_page(name: str, href: str) -> dict:
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
     root = _scope_content(soup, name, href)
+    schedule = _parse_project_infobox(soup)
 
     # Tables (including inside tabbers) + turn-in uls that precede Rewards
     pairs = _requirements_from_tables(root) + _requirements_from_tabbers(root)
@@ -948,9 +1224,25 @@ def scrape_wiki_project_page(name: str, href: str) -> dict:
         }
         for item_name, qty in aggregated
     ]
+    active = project_is_active(schedule)
+    if schedule.get("ends_on") and not active:
+        print(f"    (expired {schedule['ends_on']} — kept in catalog, excluded from keep)")
+    elif schedule.get("project_type"):
+        print(
+            f"    ({schedule['project_type']}"
+            + (
+                f", {schedule['starts_on']} → {schedule['ends_on']}"
+                if schedule.get("ends_on")
+                else ""
+            )
+            + ")"
+        )
     return {
         "id": _slugify(name),
         "name": name,
+        "project_type": schedule.get("project_type") or "",
+        "starts_on": schedule.get("starts_on") or "",
+        "ends_on": schedule.get("ends_on") or "",
         "required_items": required_items,
     }
 
@@ -1028,10 +1320,17 @@ def write_projects_catalog(
     *,
     csv_path: Path = PROJECTS_CSV,
     db_path: Path = PROJECTS_DB,
+    today: date | None = None,
 ) -> dict[str, list[str]]:
-    """Persist projects.csv + project tables in arlo.db; return keep_for map."""
+    """Persist projects.csv + project tables in arlo.db; return keep_for map.
+
+    Expired temporary projects are stored (with schedule columns) but omitted
+    from the returned item→project keep map so they no longer drive Keep.
+    """
+    today = today or date.today()
     project_rows: list[dict[str, str]] = []
     req_rows: list[dict[str, str]] = []
+    active_ids: set[str] = set()
     for project in projects:
         pid = str(project.get("id") or "").strip()
         pname = str(project.get("name") or "").strip()
@@ -1043,11 +1342,28 @@ def write_projects_catalog(
             for r in reqs
             if isinstance(r, dict) and (r.get("item_id") or (r.get("item") or {}).get("name"))
         ]
-        project_rows.append({
+        project_type = str(project.get("project_type") or "").strip()
+        starts_on = str(project.get("starts_on") or "").strip()
+        ends_on = str(project.get("ends_on") or "").strip()
+        # Normalize free-text dates if a caller passed wiki strings
+        for label, raw in (("starts_on", starts_on), ("ends_on", ends_on)):
+            parsed = parse_wiki_date(raw)
+            if parsed is not None:
+                if label == "starts_on":
+                    starts_on = parsed.isoformat()
+                else:
+                    ends_on = parsed.isoformat()
+        row = {
             "id": pid,
             "name": pname,
+            "project_type": project_type,
+            "starts_on": starts_on,
+            "ends_on": ends_on,
             "required_items": "|".join(parts),
-        })
+        }
+        project_rows.append(row)
+        if project_is_active(row, today=today):
+            active_ids.add(pid)
         for req in reqs:
             if not isinstance(req, dict):
                 continue
@@ -1073,7 +1389,15 @@ def write_projects_catalog(
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with csv_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
-            f, fieldnames=["id", "name", "required_items"]
+            f,
+            fieldnames=[
+                "id",
+                "name",
+                "project_type",
+                "starts_on",
+                "ends_on",
+                "required_items",
+            ],
         )
         writer.writeheader()
         writer.writerows(project_rows)
@@ -1086,7 +1410,10 @@ def write_projects_catalog(
             DROP TABLE IF EXISTS projects;
             CREATE TABLE projects (
                 id TEXT PRIMARY KEY NOT NULL,
-                name TEXT NOT NULL
+                name TEXT NOT NULL,
+                project_type TEXT,
+                starts_on TEXT,
+                ends_on TEXT
             );
             CREATE TABLE project_requirements (
                 project_id TEXT NOT NULL,
@@ -1101,8 +1428,18 @@ def write_projects_catalog(
             """
         )
         conn.executemany(
-            "INSERT INTO projects (id, name) VALUES (?, ?)",
-            [(r["id"], r["name"]) for r in project_rows],
+            "INSERT INTO projects "
+            "(id, name, project_type, starts_on, ends_on) VALUES (?, ?, ?, ?, ?)",
+            [
+                (
+                    r["id"],
+                    r["name"],
+                    r["project_type"] or None,
+                    r["starts_on"] or None,
+                    r["ends_on"] or None,
+                )
+                for r in project_rows
+            ],
         )
         conn.executemany(
             "INSERT INTO project_requirements "
@@ -1116,9 +1453,15 @@ def write_projects_catalog(
     finally:
         conn.close()
 
-    print(f"  Wrote {len(project_rows)} projects to {csv_path.name} / {db_path.name}")
+    expired_n = len(project_rows) - len(active_ids)
+    print(
+        f"  Wrote {len(project_rows)} projects to {csv_path.name} / {db_path.name}"
+        + (f" ({expired_n} expired, excluded from keep)" if expired_n else "")
+    )
     project_map: dict[str, list[str]] = {}
     for row in req_rows:
+        if row["project_id"] not in active_ids:
+            continue
         project_map.setdefault(row["item_name"].lower(), []).append(
             f"{row['project_name']} ({row['quantity']}x)"
         )
@@ -1218,13 +1561,22 @@ def write_traders_catalog(
     )
 
 
-def persist_wiki_side_catalogs() -> dict[str, list[str]]:
-    """Scrape + write projects/traders catalogs. Returns project item map."""
+def persist_wiki_side_catalogs() -> tuple[dict[str, list[str]], set[str]]:
+    """Scrape + write projects/traders catalogs.
+
+    Returns ``(project_item_map, inactive_project_names_lower)``.
+    """
     project_map: dict[str, list[str]] = {}
+    inactive: set[str] = set()
     try:
         projects = scrape_wiki_projects()
         if projects:
             project_map = write_projects_catalog(projects)
+            inactive = {
+                str(p.get("name") or "").strip().lower()
+                for p in projects
+                if p.get("name") and not project_is_active(p)
+            }
     except Exception as e:
         print(f"  Projects catalog skipped ({e})")
     try:
@@ -1233,7 +1585,7 @@ def persist_wiki_side_catalogs() -> dict[str, list[str]]:
             write_traders_catalog(traders)
     except Exception as e:
         print(f"  Traders catalog skipped ({e})")
-    return project_map
+    return project_map, inactive
 
 
 def _parse_recycles_to(cell) -> str:
@@ -1319,6 +1671,11 @@ def scrape_wiki_uses() -> dict[str, str]:
             uses_map[name.lower()] = uses
 
     print(f"  Found wiki uses for {len(uses_map)} items")
+    try:
+        workshop_map = scrape_wiki_workshop_keep_map()
+        uses_map = apply_workshop_keep_map(uses_map, workshop_map)
+    except Exception as e:
+        print(f"  Workshop upgrade override skipped ({e})")
     return uses_map
 
 
@@ -1388,17 +1745,20 @@ def fetch_items_from_wiki() -> list[GameItem]:
 # =============================================================================
 
 def fetch_items_hybrid(*, persist_side_catalogs: bool = True) -> list[GameItem]:
+    """Hybrid catalog build — see module docstring / docs/ITEMS.md source-of-truth.
+
+    MetaForge: items, prices, stacks, quests, primary recycles.
+    Wiki: workshop upgrade qtys (station pages), outpost room expansions
+    (MetaForge gap-fill; wiki empty), projects/traders, recycle gaps,
+    quest enrichment. ``scrape_wiki_uses`` already overlays station-page Workshop
+    lines onto Loot Uses.
     """
-    Best of both worlds:
-      - MetaForge API for items, prices, stack sizes, recycle data, quest data
-      - Wiki for workshop uses, projects, traders, and quest fallback
-    """
-    # 1. MetaForge: items + recycle + quests
+    # 1. MetaForge: items + recycle (wiki gap-fill inside) + quests
     raw_items = fetch_metaforge_items()
     recycle_map = fetch_metaforge_recycle_map(raw_items)
     quest_map = fetch_metaforge_quest_items(persist=persist_side_catalogs)
 
-    # 2. Wiki: Uses column + Projects/Traders directories
+    # 2. Wiki: keep_for (workshop from station pages + loot quests/projects) + catalogs
     try:
         wiki_uses = scrape_wiki_uses()
     except Exception as e:
@@ -1406,8 +1766,9 @@ def fetch_items_hybrid(*, persist_side_catalogs: bool = True) -> list[GameItem]:
         wiki_uses = {}
 
     project_map: dict[str, list[str]] = {}
+    inactive_projects: set[str] = set()
     if persist_side_catalogs:
-        project_map = persist_wiki_side_catalogs()
+        project_map, inactive_projects = persist_wiki_side_catalogs()
 
     # 3. Combine into GameItems
     items: list[GameItem] = []
@@ -1427,6 +1788,7 @@ def fetch_items_hybrid(*, persist_side_catalogs: bool = True) -> list[GameItem]:
             wiki_uses.get(name.lower(), ""),
             quest_map.get(name.lower(), []),
             project_map.get(name.lower(), []),
+            inactive_projects=inactive_projects,
         )
 
         items.append(GameItem(
@@ -1452,6 +1814,7 @@ def normalize_keep_labels(keep_for: str) -> str:
     text = (keep_for or "").strip()
     if not text:
         return ""
+    # Wiki Loot cells sometimes leave entities like Soul&#39;s in the text
     text = html.unescape(text)
     text = text.replace("[[", "").replace("]]", "")
     text = re.sub(r"\bQuests(?!:)\s+", "Quests: ", text)
@@ -1460,43 +1823,108 @@ def normalize_keep_labels(keep_for: str) -> str:
     return text
 
 
+_KEEP_ENTRY_RE = re.compile(r"(.+?)\s*\((\d+)x\)")
+
+
+def _dedupe_keep_entries(entries: list[str]) -> list[str]:
+    """Collapse duplicate names (after unescape); keep the highest (Nx)."""
+    best: dict[str, tuple[str, int]] = {}
+    order: list[str] = []
+    for entry in entries:
+        name = re.sub(r"\s*\(\d+x\)\s*$", "", entry).strip()
+        if not name:
+            continue
+        key = name.lower()
+        m = re.search(r"\((\d+)x\)\s*$", entry)
+        qty = int(m.group(1)) if m else 0
+        if key not in best:
+            order.append(key)
+            best[key] = (name, qty)
+        elif qty > best[key][1]:
+            best[key] = (name, qty)
+    return [
+        f"{best[k][0]} ({best[k][1]}x)" if best[k][1] else best[k][0]
+        for k in order
+    ]
+
+
 def format_keep_for(
     wiki_uses: str = "",
     quest_uses: list[str] | None = None,
     project_uses: list[str] | None = None,
+    *,
+    inactive_projects: set[str] | None = None,
 ) -> str:
     """Build a consistent keep_for string from wiki uses + quests + projects.
 
     MetaForge/wiki quests are ``Quests: Name (Nx), ...``. Structured project
-    requirements become ``Projects: Name (Nx), ...`` when not already covered
-    by the wiki Uses cell. Workshop text stays in the wiki portion.
+    requirements are merged into a single ``Projects:`` section (wiki Uses may
+    already list Expedition tiers; catalog projects append to that same section).
+    Expired temporary projects in ``inactive_projects`` are omitted.
+    Workshop text stays in the wiki portion.
     """
-    parts: list[str] = []
     wiki = normalize_keep_labels(wiki_uses or "")
-    if wiki:
-        parts.append(wiki)
-
     wiki_lower = wiki.lower()
+    inactive = {
+        html.unescape(n).strip().lower()
+        for n in (inactive_projects or set())
+        if n.strip()
+    }
+
+    def _project_active(entry: str) -> bool:
+        pname = re.sub(r"\s*\(\d+x\)\s*$", "", entry).strip().lower()
+        return bool(pname) and pname not in inactive
+
+    # Split wiki into non-Projects preamble vs existing Projects body so we can
+    # append catalog projects without a second "Projects:" header.
+    preamble_parts: list[str] = []
+    project_entries: list[str] = []
+    if wiki:
+        for chunk in re.split(r"(?=(?:Workshop|Quests|Projects):)", wiki):
+            chunk = chunk.strip().strip(";").strip()
+            if not chunk:
+                continue
+            m = re.match(r"^Projects:\s*(.*)$", chunk, re.IGNORECASE | re.DOTALL)
+            if m:
+                body = m.group(1).strip()
+                for em in _KEEP_ENTRY_RE.finditer(body):
+                    label = em.group(1).strip().strip(",;").strip()
+                    entry = f"{label} ({em.group(2)}x)"
+                    if _project_active(entry):
+                        project_entries.append(entry)
+            else:
+                preamble_parts.append(chunk)
 
     quests = quest_uses or []
-    if quests:
-        filtered: list[str] = []
-        for entry in quests:
-            quest_name = re.sub(r"\s*\(\d+x\)\s*$", "", entry).strip()
-            if quest_name and quest_name.lower() not in wiki_lower:
-                filtered.append(entry)
-        if filtered:
-            parts.append("Quests: " + ", ".join(filtered))
+    quest_entries: list[str] = []
+    for entry in quests:
+        quest_name = re.sub(r"\s*\(\d+x\)\s*$", "", entry).strip()
+        if quest_name and quest_name.lower() not in wiki_lower:
+            quest_entries.append(entry)
 
-    projects = project_uses or []
-    if projects:
-        filtered_p: list[str] = []
-        for entry in projects:
-            project_name = re.sub(r"\s*\(\d+x\)\s*$", "", entry).strip()
-            if project_name and project_name.lower() not in wiki_lower:
-                filtered_p.append(entry)
-        if filtered_p:
-            parts.append("Projects: " + ", ".join(filtered_p))
+    seen_projects = {
+        re.sub(r"\s*\(\d+x\)\s*$", "", e).strip().lower() for e in project_entries
+    }
+    for entry in project_uses or []:
+        project_name = re.sub(r"\s*\(\d+x\)\s*$", "", entry).strip()
+        key = project_name.lower()
+        if (
+            project_name
+            and key not in wiki_lower
+            and key not in seen_projects
+            and _project_active(entry)
+        ):
+            project_entries.append(entry)
+            seen_projects.add(key)
+
+    project_entries = _dedupe_keep_entries(project_entries)
+    quest_entries = _dedupe_keep_entries(quest_entries)
+
+    parts = list(preamble_parts)
+    if quest_entries:
+        parts.append("Quests: " + ", ".join(quest_entries))
+    if project_entries:
+        parts.append("Projects: " + ", ".join(project_entries))
 
     return "; ".join(parts)
 
@@ -1566,6 +1994,10 @@ def generate_action(item: GameItem) -> tuple[str, str, str]:
 
     keep_for = item.uses if has_uses else ""
     recycle_for = item.recycles_to
+
+    # Currency-like trade fodder — players sell or hold for player trading
+    if item.name.strip().lower() == "assorted seeds":
+        return "Sell or keep for user trading", recycle_for, keep_for
 
     if category == "Key":
         return "Keep", "", "Unlocks locked areas"
@@ -1812,6 +2244,9 @@ def rebuild_projects_from_csv(
             projects.append({
                 "id": pid,
                 "name": name,
+                "project_type": (row.get("project_type") or "").strip(),
+                "starts_on": (row.get("starts_on") or "").strip(),
+                "ends_on": (row.get("ends_on") or "").strip(),
                 "required_items": required_items,
             })
     # Write DB tables only (CSV already exists)
@@ -1880,14 +2315,22 @@ Examples:
   python update_db.py --merge       # Keep existing manual overrides
   python update_db.py --dry-run     # Preview changes without writing
   python update_db.py --source wiki # Wiki-only mode
-  python update_db.py --source api  # MetaForge-only mode (no wiki)
+  python update_db.py --source api  # MetaForge items/quests; still pulls wiki side catalogs
         """,
     )
     parser.add_argument("--merge", action="store_true", help="Preserve existing action overrides")
     parser.add_argument("--dry-run", action="store_true", help="Preview without writing files")
     parser.add_argument("--csv-only", action="store_true", help="Update CSV only, skip DB rebuild")
-    parser.add_argument("--source", choices=["hybrid", "api", "wiki"], default="hybrid",
-                        help="Data source: 'hybrid' (default), 'api' MetaForge only, 'wiki' only")
+    parser.add_argument(
+        "--source",
+        choices=["hybrid", "api", "wiki"],
+        default="hybrid",
+        help=(
+            "hybrid (default): MetaForge items/quests/recycles + wiki workshop/"
+            "projects/traders/recycle gaps. api: MetaForge items + wiki side "
+            "catalogs. wiki: wiki Loot only."
+        ),
+    )
 
     args = parser.parse_args()
 
@@ -1937,9 +2380,9 @@ Examples:
     if args.dry_run:
         print("\n[DRY RUN] Preview of first 20 items:\n")
         print(f"  {'Name':<35} {'Action':<40} {'Sell':>7} {'Stack':>5}  {'Recycle For':<25}")
-        print(f"  {'-'*35} {'-'*40} {'-'*7} {'-'*5}  {'-'*25}")
+        print(f"  {'-' * 35} {'-' * 40} {'-' * 7} {'-' * 5}  {'-' * 25}")
         for row in rows[:20]:
-            print(f"  {row['name']:<35} {row['action']:<40} {row.get('sell_price',''):>7} {row.get('stack_size',''):>5}  {row['recycle_for']:<25}")
+            print(f"  {row['name']:<35} {row['action']:<40} {row.get('sell_price', ''):>7} {row.get('stack_size', ''):>5}  {row['recycle_for']:<25}")
         print(f"\n  ... and {len(rows) - 20} more items")
         return
 
@@ -1951,6 +2394,7 @@ Examples:
         # refresh the items table (and re-sync others from CSV if present).
         rebuild_arlo_db_from_csvs(db_path=ARLO_DB)
 
+    _mark_updated()
     print("\nDone!")
 
 
@@ -1960,8 +2404,9 @@ def fetch_items_from_metaforge_only(*, persist_side_catalogs: bool = True) -> li
     recycle_map = fetch_metaforge_recycle_map(raw_items)
     quest_map = fetch_metaforge_quest_items(persist=persist_side_catalogs)
     project_map: dict[str, list[str]] = {}
+    inactive_projects: set[str] = set()
     if persist_side_catalogs:
-        project_map = persist_wiki_side_catalogs()
+        project_map, inactive_projects = persist_wiki_side_catalogs()
 
     items: list[GameItem] = []
     for raw in raw_items:
@@ -1979,6 +2424,7 @@ def fetch_items_from_metaforge_only(*, persist_side_catalogs: bool = True) -> li
                 "",
                 quest_map.get(name.lower(), []),
                 project_map.get(name.lower(), []),
+                inactive_projects=inactive_projects,
             ),
         ))
     print(f"  Processed {len(items)} items from MetaForge")
@@ -2048,7 +2494,7 @@ def auto_update(*, force: bool = False) -> bool:
         )
         return True
 
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # ruff: ignore[blind-except]
         print(f"  Database update skipped (error: {e})")
         return False
 
