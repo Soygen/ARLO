@@ -193,14 +193,10 @@ class ProjectCatalog:
         item_slug = _slugify(item_name)
         for req in self.requirements_for_item(item_name, today=today):
             bucket = project_items.get(_norm_name(req.project_name))
+            # Only drop when this item is explicitly COMPLETED. Missing rows are
+            # common for later project stages (MetaForge has not emitted them
+            # yet) — those must stay as remaining need.
             if bucket and bucket.get(item_slug) == "COMPLETED":
-                continue
-            # Project fully done and this item isn't a tracked leftover
-            if (
-                bucket
-                and item_slug not in bucket
-                and all(s == "COMPLETED" for s in bucket.values())
-            ):
                 continue
             remaining.append(req)
         return remaining

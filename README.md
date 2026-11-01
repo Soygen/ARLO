@@ -17,6 +17,7 @@ A screen overlay tool for [Arc Raiders](https://store.steampowered.com/app/20737
 - **Smart action generation** - Items are auto-categorized (keep materials, sell trinkets, recycle junk) based on API data
 - **Merge mode** - New items are added without overwriting your manual action overrides
 - **Hybrid catalog sync** - MetaForge for items/quests; wiki for workshop/projects/traders (see docs/ITEMS.md)
+- **Player progress import** - One-click MetaForge bookmarklet filters finished quests / workshop / projects from keep recommendations
 - **GitHub Actions** - Optional scheduled workflow that auto-updates the database weekly
 
 ---
@@ -135,7 +136,7 @@ On a Wayland session ARLO captures the screen through the desktop portal
 - System packages (Arch): `sudo pacman -S --needed cairo pkgconf gcc gstreamer gst-plugins-base gst-plugin-pipewire` (Debian/Ubuntu: `sudo apt install libcairo2-dev libgirepository1.0-dev pkg-config gcc gstreamer1.0-pipewire gstreamer1.0-plugins-base`)
 - `xdg-desktop-portal` plus your desktop's backend (`xdg-desktop-portal-kde`,
   `-gnome` or `-wlr`) — preinstalled on KDE/GNOME.
-- Python deps: `uv sync --all-extras` (builds PyGObject).
+- Python deps: plain `uv sync` / `uv run` installs PyGObject on Linux (needed for Wayland capture).
 - Hold-to-scan hotkey: reading the keyboard needs your user in the `input` group: `sudo usermod -aG input $USER` (log out and back in). Without it the
   hotkey is disabled but everything else works. The key is `HOTKEY_KEY` in
   `.env` (default `KEY_RIGHTCTRL` — hold Right Ctrl).
@@ -203,6 +204,23 @@ The included workflow at `.github/workflows/update-db.yml` can also sync the dat
 No secrets or extra configuration needed.
 
 For more details on how the updater works, CSV format, and manual database management, see [docs/ITEMS.md](https://github.com/Soygen/ARLO/blob/master/docs/ITEMS.md).
+
+---
+
+## Player progress (MetaForge)
+
+Import your MetaForge Raider Profile so ARLO hides keep recommendations you have already finished (quests, workshop tiers, projects, owned blueprints).
+
+GitHub README pages cannot host `javascript:` bookmarklets, so the drag target lives on a small install page:
+
+1. **Start ARLO** (it listens on `http://127.0.0.1:17832/` for imports).
+2. Open the [install page](https://cdn.jsdelivr.net/gh/Soygen/ARLO@master/docs/import-progress.html) (or `http://127.0.0.1:17832/` while ARLO is running).
+3. Drag **Export to ARLO** onto your bookmarks bar (Chrome or Firefox).
+4. On [MetaForge](https://metaforge.app/arc-raiders/raider-profile), Sync your profile, then click the bookmark.
+
+ARLO writes `account-sync.json` next to the app and hot-reloads progress (no restart). On launch the status pill flashes **Progress: imported …** for a few seconds. If ARLO is not running, the bookmark downloads `account-sync.json` instead — place it next to the app or run `uv run arc-import-progress import account-sync.json`.
+
+Prerequisite: MetaForge must already be synced; ARLO only imports that snapshot.
 
 ---
 

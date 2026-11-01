@@ -35,6 +35,12 @@ from arc_helper.overlay import StatusWindow
 from arc_helper.progress import ProgressProfile
 from arc_helper.progress import apply_progress
 from arc_helper.progress import load_progress
+from arc_helper.progress_import_server import IMPORT_HOST
+from arc_helper.progress_import_server import IMPORT_PORT
+from arc_helper.progress_import_server import account_sync_mtime
+from arc_helper.progress_import_server import format_import_age
+from arc_helper.progress_import_server import start_import_server
+from arc_helper.progress_import_server import stop_import_server
 from arc_helper.projects import ProjectCatalog
 from arc_helper.projects import get_project_catalog
 from arc_helper.quests import QuestCatalog
@@ -43,6 +49,9 @@ from arc_helper.resolution_profiles import get_profile_manager
 from arc_helper.screen import ScreenCaptureUnavailable
 from arc_helper.traders import TraderCatalog
 from arc_helper.traders import get_trader_catalog
+
+# How long the startup / post-import progress flash stays on the status pill.
+_PROGRESS_FLASH_MS = 5000
 
 load_dotenv(Path(__file__).with_name(".env"), override=False)
 
@@ -386,8 +395,46 @@ class Application:
         # Bind close handler
         self.root.protocol("WM_DELETE_WINDOW", self.quit)
 
+        # MetaForge bookmarklet → localhost import bridge
+        self._progress_flash_token = 0
+        self._progress_flash_active = False
+        start_import_server(on_import=self._on_progress_imported)
+
+    def _on_progress_imported(self, profile: ProgressProfile) -> None:
+        """Called from the import-server thread after a successful POST."""
+        self.ui_queue.put(("progress_imported", profile))
+
+    def _apply_progress_profile(self, profile: ProgressProfile) -> None:
+        """Hot-reload progress used by the scanner (main thread)."""
+        self.progress = profile
+        self.scanner.progress = profile
+        logger.info(
+            "Progress reloaded from bookmarklet (%s quests, %s workshop stations)",
+            len(profile.completed_quests),
+            len(profile.workshop_levels),
+        )
+        self._flash_progress_status("Progress: imported just now")
+
+    def _flash_progress_status(self, message: str) -> None:
+        """Show an info line on the status pill, then return to Scanning."""
+        self._progress_flash_token += 1
+        token = self._progress_flash_token
+        self._progress_flash_active = True
+        self.status.set_info(message)
+
+        def _clear() -> None:
+            if token != self._progress_flash_token:
+                return
+            self._progress_flash_active = False
+            # Scanner status pump will re-assert ACTIVE/HOTKEY on the next tick.
+            self.status.set_scanning()
+
+        self.root.after(_PROGRESS_FLASH_MS, _clear)
+
     def _apply_status(self, status: str) -> None:
         """Apply a status update to the StatusWindow (main thread only)."""
+        if self._progress_flash_active:
+            return
         if status == "scanning":
             self.status.set_scanning()
         elif status == "active":
@@ -406,6 +453,8 @@ class Application:
                     self._apply_status(msg[1])
                 elif msg[0] == "overlay":
                     self.overlay.show(msg[1], msg[2])
+                elif msg[0] == "progress_imported":
+                    self._apply_progress_profile(msg[1])
         except queue.Empty:
             pass
         self.root.after(50, self._pump_ui_queue)
@@ -440,6 +489,11 @@ class Application:
             f"Tooltip scan interval: {self.settings.scan.tooltip_scan_interval}s"
         )
         logger.info("=" * 50)
+        logger.info(
+            "Progress import: http://%s:%s/ (MetaForge bookmarklet)",
+            IMPORT_HOST,
+            IMPORT_PORT,
+        )
         logger.info("Looking for INVENTORY screen...")
         logger.info(
             "Hold the hotkey to force tooltip scanning (Ctrl+Shift; "
@@ -454,6 +508,13 @@ class Application:
         # Start the main-thread UI pump (must be scheduled from the main thread)
         self._pump_ui_queue()
 
+        # Brief progress-import flash on startup (mtime of account-sync.json).
+        age = format_import_age(account_sync_mtime())
+        if age == "not imported":
+            self._flash_progress_status("Progress: not imported")
+        else:
+            self._flash_progress_status(f"Progress: imported {age}")
+
         # Run Tk mainloop
         try:
             self.root.mainloop()
@@ -463,6 +524,7 @@ class Application:
     def quit(self) -> None:
         """Clean shutdown."""
         logger.info("\nShutting down...")
+        stop_import_server()
         self.scanner.stop()
         from arc_helper.screen import reset_backend
 

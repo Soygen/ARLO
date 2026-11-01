@@ -18,3 +18,4 @@ dist
 .screencast_restore_token
 account-sync.json
 diag_frame.png
+data/missing_items.csv
