@@ -3,6 +3,8 @@ Overlay UI for ARLO (Arc Raiders Loot Overlay).
 Displays item recommendations as a styled popup with action colors.
 """
 
+import html
+import re
 import tkinter as tk
 from typing import Callable
 
@@ -28,6 +30,53 @@ BG_PANEL = "#1a1a2e"
 BORDER_COLOR = "#3a3a5c"
 TEXT_DIM = "#9999bb"
 TEXT_INFO = "#c4a0ff"
+
+
+# Prefix for recycle yield lines (avoids long "Recycles into:" copy)
+RECYCLE_SYMBOL = "\u267b"  # ♻
+
+
+def normalize_keep_labels(keep_for: str) -> str:
+    """Decode HTML entities and ensure Projects/Quests/Workshop trailing colons."""
+    text = (keep_for or "").strip()
+    if not text:
+        return ""
+    text = html.unescape(text)
+    text = text.replace("[[", "").replace("]]", "")
+    text = re.sub(r"\bQuests(?!:)\s+", "Quests: ", text)
+    text = re.sub(r"\bProjects(?!:)\s+", "Projects: ", text)
+    text = re.sub(r"\bWorkshop(?!:)\s+", "Workshop: ", text)
+    return text
+
+
+def format_detail_parts(
+    *,
+    recycle_for: str | None,
+    keep_for: str | None,
+) -> tuple[str, str]:
+    """Return ``(keep_line, recycle_line)`` for the overlay detail section.
+
+    Either string may be empty. Keep reasons are independent of the action
+    wording so ``Keep until uses complete; recycle after`` still surfaces the
+    quest/workshop target.
+    """
+    keep = normalize_keep_labels(keep_for or "")
+    recycle_raw = (recycle_for or "").strip()
+    recycle = f"{RECYCLE_SYMBOL} {recycle_raw}" if recycle_raw else ""
+    return keep, recycle
+
+
+def format_detail_text(
+    *,
+    recycle_for: str | None,
+    keep_for: str | None,
+) -> str:
+    """Join keep + recycle detail lines (tests / simple callers)."""
+    keep, recycle = format_detail_parts(
+        recycle_for=recycle_for,
+        keep_for=keep_for,
+    )
+    return "\n".join(part for part in (keep, recycle) if part)
 
 
 class OverlayWindow:
@@ -137,8 +186,8 @@ class OverlayWindow:
         )
         # Only packed when there's detail text (see show())
 
-        # Detail / notes label (recycle_for or keep_for)
-        self.notes_label = tk.Label(
+        # Keep reason (quests / workshop / projects)
+        self.keep_label = tk.Label(
             self.frame,
             text="",
             font=("Segoe UI", detail_size),
@@ -147,7 +196,24 @@ class OverlayWindow:
             justify=tk.LEFT,
             anchor="w",
         )
-        # Only packed when there's detail text (see show())
+        # HR between keep reason and recycle yield when both are present
+        self.detail_separator = tk.Frame(
+            self.frame,
+            bg=BORDER_COLOR,
+            height=max(1, self._scale(1)),
+        )
+        # Recycle yield
+        self.recycle_label = tk.Label(
+            self.frame,
+            text="",
+            font=("Segoe UI", detail_size),
+            fg=TEXT_DIM,
+            bg=BG_PANEL,
+            justify=tk.LEFT,
+            anchor="w",
+        )
+        # Fallback / unknown-item notes (also used as alias for tests)
+        self.notes_label = self.keep_label
 
     def show(self, item_name: str, recommendation: Item | None) -> None:
         """Show the overlay with item info."""
@@ -189,28 +255,17 @@ class OverlayWindow:
                 info_parts.append(f"Stack: {recommendation.stack_size}")
             self.info_label.config(text="    \u00b7    ".join(info_parts))
 
-            # Detail text
-            detail_text = ""
-            if "RECYCLE" in action_upper and recommendation.recycle_for:
-                detail_text = f"Recycles into: {recommendation.recycle_for}"
-            elif recommendation.keep_for:
-                detail_text = recommendation.keep_for
-
-            # Show or hide separator and notes based on content
-            self.separator.pack_forget()
-            self.notes_label.pack_forget()
-            if detail_text:
-                self.separator.pack(fill="x", pady=(self._scale(8), self._scale(6)))
-                self.notes_label.pack(anchor="w")
-                self.notes_label.config(text=detail_text)
+            # Detail: keep reason and/or recycle yield, with HR when both exist
+            keep_text, recycle_text = format_detail_parts(
+                recycle_for=recommendation.recycle_for,
+                keep_for=recommendation.keep_for,
+            )
+            self._set_detail_section(keep_text, recycle_text)
         else:
             self.action_label.config(text="\u2192 UNKNOWN", fg=ACTION_COLORS["UNKNOWN"])
             self.accent_bar.config(bg=ACTION_COLORS["UNKNOWN"])
             self.info_label.config(text="")
-            self.separator.pack_forget()
-            self.notes_label.pack_forget()
-            self.notes_label.pack(anchor="w", pady=(self._scale(4), 0))
-            self.notes_label.config(text="Item not in database")
+            self._set_detail_section("Item not in database", "")
 
         # Position and show
         self.window.geometry(
@@ -227,11 +282,35 @@ class OverlayWindow:
             self.info_label.winfo_width(),
         ]
         max_width = max(*widths, self._scale(280))
-        self.notes_label.config(wraplength=max_width)
+        self.keep_label.config(wraplength=max_width)
+        self.recycle_label.config(wraplength=max_width)
 
         # Auto-hide
         hide_ms = int(self.settings.overlay.display_time * 1000)
         self._hide_after_id = self.window.after(hide_ms, self.hide)
+
+    def _set_detail_section(self, keep_text: str, recycle_text: str) -> None:
+        """Pack keep / recycle detail rows and an HR between them when both exist."""
+        self.separator.pack_forget()
+        self.keep_label.pack_forget()
+        self.detail_separator.pack_forget()
+        self.recycle_label.pack_forget()
+
+        if not keep_text and not recycle_text:
+            return
+
+        self.separator.pack(fill="x", pady=(self._scale(8), self._scale(6)))
+        if keep_text:
+            self.keep_label.config(text=keep_text)
+            self.keep_label.pack(anchor="w")
+        if keep_text and recycle_text:
+            self.detail_separator.pack(
+                fill="x",
+                pady=(self._scale(6), self._scale(6)),
+            )
+        if recycle_text:
+            self.recycle_label.config(text=recycle_text)
+            self.recycle_label.pack(anchor="w")
 
     def hide(self) -> None:
         if self._hide_after_id:

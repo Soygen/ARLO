@@ -53,17 +53,32 @@ The updater auto-generates action recommendations based on item category and use
 - **Recyclables** with workshop/quest uses - `Keep until uses complete; recycle after`
 - **Recyclables** with no uses - `Recycle`
 - **Keys** - `Keep`
-- **Quick Use / Mods / Augments / Shields** - `Keep` or `Use`
-- Items needed for quests get a "Quests:" note in the keep_for field
+- **Weapons / Mods / Augments / Shields** - `Keep` (player decision; attachments included)
+- **Blueprints** - `Keep` with note to learn, sell, or trade
+- **Quick Use** - `Keep` or `Use`
+- Items needed for quests get a `Quests: Name (Nx)` note in the `keep_for` field (combined with wiki workshop/project uses when present)
+
+### Overlay detail text
+
+The overlay shows **both** keep reasons and recycle yields when available:
+
+- `keep_for` first (quest / workshop / project target), with `Projects:` / `Quests:` / `Workshop:` colons
+- A thin horizontal rule when both are present
+- Then `♻ …` when `recycle_for` is set (recycle yield)
+
+So actions like `Keep until uses complete; recycle after` still show *what* to keep the item for, not only the recycle output.
+
+Merge also upgrades stale bare `Recycle` / `Sell` actions when `keep_for` names a real quest/project/workshop use (so the colored action matches the keep reason).
 
 ### Merge Mode
 
 The on-launch auto-update always uses merge mode. When you run the updater manually, you can choose between full update or merge mode.
 
 In merge mode the updater will:
-- **Preserve** your existing `action`, `recycle_for`, and `keep_for` for items already in your CSV
+- **Preserve** your existing `action` for items already in your CSV (hand-tuned overrides)
+- **Refresh** `keep_for` from API/wiki scrape when the scrape produces a non-empty value; otherwise keep the old note
+- **Fill in** empty `recycle_for` from API data
 - **Add** any new items with auto-generated recommendations
-- **Fill in** empty `recycle_for` / `keep_for` fields from API data
 - **Always update** `sell_price` and `stack_size` to the latest values
 
 ### GitHub Actions (Optional)
@@ -94,8 +109,8 @@ Alarm Clock,Recycle,"1x Processor, 6x Plastic Parts",,1000,3
 |--------|-------------|
 | `name` | Item name as it appears in-game (case-insensitive matching) |
 | `action` | Recommended action: `KEEP`, `RECYCLE`, `SELL`, `USE`, `TRASH`, or any custom text |
-| `recycle_for` | What you get when recycling (shown when action is RECYCLE) |
-| `keep_for` | Why to keep it (shown when action is KEEP or USE) |
+| `recycle_for` | What you get when recycling (shown as `♻ …` when set) |
+| `keep_for` | Why to keep it — quests, workshop upgrades, projects (always shown when set) |
 | `sell_price` | Sell value in credits (shown on overlay) |
 | `stack_size` | Maximum stack size (shown on overlay) |
 
