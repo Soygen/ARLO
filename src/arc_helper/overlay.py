@@ -12,6 +12,7 @@ from .clickthrough import make_click_through
 from .config import get_dpi_scale
 from .config import get_settings
 from .database import Item
+from .database import names_match
 from .screen import phys_to_tk
 
 # Action colors
@@ -79,6 +80,16 @@ def format_detail_text(
     return "\n".join(part for part in (keep, recycle) if part)
 
 
+def _using_wayland() -> bool:
+    """True when the active screen backend is Wayland (portal/PipeWire)."""
+    try:
+        from .screen import get_backend
+
+        return get_backend().name == "wayland"
+    except Exception:  # noqa: BLE001 - overlay must still construct
+        return False
+
+
 class OverlayWindow:
     """Transparent overlay window for showing recommendations."""
 
@@ -86,6 +97,8 @@ class OverlayWindow:
         self.root = root
         self.settings = get_settings()
         self.dpi_scale = get_dpi_scale()
+        # Resolved lazily on first show — backend may not exist at construct time.
+        self._wayland_stable: bool | None = None
 
         self.window = tk.Toplevel(root)
         self.window.title("ARLO")
@@ -103,9 +116,38 @@ class OverlayWindow:
 
         self._hide_after_id: str | None = None
         self._current_item: str | None = None
+        self._mapped = False
 
     def _scale(self, value: int) -> int:
         return max(1, int(value / self.dpi_scale))
+
+    def _is_wayland(self) -> bool:
+        if self._wayland_stable is None:
+            self._wayland_stable = _using_wayland()
+        return self._wayland_stable
+
+    def _bump_hide_timer(self) -> None:
+        """X11/Windows auto-hide. Not used while Wayland sticky hover is active."""
+        if self._hide_after_id:
+            self.window.after_cancel(self._hide_after_id)
+        hide_ms = int(self.settings.overlay.display_time * 1000)
+        self._hide_after_id = self.window.after(hide_ms, self.hide)
+
+    def _cancel_hide_timer(self) -> None:
+        if self._hide_after_id:
+            self.window.after_cancel(self._hide_after_id)
+            self._hide_after_id = None
+
+    def keep_alive(self) -> None:
+        """Scanner heartbeat: item unchanged (or empty OCR). Do not dismiss."""
+        if not self._mapped:
+            return
+        # Wayland: stay up until the scanner hides us (inventory closed).
+        # A short OVERLAY_DISPLAY_TIME must not win over flaky OCR.
+        if self._is_wayland():
+            self._cancel_hide_timer()
+            return
+        self._bump_hide_timer()
 
     def _setup_ui(self) -> None:
         """Build the overlay layout."""
@@ -217,18 +259,22 @@ class OverlayWindow:
 
     def show(self, item_name: str, recommendation: Item | None) -> None:
         """Show the overlay with item info."""
+        wayland = self._is_wayland()
+
         # Skip redraw if same item already showing
-        if self._current_item == item_name and self.is_visible():
-            if self._hide_after_id:
-                self.window.after_cancel(self._hide_after_id)
-            hide_ms = int(self.settings.overlay.display_time * 1000)
-            self._hide_after_id = self.window.after(hide_ms, self.hide)
+        same = self._current_item == item_name
+        if wayland and self._current_item and self._mapped:
+            same = names_match(item_name, self._current_item)
+
+        if same and self.is_visible():
+            if wayland:
+                self._cancel_hide_timer()
+            else:
+                self._bump_hide_timer()
             return
 
         self._current_item = item_name
-
-        if self._hide_after_id:
-            self.window.after_cancel(self._hide_after_id)
+        self._cancel_hide_timer()
 
         # Update content
         self.name_label.config(text=item_name)
@@ -271,8 +317,17 @@ class OverlayWindow:
         self.window.geometry(
             f"+{phys_to_tk(self.overlay_x)}+{phys_to_tk(self.overlay_y)}"
         )
-        self.window.deiconify()
-        self.window.lift()
+
+        # Wayland: remounting (deiconify/lift) every update flickers under
+        # XWayland. Only map when hidden; re-apply click-through after map.
+        if wayland and self._mapped:
+            pass
+        else:
+            self.window.deiconify()
+            self.window.lift()
+            self._mapped = True
+            if wayland:
+                make_click_through(self.window)
 
         # Update wraplength
         self.window.update_idletasks()
@@ -285,9 +340,12 @@ class OverlayWindow:
         self.keep_label.config(wraplength=max_width)
         self.recycle_label.config(wraplength=max_width)
 
-        # Auto-hide
-        hide_ms = int(self.settings.overlay.display_time * 1000)
-        self._hide_after_id = self.window.after(hide_ms, self.hide)
+        # Wayland: no wall-clock auto-hide while sticky (scanner hides on IDLE).
+        # X11/Windows: original OVERLAY_DISPLAY_TIME behavior.
+        if wayland:
+            self._cancel_hide_timer()
+        else:
+            self._bump_hide_timer()
 
     def _set_detail_section(self, keep_text: str, recycle_text: str) -> None:
         """Pack keep / recycle detail rows and an HR between them when both exist."""
@@ -313,17 +371,19 @@ class OverlayWindow:
             self.recycle_label.pack(anchor="w")
 
     def hide(self) -> None:
-        if self._hide_after_id:
-            self.window.after_cancel(self._hide_after_id)
-            self._hide_after_id = None
+        self._cancel_hide_timer()
         self._current_item = None
-        self.window.withdraw()
+        if self._mapped:
+            self.window.withdraw()
+        self._mapped = False
 
     def set_position(self, x: int, y: int) -> None:
         self.overlay_x = x
         self.overlay_y = y
 
     def is_visible(self) -> bool:
+        if self._is_wayland():
+            return self._mapped
         try:
             return self.window.winfo_viewable()
         except tk.TclError:
