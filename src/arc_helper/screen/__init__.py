@@ -16,12 +16,12 @@ from .base import choose_backend_name
 
 __all__ = ["Point", "ScreenBackend", "ScreenCaptureUnavailable", "get_backend", "phys_to_tk", "reset_backend"]
 
-_backend: ScreenBackend | None = None  # noqa: RUF067
-_lock = threading.Lock()  # noqa: RUF067
+_backend: ScreenBackend | None = None  # ruff: ignore[non-empty-init-module]
+_lock = threading.Lock()  # ruff: ignore[non-empty-init-module]
 
 
-def get_backend() -> ScreenBackend:  # noqa: RUF067
-    global _backend  # noqa: PLW0603 - process-wide singleton, mirrors SettingsManager
+def get_backend() -> ScreenBackend:  # ruff: ignore[non-empty-init-module]
+    global _backend  # ruff: ignore[global-statement] - process-wide singleton, mirrors SettingsManager
     with _lock:
         if _backend is None:
             from arc_helper.config import get_settings
@@ -48,15 +48,15 @@ def get_backend() -> ScreenBackend:  # noqa: RUF067
         return _backend
 
 
-def reset_backend() -> None:  # noqa: RUF067
+def reset_backend() -> None:  # ruff: ignore[non-empty-init-module]
     """Stop and forget the backend (used by tests)."""
-    global _backend  # noqa: PLW0603
+    global _backend  # ruff: ignore[global-statement]
     with _lock:
         if _backend is not None:
             _backend.stop()
             _backend = None
 
 
-def phys_to_tk(value: float) -> int:  # noqa: RUF067
+def phys_to_tk(value: float) -> int:  # ruff: ignore[non-empty-init-module]
     """Convert physical pixels to tkinter window coordinates."""
     return round(value / get_backend().tk_scale)

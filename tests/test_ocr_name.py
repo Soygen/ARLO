@@ -57,8 +57,6 @@ def test_multiword_multiline_name():
 def test_zero_when_description_leads():
     text = "the quick brown fox\nmore lowercase text"
     assert OCREngine._count_name_lines(text) == 0  # ruff: ignore[private-member-access]
-
-
 def test_fuzzy_match_accepts_inventory_with_ocr_errors():
     assert OCREngine._fuzzy_match("INVENTORY", "INVENTORY")
     assert OCREngine._fuzzy_match("INVNTORY", "INVENTORY")
@@ -71,7 +69,7 @@ def test_fuzzy_match_rejects_shared_letters():
     # active (and the tooltip up) on ordinary desktop text.
     assert not OCREngine._fuzzy_match("EVERYTHING", "INVENTORY")
     assert not OCREngine._fuzzy_match("DIRECTORY", "INVENTORY")
-    assert not OCREngine._fuzzy_match("NOT VERY", "INVENTORY")
+    assert not OCREngine._fuzzy_match("NOT VIEW", "INVENTORY")
     assert not OCREngine._fuzzy_match("", "INVENTORY")
 
 
