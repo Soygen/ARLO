@@ -236,3 +236,91 @@ def test_build_csv_rows_merge_overwrites_stale_keep_for():
     rows, _stats = build_csv_rows(items, existing=existing, merge=True)
     assert rows[0]["keep_for"] == "Quests: After Rain Comes (2x)"
     assert rows[0]["action"] == "Keep"
+
+
+def test_generate_action_research_item_converts_to_rp():
+    from update_db import generate_action, GameItem
+
+    item = GameItem(
+        name="Frigate Diagnostic Node",
+        category="Trinket",
+        sell_price=3000,
+        stack_size=1,
+    )
+    action, _recycle, keep = generate_action(item)
+    assert action == "Convert to research points"
+    assert "1000 Research Points" in keep
+
+
+def test_generate_action_research_item_with_station_upgrade():
+    from update_db import generate_action, GameItem
+
+    item = GameItem(
+        name="ARC Data Module",
+        category="Research Item",
+        sell_price=2000,
+        stack_size=3,
+        uses="Workshop: Research Station 4 (3x)",
+    )
+    action, _recycle, keep = generate_action(item)
+    assert "convert to research points" in action.lower()
+    assert "Research Station 4" in keep
+    assert "200 Research Points" in keep
+    # RP note after Workshop so overlay shows progression first
+    assert keep.startswith("Workshop:")
+    assert keep.endswith("Converts to 200 Research Points")
+
+
+def test_research_item_converts_after_station_upgrade_done():
+    from arc_helper.database import Item
+    from arc_helper.progress import ProgressProfile, apply_progress
+
+    profile = ProgressProfile(workshop_levels={"research station": 2})
+    item = Item(
+        name="Battered Paperback",
+        action="Keep until uses complete; then convert to research points",
+        keep_for="Workshop: Research Station 1 (5x); Converts to 50 Research Points",
+    )
+    out = apply_progress(item, profile)
+    assert "Research Station" not in (out.keep_for or "")
+    assert out.keep_for == "Converts to 50 Research Points"
+    assert out.action == "Convert to research points"
+
+
+def test_research_item_rp_note_stays_after_workshop_when_still_needed():
+    from arc_helper.database import Item
+    from arc_helper.progress import ProgressProfile, apply_progress
+
+    profile = ProgressProfile(workshop_levels={"research station": 2})
+    item = Item(
+        name="ARC Data Module",
+        action="Keep until uses complete; then convert to research points",
+        keep_for="Workshop: Research Station 4 (3x); Converts to 200 Research Points",
+    )
+    out = apply_progress(item, profile)
+    assert out.keep_for == (
+        "Workshop: Research Station 4 (3x); Converts to 200 Research Points"
+    )
+
+
+def test_scrape_research_includes_unusable_weapon(monkeypatch):
+    from update_db import scrape_research_blueprint_keep_map
+
+    html = """
+    <table>
+      <tr><th>Ingredients</th><th>A</th><th>B</th><th>C</th><th>Result</th></tr>
+      <tr><td>3x Unusable Weapon</td><td></td><td></td><td></td>
+          <td>1x Medium Gun Parts Blueprint</td></tr>
+      <tr><td>2x Unusable Weapon 10x Research Points</td><td></td><td></td><td></td>
+          <td>1x Tether Launcher Blueprint</td></tr>
+    </table>
+    """
+    monkeypatch.setattr(
+        "update_db.fetch_wiki_page",
+        lambda _title: html,
+    )
+    keep = scrape_research_blueprint_keep_map()
+    assert "unusable weapon" in keep
+    joined = " ".join(keep["unusable weapon"])
+    assert "Medium Gun Parts Blueprint" in joined
+    assert "Tether Launcher Blueprint" in joined

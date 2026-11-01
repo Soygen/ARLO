@@ -13,6 +13,8 @@ Neither MetaForge nor the wiki is complete alone. Default hybrid mode picks per 
 | Recycle yields (`recycle_for`) | **MetaForge** recycle table, then **wiki** Loot for gaps | MetaForge has more weapon/tier rows; wiki has nature/trinket rows MetaForge omits (e.g. Olives) |
 | Workshop upgrade keep (`Workshop: Station N (Qx)`) | **Wiki** `Workshop` / `Scrappy` / `Outpost` | Not the Loot Uses column — it often copies a sibling material’s quantity |
 | Outpost room expansions (`Workshop: Outpost Room N (Qx)`) | **Curated** (MetaForge rooms page) | Wiki Workshop Upgrade tables are empty for Chalet / expansions; progress uses `workshop.outpost.rooms` count |
+| Blueprint research costs (`Research: Foo Blueprint (Qx)`) | **Wiki** `Research Points` crafting table | Filtered by learned recipes in `account-sync` `resources.blueprints` |
+| Research Items (convert to RP) | **MetaForge** `item_type` + wiki RP yields | Action prefers convert-to-RP over Sell; station upgrade keeps still apply |
 | Project requirements + schedule | **Wiki** Projects directory | `Type` / `Start` / `End`; expired temporary projects stay in the catalog but are excluded from keep / `Need:` |
 | Trader shop inventories (`Buy:`) | **Wiki** Traders directory | |
 

@@ -607,6 +607,7 @@ def _normalize_category(item_type: str) -> str:
         "shield": "Shield", "augment": "Augment",
         "mods": "Mods", "mod": "Mods", "modification": "Mods",
         "weapon": "Weapon", "blueprint": "Blueprint",
+        "research_item": "Research Item", "research item": "Research Item",
     }
     return mapping.get(item_type.lower().strip(), item_type.title() if item_type else "")
 
@@ -794,7 +795,9 @@ def apply_workshop_keep_map(
         loot = normalize_keep_labels(uses_map.get(key, ""))
         parts: list[str] = []
         if loot:
-            for chunk in re.split(r"(?=(?:Workshop|Quests|Projects):)", loot):
+            for chunk in re.split(
+                r"(?=(?:Workshop|Quests|Projects|Research):)", loot
+            ):
                 chunk = chunk.strip().strip(";").strip()
                 if not chunk:
                     continue
@@ -807,6 +810,100 @@ def apply_workshop_keep_map(
         if parts:
             out[key] = "; ".join(parts)
     return out
+
+
+def scrape_research_blueprint_keep_map() -> dict[str, list[str]]:
+    """Item → ``Blueprint Name (Qx)`` from the wiki Research Points table.
+
+    These are Research Station unlock costs (not station upgrades). Research
+    Points currency rows are skipped; only material ingredients are kept.
+    """
+    print("Scraping wiki Research Points blueprint costs...")
+    html = fetch_wiki_page("Research_Points")
+    soup = BeautifulSoup(html, "html.parser")
+    table = None
+    for candidate in soup.find_all("table"):
+        headers = [th.get_text(strip=True).lower() for th in candidate.find_all("th")]
+        if "ingredients" in headers and "result" in headers:
+            table = candidate
+            break
+    if table is None:
+        print("  Research Points crafting table not found")
+        return {}
+
+    keep_map: dict[str, list[str]] = {}
+    rows_n = 0
+    for tr in table.find_all("tr")[1:]:
+        cells = [c.get_text(" ", strip=True) for c in tr.find_all(["td", "th"])]
+        if len(cells) < 5:
+            continue
+        ingredients = _parse_wiki_item_quantities(cells[0])
+        results = _parse_wiki_item_quantities(cells[4])
+        if not ingredients or not results:
+            continue
+        blueprint = results[0][0].strip()
+        if not blueprint:
+            continue
+        rows_n += 1
+        for mat_name, qty in ingredients:
+            if mat_name.lower() in {"research points", "research point"}:
+                continue
+            keep_map.setdefault(mat_name.lower(), []).append(
+                f"{blueprint} ({qty}x)"
+            )
+    # Dedupe per item while keeping order
+    for key, entries in list(keep_map.items()):
+        keep_map[key] = _dedupe_keep_entries(entries)
+    print(
+        f"  Research blueprint costs: {rows_n} recipes, "
+        f"{len(keep_map)} material items"
+    )
+    return keep_map
+
+
+def apply_research_keep_map(
+    uses_map: dict[str, str],
+    research_map: dict[str, list[str]],
+) -> dict[str, str]:
+    """Merge ``Research:`` blueprint unlock costs into the uses map."""
+    if not research_map:
+        return uses_map
+    out = dict(uses_map)
+    for key, entries in research_map.items():
+        if not entries:
+            continue
+        research_line = "Research: " + ", ".join(entries)
+        existing = normalize_keep_labels(out.get(key, ""))
+        parts: list[str] = []
+        if existing:
+            for chunk in re.split(
+                r"(?=(?:Workshop|Quests|Projects|Research):)", existing
+            ):
+                chunk = chunk.strip().strip(";").strip()
+                if not chunk or re.match(r"^Research:", chunk, re.IGNORECASE):
+                    continue
+                parts.append(chunk)
+        parts.append(research_line)
+        out[key] = "; ".join(parts)
+    return out
+
+
+# Wiki Category:Research_Items — study yields (MetaForge has type, not RP amount)
+_RESEARCH_ITEM_RP: dict[str, int] = {
+    "battered paperback": 50,
+    "raider logbook": 100,
+    "exodus technical handbook": 150,
+    "arc data module": 200,
+    "frigate diagnostic node": 1000,
+}
+
+
+def research_item_rp_note(item_name: str) -> str:
+    """Keep note for studying a Research Item into Research Points."""
+    qty = _RESEARCH_ITEM_RP.get((item_name or "").strip().lower())
+    if qty:
+        return f"Converts to {qty} Research Points"
+    return "Converts to Research Points"
 
 
 def _slugify(value: str) -> str:
@@ -1676,6 +1773,11 @@ def scrape_wiki_uses() -> dict[str, str]:
         uses_map = apply_workshop_keep_map(uses_map, workshop_map)
     except Exception as e:
         print(f"  Workshop upgrade override skipped ({e})")
+    try:
+        research_map = scrape_research_blueprint_keep_map()
+        uses_map = apply_research_keep_map(uses_map, research_map)
+    except Exception as e:
+        print(f"  Research blueprint costs skipped ({e})")
     return uses_map
 
 
@@ -1820,6 +1922,12 @@ def normalize_keep_labels(keep_for: str) -> str:
     text = re.sub(r"\bQuests(?!:)\s+", "Quests: ", text)
     text = re.sub(r"\bProjects(?!:)\s+", "Projects: ", text)
     text = re.sub(r"\bWorkshop(?!:)\s+", "Workshop: ", text)
+    # Section header only — leave "Research Station" / "Research Points" alone
+    text = re.sub(
+        r"\bResearch(?!:)(?!\s+(?:Station|Points)\b)\s+",
+        "Research: ",
+        text,
+    )
     return text
 
 
@@ -1880,7 +1988,9 @@ def format_keep_for(
     preamble_parts: list[str] = []
     project_entries: list[str] = []
     if wiki:
-        for chunk in re.split(r"(?=(?:Workshop|Quests|Projects):)", wiki):
+        for chunk in re.split(
+            r"(?=(?:Workshop|Quests|Projects|Research):)", wiki
+        ):
             chunk = chunk.strip().strip(";").strip()
             if not chunk:
                 continue
@@ -1946,6 +2056,7 @@ _BARE_DISPOSE_ACTIONS = frozenset({
 # keep_for values that mean a real progression hold (not "Quick Use consumable")
 _PROGRESS_KEEP_RE = re.compile(
     r"quests?|projects?|workshop|upgrade|expedition|scrappy|"
+    r"research\s*:|research\s+station|"
     r"flickering\s+flames|\bstage\b",
     re.IGNORECASE,
 )
@@ -1966,6 +2077,15 @@ def merge_action(old_action: str, new_action: str, keep_for: str) -> str:
     old_action = (old_action or "").strip()
     new_action = (new_action or "").strip()
     new_lower = new_action.lower()
+    old_lower = old_action.lower()
+    # Refresh Research Item convert wording over stale Keep/Sell/Recycle
+    if "convert to research" in new_lower and old_lower in {
+        "keep",
+        "sell",
+        "recycle",
+        "recycle if short on materials; sell otherwise",
+    }:
+        return new_action
     # Bare Recycle/Sell + quest/project/workshop keep_for → use generated keep-until
     if (
         has_progress_keep(keep_for)
@@ -2013,6 +2133,20 @@ def generate_action(item: GameItem) -> tuple[str, str, str]:
             recycle_for,
             "Learn, sell, or trade to other players",
         )
+    if category == "Research Item" or item.name.strip().lower() in _RESEARCH_ITEM_RP:
+        rp_note = research_item_rp_note(item.name)
+        # Preserve workshop/research-station upgrade keeps; always note RP convert
+        if keep_for and rp_note.lower() not in keep_for.lower():
+            keep_for = f"{keep_for}; {rp_note}"
+        elif not keep_for:
+            keep_for = rp_note
+        if has_progress_keep(keep_for) and "research station" in keep_for.lower():
+            return (
+                "Keep until uses complete; then convert to research points",
+                recycle_for,
+                keep_for,
+            )
+        return "Convert to research points", recycle_for, keep_for
     if category in MATERIAL_CATEGORIES:
         return ("Keep", recycle_for, keep_for) if has_uses else ("Keep", recycle_for, f"{category} - crafting ingredient")
     if category == "Nature":

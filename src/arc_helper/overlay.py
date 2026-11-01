@@ -46,6 +46,12 @@ def normalize_keep_labels(keep_for: str) -> str:
     text = re.sub(r"\bQuests(?!:)\s+", "Quests: ", text)
     text = re.sub(r"\bProjects(?!:)\s+", "Projects: ", text)
     text = re.sub(r"\bWorkshop(?!:)\s+", "Workshop: ", text)
+    # Section header only — leave "Research Station" / "Research Points" alone
+    text = re.sub(
+        r"\bResearch(?!:)(?!\s+(?:Station|Points)\b)\s+",
+        "Research: ",
+        text,
+    )
     return text
 
 
@@ -392,6 +398,10 @@ class StatusWindow:
 
     def set_error(self, message: str) -> None:
         self.status_label.config(text=f"\u25cf {message}", fg="#FF4444")
+
+    def set_info(self, message: str, *, fg: str = "#5AD4A0") -> None:
+        """Non-error status line (e.g. progress import flash)."""
+        self.status_label.config(text=f"\u25cf {message}", fg=fg)
 
     def hide(self) -> None:
         self.window.withdraw()

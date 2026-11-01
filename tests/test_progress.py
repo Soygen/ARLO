@@ -183,6 +183,93 @@ def test_filter_project_fully_done_without_item_row():
     assert out.action == "Sell"
 
 
+def test_phased_project_prefers_in_progress_over_earlier_completed():
+    """Same material in stage 1 COMPLETED + stage 2 IN_PROGRESS stays needed."""
+    profile = import_account_sync(
+        {
+            "accountId": "1",
+            "resources": {
+                "projects": {
+                    "data": {
+                        "mappedProgress": {
+                            "Soul's Offering::Phase 1/4::dead-flowers": {
+                                "state": "COMPLETED",
+                                "amount": 1,
+                            },
+                            "Soul's Offering::Phase 2/4::dead-flowers": {
+                                "state": "IN_PROGRESS",
+                                "amount": 2,
+                            },
+                            "Soul's Offering::dead-flowers": {
+                                "state": "COMPLETED",
+                                "amount": 1,
+                            },
+                        }
+                    }
+                }
+            },
+        }
+    )
+    assert profile.project_items["soul's offering"]["dead-flowers"] == "IN_PROGRESS"
+
+
+def test_future_project_stage_item_not_cleared_when_earlier_stages_done(
+    tmp_path: Path,
+):
+    """Mask Fragment (part 3) must stay while only parts 1–2 are mapped done."""
+    from update_db import write_projects_catalog
+    from arc_helper.projects import ProjectCatalog
+
+    write_projects_catalog(
+        [
+            {
+                "id": "souls-offering",
+                "name": "Soul's Offering",
+                "project_type": "Temporary",
+                "starts_on": "2026-10-27",
+                "ends_on": "2026-11-16",
+                "required_items": [
+                    {
+                        "item_id": "mask-fragment",
+                        "quantity": 1,
+                        "item": {"id": "mask-fragment", "name": "Mask Fragment"},
+                    },
+                    {
+                        "item_id": "arc-alloy",
+                        "quantity": 15,
+                        "item": {"id": "arc-alloy", "name": "ARC Alloy"},
+                    },
+                ],
+            }
+        ],
+        csv_path=tmp_path / "projects.csv",
+        db_path=tmp_path / "projects.db",
+    )
+    profile = ProgressProfile(
+        project_items={
+            "soul's offering": {
+                "arc-alloy": "COMPLETED",
+                "rock-salt": "COMPLETED",
+                "dead-flowers": "COMPLETED",
+            }
+        }
+    )
+    item = Item(
+        name="Mask Fragment",
+        action="Keep until uses complete; sell after",
+        keep_for="Projects: Soul's Offering (1x)",
+        sell_price=7000,
+        stack_size=3,
+    )
+    out = apply_progress(
+        item,
+        profile,
+        project_catalog=ProjectCatalog(tmp_path / "projects.db"),
+    )
+    assert "Soul's Offering" in (out.keep_for or "")
+    assert out.action == item.action
+
+
 def test_unknown_project_fails_open():
     profile = import_account_sync(FIXTURE)
     item = Item(
@@ -240,3 +327,106 @@ def test_cli_import(tmp_path: Path):
     loaded = load_progress(out)
     assert loaded is not None
     assert "clearer-skies" in loaded.completed_quests
+
+
+def test_blueprint_owned_normalizes_recipe_ids():
+    from arc_helper.progress import _blueprint_owned
+
+    profile = ProgressProfile(
+        owned_blueprints={
+            "anvil-recipe",
+            "heavy-gun-parts-recipe",
+            "aphelion-rifle-blueprint",
+        }
+    )
+    assert _blueprint_owned(profile, "Anvil Blueprint")
+    assert _blueprint_owned(profile, "Heavy Gun Parts Blueprint")
+    assert _blueprint_owned(profile, "Aphelion Blueprint")
+    assert not _blueprint_owned(profile, "Medium Gun Parts Blueprint")
+
+
+def test_filter_research_keeps_unlearned_blueprints():
+    profile = ProgressProfile(
+        owned_blueprints={"heavy-gun-parts-recipe", "light-gun-parts-recipe"}
+    )
+    item = Item(
+        name="Unusable Weapon",
+        action="Keep until uses complete; recycle after",
+        recycle_for="4x Metal Parts, 5x Simple Gun Parts",
+        keep_for=(
+            "Research: Heavy Gun Parts Blueprint (1x), "
+            "Light Gun Parts Blueprint (1x), "
+            "Medium Gun Parts Blueprint (1x), "
+            "Tether Launcher Blueprint (1x)"
+        ),
+    )
+    out = apply_progress(item, profile)
+    assert "Heavy Gun Parts" not in (out.keep_for or "")
+    assert "Light Gun Parts" not in (out.keep_for or "")
+    assert "Medium Gun Parts Blueprint (1x)" in (out.keep_for or "")
+    assert "Tether Launcher Blueprint (1x)" in (out.keep_for or "")
+    assert out.project_needed == 2
+    assert out.action == item.action
+
+
+def test_import_includes_stencils():
+    profile = import_account_sync(
+        {
+            "accountId": "1",
+            "resources": {
+                "blueprints": {
+                    "data": {
+                        "blueprints": [{"name": "Anvil", "blueprintId": "anvil-recipe"}],
+                        "designs": [{"name": "Chandelier_01_A", "itemId": "chandelier-design"}],
+                        "stencils": [{"name": "Unlock ItemSkin CommonRed", "itemId": "garnet-stencil"}],
+                    }
+                }
+            },
+        }
+    )
+    assert "anvil-recipe" in profile.owned_blueprints
+    assert "chandelier-design" in profile.owned_blueprints
+    assert "garnet-stencil" in profile.owned_blueprints
+
+
+def test_overlay_marks_known_blueprint_design_stencil():
+    profile = ProgressProfile(
+        owned_blueprints={
+            "anvil-recipe",
+            "chandelier-design",
+            "cerulean-stencil",
+        }
+    )
+    known_bp = apply_progress(
+        Item(name="Anvil Blueprint", action="Keep", keep_for="Learn, sell, or trade to other players"),
+        profile,
+    )
+    assert known_bp.action == "Sell"
+    assert "Already know this blueprint" in (known_bp.keep_for or "")
+
+    unknown_bp = apply_progress(
+        Item(name="Tempest Blueprint", action="Keep", keep_for="Learn, sell, or trade to other players"),
+        profile,
+    )
+    assert unknown_bp.action == "Keep"
+    assert "Not learned yet" in (unknown_bp.keep_for or "")
+
+    known_design = apply_progress(
+        Item(name="Chandelier Design", action="Sell", keep_for=""),
+        profile,
+    )
+    assert known_design.action == "Sell"
+    assert "Already know this design" in (known_design.keep_for or "")
+
+    unknown_design = apply_progress(
+        Item(name="Alpine Wardrobe Design", action="Sell", keep_for=""),
+        profile,
+    )
+    assert unknown_design.action == "Keep"
+    assert "Not learned yet" in (unknown_design.keep_for or "")
+
+    known_stencil = apply_progress(
+        Item(name="Cerulean Stencil", action="Sell", keep_for=""),
+        profile,
+    )
+    assert "Already know this stencil" in (known_stencil.keep_for or "")

@@ -46,7 +46,7 @@ class ProgressProfile(BaseModel):
     workshop_levels: dict[str, int] = Field(default_factory=dict)
     # project name lowercased → {item_slug: state} (COMPLETED / IN_PROGRESS / …)
     project_items: dict[str, dict[str, str]] = Field(default_factory=dict)
-    # Owned blueprint / design itemIds (optional; unused by filter for now)
+    # Owned blueprint / design / stencil itemIds (MetaForge account-sync)
     owned_blueprints: set[str] = Field(default_factory=set)
 
 
@@ -151,6 +151,9 @@ def import_account_sync(raw: dict[str, Any] | str | Path) -> ProgressProfile:
         profile.workshop_levels["outpost room"] = len(rooms)
 
     # Projects / mappedProgress --------------------------------------------
+    # Keys look like ``Soul's Offering::Phase 2/4::dead-flowers`` or flat
+    # ``Soul's Offering::arc-alloy``. Same item can be COMPLETED in an early
+    # phase and still IN_PROGRESS later — prefer still-needed over COMPLETED.
     projects_block = (resources.get("projects") or {}).get("data") or {}
     mapped = projects_block.get("mappedProgress") or {}
     for key, entry in mapped.items():
@@ -163,14 +166,10 @@ def import_account_sync(raw: dict[str, Any] | str | Path) -> ProgressProfile:
         item_slug = slugify(parts[-1])
         state = str(entry.get("state") or "").upper() or "UNKNOWN"
         bucket = profile.project_items.setdefault(project_name, {})
-        # Prefer COMPLETED if any duplicate Phase/non-Phase key says so
         prev = bucket.get(item_slug, "")
-        if prev == "COMPLETED" or state == "COMPLETED":
-            bucket[item_slug] = "COMPLETED"
-        elif not prev or prev == "UNKNOWN":
-            bucket[item_slug] = state
+        bucket[item_slug] = _merge_project_item_state(prev, state)
 
-    # Blueprints (owned recipes/designs) -----------------------------------
+    # Blueprints / designs / stencils already unlocked --------------------
     bp_block = (resources.get("blueprints") or {}).get("data") or {}
     for bp in bp_block.get("blueprints") or []:
         if isinstance(bp, dict) and bp.get("blueprintId"):
@@ -178,6 +177,9 @@ def import_account_sync(raw: dict[str, Any] | str | Path) -> ProgressProfile:
     for design in bp_block.get("designs") or []:
         if isinstance(design, dict) and design.get("itemId"):
             profile.owned_blueprints.add(str(design["itemId"]))
+    for stencil in bp_block.get("stencils") or []:
+        if isinstance(stencil, dict) and stencil.get("itemId"):
+            profile.owned_blueprints.add(str(stencil["itemId"]))
 
     return profile
 
@@ -246,11 +248,11 @@ def save_progress(profile: ProgressProfile, path: Path | None = None) -> Path:
 # ---------------------------------------------------------------------------
 
 _SECTION_SPLIT = re.compile(
-    r"(?=(?:Workshop|Quests|Projects):)",
+    r"(?=(?:Workshop|Quests|Projects|Research):)",
     re.IGNORECASE,
 )
 _SECTION_HEAD = re.compile(
-    r"^(Workshop|Quests|Projects):\s*(.*)$",
+    r"^(Workshop|Quests|Projects|Research):\s*(.*)$",
     re.IGNORECASE | re.DOTALL,
 )
 # "Medical Lab 3 (8x)" / "Doctor's Orders (2x)" / "Trophy Display (10x)"
@@ -264,7 +266,14 @@ _WORKSHOP_ENTRY_RE = re.compile(
 
 _PROGRESS_KEEP_RE = re.compile(
     r"quests?|projects?|workshop|upgrade|expedition|scrappy|"
+    r"research\s*:|research\s+station|"
     r"flickering\s+flames|\bstage\b",
+    re.IGNORECASE,
+)
+
+# Trailing Research Item study note (must survive Workshop section filtering)
+_RP_CONVERT_NOTE_RE = re.compile(
+    r"Converts to (?:\d+ )?(?:Research Points|RP)\b",
     re.IGNORECASE,
 )
 
@@ -292,6 +301,76 @@ def _quest_done(profile: ProgressProfile, quest_label: str) -> bool:
     return slugify(quest_label) in profile.completed_quests
 
 
+def _unlock_item_kind(item_name: str) -> str | None:
+    """Return ``blueprint`` / ``design`` / ``stencil`` from a catalog item name."""
+    low = (item_name or "").strip().lower()
+    if low.endswith(" blueprint"):
+        return "blueprint"
+    if low.endswith(" design"):
+        return "design"
+    if low.endswith(" stencil"):
+        return "stencil"
+    return None
+
+
+def _blueprint_owned(profile: ProgressProfile, blueprint_label: str) -> bool:
+    """True when ``owned_blueprints`` already includes this unlock.
+
+    Covers craft blueprints, furniture designs, and stencils. MetaForge ids are
+    inconsistent (``anvil-recipe``, ``heavy-gun-parts-recipe``,
+    ``aphelion-rifle-blueprint``, ``chandelier-design``), so match on a
+    normalized stem.
+    """
+    if not profile.owned_blueprints:
+        return False
+    label = (blueprint_label or "").strip()
+    if not label:
+        return False
+    kind = _unlock_item_kind(label)
+    if kind:
+        base = slugify(re.sub(rf"\s*{kind}\s*$", "", label, flags=re.IGNORECASE))
+    else:
+        # Research: clause labels are usually ``Anvil Blueprint``
+        base = slugify(re.sub(r"\s*blueprint\s*$", "", label, flags=re.IGNORECASE))
+    full = slugify(label)
+    if not base and not full:
+        return False
+    candidates = {full, base, f"{base}-recipe", f"{base}-blueprint", f"{base}-design", f"{base}-stencil"}
+    for owned in profile.owned_blueprints:
+        o = (owned or "").strip().lower()
+        if not o:
+            continue
+        if o in candidates:
+            return True
+        stem = re.sub(r"-(recipe|blueprint|design|stencil)$", "", o)
+        if stem == base or stem.startswith(base + "-") or base.startswith(stem + "-"):
+            return True
+    return False
+
+
+def _apply_unlock_knowledge(item: Item, profile: ProgressProfile) -> dict[str, object]:
+    """Overlay text for blueprint / design / stencil learn state."""
+    kind = _unlock_item_kind(item.name)
+    if kind is None:
+        return {}
+    if _blueprint_owned(profile, item.name):
+        return {
+            "action": "Sell",
+            "keep_for": f"Already know this {kind} — sell or trade",
+        }
+    # Unlearned designs/stencils were bare Sell; mirror blueprint guidance
+    if kind in {"design", "stencil"}:
+        return {
+            "action": "Keep",
+            "keep_for": f"Not learned yet — learn, sell, or trade",
+        }
+    # Blueprints already catalog as Keep + learn note; reinforce explicitly
+    return {
+        "action": "Keep",
+        "keep_for": "Not learned yet — learn, sell, or trade",
+    }
+
+
 def _workshop_done(profile: ProgressProfile, label: str) -> bool:
     """True when player's station level already meets the listed tier."""
     m = _WORKSHOP_ENTRY_RE.match(label.strip())
@@ -315,11 +394,39 @@ def _workshop_done(profile: ProgressProfile, label: str) -> bool:
     return current >= needed
 
 
+def _merge_project_item_state(prev: str, state: str) -> str:
+    """Merge Phase/flat mappedProgress rows for one item.
+
+    Later stages of the same material (e.g. Dead Flowers in Soul's Offering
+    1 then 2) must not be wiped by an earlier COMPLETED.
+    """
+    state = (state or "").upper() or "UNKNOWN"
+    prev = (prev or "").upper()
+    if not prev or prev == "UNKNOWN":
+        return state
+    if state == "IN_PROGRESS" or prev == "IN_PROGRESS":
+        return "IN_PROGRESS"
+    if state == "COMPLETED" and prev == "COMPLETED":
+        return "COMPLETED"
+    if state == "COMPLETED":
+        return prev
+    if prev == "COMPLETED":
+        return state
+    return state
+
+
+def _project_names_match(label: str, project_name: str) -> bool:
+    a = _norm_name(label)
+    b = _norm_name(project_name)
+    return a == b or a.startswith(b + " ") or b.startswith(a + " ")
+
+
 def _project_clause_done(
     profile: ProgressProfile,
     project_label: str,
     *,
     item_name: str,
+    project_catalog: ProjectCatalog | None = None,
 ) -> bool:
     """True when this project clause no longer applies for ``item_name``."""
     project = _norm_name(project_label)
@@ -337,7 +444,16 @@ def _project_clause_done(
     if item_slug in bucket:
         return bucket[item_slug] == "COMPLETED"
 
-    # No item-specific row: drop only if every tracked requirement is done
+    # Future stages often have no mappedProgress row yet (e.g. Mask Fragment
+    # on Soul's Offering part 3 while parts 1–2 are done). If the catalog still
+    # lists this item for the project, keep it.
+    if project_catalog is not None and project_catalog.available:
+        for req in project_catalog.requirements_for_item(item_name):
+            if _project_names_match(project_label, req.project_name):
+                return False
+
+    # No item row and not a known catalog requirement: drop when every tracked
+    # requirement is done (fully finished projects / wiki leftovers).
     return bool(bucket) and all(state == "COMPLETED" for state in bucket.values())
 
 
@@ -385,7 +501,7 @@ def _needed_from_entries(
     quest = sum(qty for _, qty in kept_by_kind.get("Quests", []))
     other = sum(
         qty
-        for kind in ("Workshop", "Projects")
+        for kind in ("Workshop", "Projects", "Research")
         for _, qty in kept_by_kind.get(kind, [])
     )
     return (quest if quest > 0 else None, other if other > 0 else None)
@@ -408,12 +524,19 @@ def _needed_from_keep_for(keep_for: str) -> tuple[int | None, int | None]:
             kind = "Workshop"
         elif kind.lower() == "projects":
             kind = "Projects"
+        elif kind.lower() == "research":
+            kind = "Research"
         else:
             continue
         entries = _parse_entries(head.group(2))
         if entries:
             kept_by_kind.setdefault(kind, []).extend(entries)
     return _needed_from_entries(kept_by_kind)
+
+
+def _extract_rp_convert_notes(text: str) -> list[str]:
+    """Pull ``Converts to N Research Points`` notes out of keep_for text."""
+    return [m.group(0).strip() for m in _RP_CONVERT_NOTE_RE.finditer(text or "")]
 
 
 def _filter_keep_for(
@@ -428,7 +551,13 @@ def _filter_keep_for(
     if not text:
         return "", None, None
 
-    chunks = [c for c in _SECTION_SPLIT.split(text) if c.strip()]
+    rp_notes = _extract_rp_convert_notes(text)
+    # Strip RP notes so they are not lost inside Workshop: body parsing
+    text_wo_rp = _RP_CONVERT_NOTE_RE.sub(" ", text)
+    text_wo_rp = re.sub(r"\s*;\s*;\s*", "; ", text_wo_rp)
+    text_wo_rp = text_wo_rp.strip(" ;")
+
+    chunks = [c for c in _SECTION_SPLIT.split(text_wo_rp) if c.strip()]
     preamble: list[str] = []
     kept_by_kind: dict[str, list[tuple[str, int]]] = {}
     saw_quests = False
@@ -436,7 +565,9 @@ def _filter_keep_for(
     for chunk in chunks:
         head = _SECTION_HEAD.match(chunk.strip().strip(";").strip())
         if not head:
-            preamble.append(chunk.strip().strip(";").strip())
+            bit = chunk.strip().strip(";").strip()
+            if bit:
+                preamble.append(bit)
             continue
         kind = head.group(1).capitalize()
         if kind.lower() == "quests":
@@ -445,6 +576,8 @@ def _filter_keep_for(
             kind = "Workshop"
         elif kind.lower() == "projects":
             kind = "Projects"
+        elif kind.lower() == "research":
+            kind = "Research"
 
         entries = _parse_entries(head.group(2))
         if kind == "Quests":
@@ -460,6 +593,8 @@ def _filter_keep_for(
             for label, qty in entries:
                 if kind == "Workshop" and _workshop_done(profile, label):
                     continue
+                if kind == "Research" and _blueprint_owned(profile, label):
+                    continue
                 if kind == "Projects":
                     if (
                         project_catalog is not None
@@ -468,7 +603,10 @@ def _filter_keep_for(
                     ):
                         continue
                     if _project_clause_done(
-                        profile, label, item_name=item_name
+                        profile,
+                        label,
+                        item_name=item_name,
+                        project_catalog=project_catalog,
                     ):
                         continue
                 kept.append((label, qty))
@@ -492,12 +630,13 @@ def _filter_keep_for(
             kept_by_kind["Quests"] = kept + kept_by_kind.get("Quests", [])
 
     rebuilt: list[str] = []
-    for kind in ("Quests", "Workshop", "Projects"):
+    for kind in ("Quests", "Workshop", "Projects", "Research"):
         entries = kept_by_kind.get(kind)
         if entries:
             rebuilt.append(f"{kind}: {_format_entries(entries)}")
 
-    parts = [p for p in (*preamble, *rebuilt) if p]
+    # Progression sections first; RP convert note last
+    parts = [p for p in (*preamble, *rebuilt, *rp_notes) if p]
     quest_needed, other_needed = _needed_from_entries(kept_by_kind)
     return "; ".join(parts), quest_needed, other_needed
 
@@ -507,6 +646,15 @@ def _rewrite_action(action: str, recycle_for: str | None, keep_for: str) -> str:
     if has_progress_keep(keep_for):
         return action
     al = (action or "").lower().strip()
+    keep_l = (keep_for or "").lower()
+    # Research Items still convert to RP after station upgrades are done
+    if (
+        "convert to research" in al
+        or "convert to rp" in al
+        or "converts to" in keep_l
+        and ("research points" in keep_l or re.search(r"\brp\b", keep_l))
+    ):
+        return "Convert to research points"
     sells = "sell after" in al or "sell once" in al
     recycles = (
         "recycle after" in al
@@ -600,6 +748,10 @@ def apply_progress(
         updates["project_needed"] = None
     if buy_from:
         updates["buy_from"] = buy_from
+
+    # Blueprint / design / stencil: show known vs unlearned from account-sync
+    if profile is not None:
+        updates.update(_apply_unlock_knowledge(item, profile))
 
     if not updates:
         return item
