@@ -5,12 +5,14 @@ SQLite operations for item recommendations with Pydantic models.
 
 import csv
 import difflib
+import re
 import sqlite3
 from pathlib import Path
 
 from pydantic import BaseModel
 from pydantic import Field
 
+from .config import DATA_DIR
 from .config import get_settings
 
 
@@ -67,23 +69,52 @@ def names_match(a: str, b: str, *, cutoff: float = 0.85) -> bool:
     return ratio >= cutoff
 
 
+# UI chrome OCR often glues onto the item name (crafting / recycle panels).
+_OCR_UI_NOISE_RE = re.compile(
+    r"(?:required\s*resources|requiredresources|\bsplit\s*stack\b|"
+    r"\baugment\s*effect\b|\bresources?\b)",
+    re.IGNORECASE,
+)
+
+
+def _scrub_ocr_query(name: str) -> str:
+    """Strip glued UI labels so the residual can match a catalog name."""
+    text = (name or "").strip()
+    if not text:
+        return ""
+    text = _OCR_UI_NOISE_RE.sub(" ", text)
+    # Leading action verb from recycle/confirm panels (spaced or glued)
+    text = re.sub(
+        r"^(?:recycle|keep|sell)(?:\s+|(?=[A-Za-z]))",
+        "",
+        text,
+        flags=re.IGNORECASE,
+    )
+    return " ".join(text.split())
+
+
 def _pick_row_by_ocr_key(
     clean_name: str, rows: list[sqlite3.Row]
 ) -> sqlite3.Row | None:
     """Resolve OCR noise against catalog names using alphanumeric keys.
 
     Handles dropped spaces/punct (``LOOTINGMK``), digit↔letter swaps
-    (``…STH EDITION`` vs ``…5TH EDITION``), and truncated tier suffixes
-    (``LOOTINGMK`` → shortest ``Looting Mk. …`` when the digit was lost).
+    (``…STH EDITION`` vs ``…5TH EDITION``), truncated tier suffixes
+    (``LOOTINGMK`` → shortest ``Looting Mk. …`` when the digit was lost),
+    dropped leading letters (``ERALENS`` → ``Camera Lens``), and UI chrome
+    glued onto the name (``…DESIGN REQUIREDRESOURCES``).
     """
-    target = _match_key(clean_name)
-    folded = _ocr_fold_key(clean_name)
+    scrubbed = _scrub_ocr_query(clean_name)
+    target = _match_key(scrubbed)
+    folded = _ocr_fold_key(scrubbed)
     if not target:
         return None
 
     exact: list[sqlite3.Row] = []
     folded_hits: list[sqlite3.Row] = []
     prefix_hits: list[sqlite3.Row] = []
+    suffix_hits: list[sqlite3.Row] = []
+    contained_hits: list[sqlite3.Row] = []
 
     for row in rows:
         ck = _match_key(row["name"])
@@ -91,16 +122,57 @@ def _pick_row_by_ocr_key(
             continue
         if ck == target:
             exact.append(row)
-        elif _ocr_fold_key(row["name"]) == folded:
+            continue
+        if _ocr_fold_key(row["name"]) == folded:
             folded_hits.append(row)
-        elif ck.startswith(target) and 0 < len(ck) - len(target) <= 12:
-            # Query is a stem of the catalog name (tier/variant OCR-dropped)
+            continue
+        if (
+            len(target) >= 5
+            and ck.startswith(target)
+            and 0 < len(ck) - len(target) <= 12
+        ):
+            # Query is a stem of the catalog name (tier/variant OCR-dropped).
+            # Require length ≥5 so scrubbed fragments like ``ADVA`` do not
+            # prefix-match ``Advanced …``.
             prefix_hits.append(row)
+        # OCR dropped a leading chunk (``CHERIII`` → ``Stitcher III``,
+        # ``TIONBOX`` → ``Frequency Modulation Box``). Cap is generous because
+        # uniqueness is required before we accept a suffix hit.
+        if (
+            len(target) >= 5
+            and ck.endswith(target)
+            and 0 < len(ck) - len(target) <= 18
+        ):
+            suffix_hits.append(row)
+        # Query sits inside the catalog key with a short OCR prefix/suffix gap
+        # (``TINGMKSURVIVOR`` → ``Looting Mk. 3 (Survivor)``).
+        if len(target) >= 6 and target != ck:
+            idx = ck.find(target)
+            if idx >= 0 and idx <= 8 and len(ck) - idx - len(target) <= 4:
+                contained_hits.append(row)
+            else:
+                # Catalog key contained in a UI-prefixed query
+                # (``CYCLEARPEGGIOI`` → ``Arpeggio I``). Require the catalog
+                # stem to cover most of the query so ``Magnet`` cannot win
+                # inside ``JSTRIALMAGNET``.
+                qidx = target.find(ck)
+                if (
+                    len(ck) >= 8
+                    and len(ck) * 2 >= len(target)
+                    and qidx >= 0
+                    and qidx <= 10
+                    and len(target) - qidx - len(ck) <= 2
+                ):
+                    contained_hits.append(row)
 
     if len(exact) == 1:
         return exact[0]
     if len(folded_hits) == 1:
         return folded_hits[0]
+    if len(suffix_hits) == 1:
+        return suffix_hits[0]
+    if len(contained_hits) == 1:
+        return contained_hits[0]
 
     # Fuzzy on keys (not raw display strings — those fail when spaces drop)
     best: sqlite3.Row | None = None
@@ -120,20 +192,32 @@ def _pick_row_by_ocr_key(
         if ratio > best_ratio:
             best_ratio = ratio
             best = row
-    if best is not None and best_ratio >= 0.9:
-        return best
+    # Long keys: allow slightly more OCR damage (Industrial←Jstrial, …)
+    if best is not None:
+        best_len = len(_match_key(best["name"]))
+        cutoff = 0.82 if min(len(target), best_len) >= 10 else 0.9
+        if best_ratio >= cutoff:
+            return best
 
     # Truncated stem with several tiered variants → prefer shortest catalog name
-    if prefix_hits:
-        prefix_hits.sort(
-            key=lambda r: (len(_match_key(r["name"])), len(r["name"]), r["name"])
-        )
-        return prefix_hits[0]
+    for group in (prefix_hits, suffix_hits, contained_hits):
+        if group:
+            group.sort(
+                key=lambda r: (
+                    len(_match_key(r["name"])),
+                    len(r["name"]),
+                    r["name"],
+                )
+            )
+            return group[0]
     return None
 
 
 class Item(BaseModel):
-    """Item model matching database schema."""
+    """Item model matching database schema.
+
+    ``quest_needed`` is runtime-only (progress filter); not stored in arlo.db.
+    """
 
     name: str = Field(..., min_length=1, max_length=200)
     action: str = Field(..., min_length=1, max_length=100)
@@ -141,6 +225,18 @@ class Item(BaseModel):
     keep_for: str | None = Field(default=None, max_length=500)
     sell_price: int | None = Field(default=None)
     stack_size: int | None = Field(default=None)
+    quest_needed: int | None = Field(
+        default=None,
+        description="Total qty still needed across incomplete catalog quests",
+    )
+    project_needed: int | None = Field(
+        default=None,
+        description="Total qty still needed across incomplete catalog projects",
+    )
+    buy_from: str | None = Field(
+        default=None,
+        description="Trader buy hint, e.g. 'Celeste (1)'",
+    )
 
 
 class Database:
@@ -303,17 +399,42 @@ class Database:
         return count
 
     def log_missing_item(self, name: str) -> None:
-        """Log an unknown item to missing_items.csv for easy addition later."""
+        """Log an unknown item to missing_items.csv for easy addition later.
+
+        Writes under ``data/`` (not beside the DB) and de-duplicates so OCR
+        spam does not grow the file without bound.
+        """
         if not name:
             return
 
-        missing_file = self.db_path.parent / "missing_items.csv"
+        missing_file = DATA_DIR / "missing_items.csv"
 
         try:
-            # Append to file
-            with missing_file.open("a", newline="", encoding="utf-8") as f:
-                writer = csv.writer(f)
-                writer.writerow([name])
+            seen: set[str] = set()
+            unique: list[str] = []
+            raw_count = 0
+            if missing_file.is_file():
+                with missing_file.open(newline="", encoding="utf-8") as f:
+                    for row in csv.reader(f):
+                        if not row or not row[0].strip():
+                            continue
+                        raw_count += 1
+                        item = row[0].strip()
+                        if item in seen:
+                            continue
+                        seen.add(item)
+                        unique.append(item)
+
+            if name not in seen:
+                unique.append(name)
+            elif raw_count == len(unique):
+                return
+
+            missing_file.parent.mkdir(parents=True, exist_ok=True)
+            with missing_file.open("w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f, lineterminator="\n")
+                for item in unique:
+                    writer.writerow([item])
         except Exception:  # ruff: ignore[blind-except]
             pass  # Fail silently to not interrupt the user
 

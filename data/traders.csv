@@ -1,0 +1,158 @@
+trader_id,trader_name,item_id,item_name,price
+celeste,Celeste,metal-parts,Metal Parts,1
+celeste,Celeste,plastic-parts,Plastic Parts,1
+celeste,Celeste,rubber-parts,Rubber Parts,1
+celeste,Celeste,chemicals,Chemicals,1
+celeste,Celeste,fabric,Fabric,1
+celeste,Celeste,sheet-metal,Sheet Metal,3
+celeste,Celeste,planks,Planks,3
+celeste,Celeste,great-mullein,Great Mullein,5
+celeste,Celeste,wires,Wires,4
+celeste,Celeste,steel-spring,Steel Spring,6
+celeste,Celeste,oil,Oil,6
+celeste,Celeste,simple-gun-parts,Simple Gun Parts,7
+celeste,Celeste,battery,Battery,5
+celeste,Celeste,canister,Canister,6
+celeste,Celeste,magnet,Magnet,6
+celeste,Celeste,duct-tape,Duct Tape,6
+celeste,Celeste,rope,Rope,10
+celeste,Celeste,steel-cable,Steel Cable,20
+celeste,Celeste,synthesized-fuel,Synthesized Fuel,14
+celeste,Celeste,syringe,Syringe,10
+celeste,Celeste,sensors,Sensors,10
+celeste,Celeste,heavy-gun-parts,Heavy Gun Parts,15
+celeste,Celeste,medium-gun-parts,Medium Gun Parts,15
+celeste,Celeste,light-gun-parts,Light Gun Parts,15
+celeste,Celeste,moss,Moss,10
+celeste,Celeste,speaker-component,Speaker Component,10
+celeste,Celeste,processor,Processor,10
+celeste,Celeste,voltage-converter,Voltage Converter,10
+celeste,Celeste,complex-gun-parts,Complex Gun Parts,60
+celeste,Celeste,exodus-modules,Exodus Modules,55
+shani,Shani,remote-raider-flare,Remote Raider Flare,810
+shani,Shani,firecracker,Firecracker,810
+shani,Shani,binoculars,Binoculars,1.9k
+shani,Shani,blue-light-stick,Blue Light Stick,3k
+shani,Shani,red-light-stick,Red Light Stick,3k
+shani,Shani,yellow-light-stick,Yellow Light Stick,3k
+shani,Shani,green-light-stick,Green Light Stick,3k
+shani,Shani,basic-camera,Basic Camera,1.9k
+shani,Shani,advanced-camera,Advanced Camera,3k
+shani,Shani,fireworks-box,Fireworks Box,6k
+shani,Shani,raider-hatch-key,Raider Hatch Key,9k
+tian-wen,Tian Wen,light-ammo,Light Ammo,900
+tian-wen,Tian Wen,medium-ammo,Medium Ammo,900
+tian-wen,Tian Wen,heavy-ammo,Heavy Ammo,900
+tian-wen,Tian Wen,shotgun-ammo,Shotgun Ammo,900
+tian-wen,Tian Wen,launcher-ammo,Launcher Ammo,4.5k
+tian-wen,Tian Wen,energy-clip,Energy Clip,3k
+tian-wen,Tian Wen,stitcher-i,Stitcher I,2.4k
+tian-wen,Tian Wen,kettle-i,Kettle I,2.52k
+tian-wen,Tian Wen,ferro-i,Ferro I,1.4k
+tian-wen,Tian Wen,ferro-iv,Ferro IV,8.7k
+tian-wen,Tian Wen,arpeggio-i,Arpeggio I,16.5k
+tian-wen,Tian Wen,burletta-i,Burletta I,8.7k
+tian-wen,Tian Wen,il-toro-i,Il Toro I,15k
+tian-wen,Tian Wen,bantam-i,Bantam I,11.4k
+tian-wen,Tian Wen,renegade-i,Renegade I,21k
+tian-wen,Tian Wen,osprey-i,Osprey I,21k
+tian-wen,Tian Wen,torrente-i,Torrente I,21k
+tian-wen,Tian Wen,rascal-i,Rascal I,21k
+tian-wen,Tian Wen,extended-light-mag-i,Extended Light Mag I,1.92k
+tian-wen,Tian Wen,muzzle-brake-i,Muzzle Brake I,1.92k
+tian-wen,Tian Wen,angled-grip-i,Angled Grip I,1.92k
+tian-wen,Tian Wen,extended-medium-mag-ii,Extended Medium Mag II,6k
+tian-wen,Tian Wen,extended-light-mag-ii,Extended Light Mag II,6k
+tian-wen,Tian Wen,vertical-grip-ii,Vertical Grip II,6k
+tian-wen,Tian Wen,angled-grip-ii,Angled Grip II,6k
+tian-wen,Tian Wen,silencer-i,Silencer I,6k
+tian-wen,Tian Wen,shotgun-choke-ii,Shotgun Choke II,6k
+tian-wen,Tian Wen,stable-stock-iii,Stable Stock III,15k
+tian-wen,Tian Wen,angled-grip-iii,Angled Grip III,15k
+tian-wen,Tian Wen,padded-stock,Padded Stock,15k
+lance,Lance,looting-mk-1,Looting Mk. 1,1
+lance,Lance,combat-mk-1,Combat Mk. 1,1
+lance,Lance,tactical-mk-1,Tactical Mk. 1,1
+lance,Lance,looting-mk-2,Looting Mk. 2,6k
+lance,Lance,combat-mk-2,Combat Mk. 2,6k
+lance,Lance,tactical-mk-2,Tactical Mk. 2,6k
+lance,Lance,looting-mk-3-cautious,Looting Mk. 3 (Cautious),15k
+lance,Lance,combat-mk-3-flanking,Combat Mk. 3 (Flanking),15k
+lance,Lance,tactical-mk-3-healing,Tactical Mk. 3 (Healing),15k
+lance,Lance,bandage,Bandage,750
+lance,Lance,herbal-bandage,Herbal Bandage,2.7k
+lance,Lance,sterilized-bandage,Sterilized Bandage,6k
+lance,Lance,light-shield,Light Shield,1.92k
+lance,Lance,medium-shield,Medium Shield,6k
+lance,Lance,heavy-shield,Heavy Shield,16.5k
+lance,Lance,shield-recharger,Shield Recharger,1.56k
+lance,Lance,surge-shield-recharger,Surge Shield Recharger,3.6k
+lance,Lance,defibrillator,Defibrillator,3k
+lance,Lance,adrenaline-shot,Adrenaline Shot,900
+apollo,Apollo,door-blocker,Door Blocker,810
+apollo,Apollo,gas-grenade,Gas Grenade,810
+apollo,Apollo,light-impact-grenade,Light Impact Grenade,810
+apollo,Apollo,noisemaker,Noisemaker,1.92k
+apollo,Apollo,dockmasters-detector,Dockmaster's Detector,1.92k
+apollo,Apollo,shrapnel-grenade,Shrapnel Grenade,2.4k
+apollo,Apollo,pulse-mine,Pulse Mine,1.41k
+apollo,Apollo,seeker-grenade,Seeker Grenade,1.92k
+apollo,Apollo,snap-blast-grenade,Snap Blast Grenade,2.4k
+apollo,Apollo,recorder,Recorder,3k
+apollo,Apollo,barricade-kit,Barricade Kit,1.92k
+apollo,Apollo,zipline,Zipline,3k
+apollo,Apollo,heavy-fuze-grenade,Heavy Fuze Grenade,4.8k
+apollo,Apollo,tagging-grenade,Tagging Grenade,3k
+apollo,Apollo,trigger-nade,Trigger 'Nade,3k
+apollo,Apollo,smoke-grenade,Smoke Grenade,3k
+apollo,Apollo,blaze-grenade,Blaze Grenade,4.8k
+apollo,Apollo,surge-coil,Surge Coil,6.3k
+nomadic-envoys,Nomadic Envoys,assessor-matrix,Assessor Matrix,
+nomadic-envoys,Nomadic Envoys,bastion-cell,Bastion Cell,
+nomadic-envoys,Nomadic Envoys,bombardier-cell,Bombardier Cell,
+nomadic-envoys,Nomadic Envoys,leaper-pulse-unit,Leaper Pulse Unit,
+nomadic-envoys,Nomadic Envoys,rocketeer-driver,Rocketeer Driver,
+nomadic-envoys,Nomadic Envoys,turbine-compressor,Turbine Compressor,
+nomadic-envoys,Nomadic Envoys,vaporizer-regulator,Vaporizer Regulator,
+nomadic-envoys,Nomadic Envoys,matriarch-reactor,Matriarch Reactor,
+nomadic-envoys,Nomadic Envoys,queen-reactor,Queen Reactor,
+nomadic-envoys,Nomadic Envoys,fireball-burner,Fireball Burner,
+nomadic-envoys,Nomadic Envoys,pop-trigger,Pop Trigger,
+nomadic-envoys,Nomadic Envoys,snitch-scanner,Snitch Scanner,
+nomadic-envoys,Nomadic Envoys,spotter-relay,Spotter Relay,
+nomadic-envoys,Nomadic Envoys,tick-pod,Tick Pod,
+nomadic-envoys,Nomadic Envoys,comet-igniter,Comet Igniter,
+nomadic-envoys,Nomadic Envoys,firefly-burner,Firefly Burner,
+nomadic-envoys,Nomadic Envoys,hornet-driver,Hornet Driver,
+nomadic-envoys,Nomadic Envoys,sentinel-firing-core,Sentinel Firing Core,
+nomadic-envoys,Nomadic Envoys,shredder-gyro,Shredder Gyro,
+nomadic-envoys,Nomadic Envoys,surveyor-vault,Surveyor Vault,
+nomadic-envoys,Nomadic Envoys,arc-powercell,ARC Powercell,
+nomadic-envoys,Nomadic Envoys,arc-alloy,ARC Alloy,
+nomadic-envoys,Nomadic Envoys,burned-arc-circuitry,Burned ARC Circuitry,
+nomadic-envoys,Nomadic Envoys,impure-arc-coolant,Impure ARC Coolant,
+nomadic-envoys,Nomadic Envoys,skulker-targeter,Skulker Targeter,
+nomadic-envoys,Nomadic Envoys,advanced-arc-powercell,Advanced ARC Powercell,
+nomadic-envoys,Nomadic Envoys,arc-circuitry,ARC Circuitry,
+nomadic-envoys,Nomadic Envoys,arc-coolant,ARC Coolant,
+nomadic-envoys,Nomadic Envoys,arc-flex-rubber,ARC Flex Rubber,
+nomadic-envoys,Nomadic Envoys,arc-motion-core,ARC Motion Core,
+nomadic-envoys,Nomadic Envoys,arc-performance-steel,ARC Performance Steel,
+nomadic-envoys,Nomadic Envoys,arc-synthetic-resin,ARC Synthetic Resin,
+nomadic-envoys,Nomadic Envoys,arc-thermo-lining,ARC Thermo Lining,
+nomadic-envoys,Nomadic Envoys,arc-conductive-coupler,ARC Conductive Coupler,
+nomadic-envoys,Nomadic Envoys,arc-data-module,ARC Data Module,
+nomadic-envoys,Nomadic Envoys,arc-insulated-coupler,ARC Insulated Coupler,
+nomadic-envoys,Nomadic Envoys,arc-plated-coupler,ARC Plated Coupler,
+nomadic-envoys,Nomadic Envoys,bully-fragmenter,Bully Fragmenter,
+nomadic-envoys,Nomadic Envoys,bronze-statuette,Bronze Statuette,
+nomadic-envoys,Nomadic Envoys,eye-band,Eye Band,100k
+nomadic-envoys,Nomadic Envoys,bobblehead,Bobblehead,50k
+nomadic-envoys,Nomadic Envoys,50-assorted-seeds,×50 Assorted Seeds,10k
+nomadic-envoys,Nomadic Envoys,yank-grenade,Yank Grenade,9k
+nomadic-envoys,Nomadic Envoys,grappling-hook,Grappling Hook,9k
+nomadic-envoys,Nomadic Envoys,anvil-ii,Anvil II,20k
+nomadic-envoys,Nomadic Envoys,hullcracker-ii,Hullcracker II,30k
+nomadic-envoys,Nomadic Envoys,deadline,Deadline,20k
+nomadic-envoys,Nomadic Envoys,kinetic-converter,Kinetic Converter,50k
+nomadic-envoys,Nomadic Envoys,25-raider-tokens,×25 Raider Tokens,150k

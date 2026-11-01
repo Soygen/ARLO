@@ -18,8 +18,23 @@ def _db(tmp_path):
                 ("Looting Mk. 1", "Keep"),
                 ("Looting Mk. 2", "Keep"),
                 ("Looting Mk. 3 (Cautious)", "Keep"),
+                ("Looting Mk. 3 (Survivor)", "Keep"),
                 ("Tactical Mk. 1", "Keep"),
                 ("Combat Mk. 1", "Keep"),
+                ("Camera Lens", "Keep"),
+                ("Stitcher III", "Keep"),
+                ("Water Pump", "Keep"),
+                ("Dart Board", "Sell"),
+                ("Industrial Magnet", "Keep"),
+                ("Medium Ammo", "Keep"),
+                ("Heavy Ammo", "Keep"),
+                ("Arpeggio I", "Keep"),
+                ("Chandelier Design", "Keep"),
+                ("Sturdy Wardrobe Design", "Keep"),
+                ("Spaceport Trench Tower Key", "Keep"),
+                ("Crude Explosives", "Keep"),
+                ("Deflated Football", "Sell"),
+                ("Bicycle Pump", "Keep"),
             ],
         )
         conn.commit()
@@ -79,3 +94,61 @@ def test_ocr_collapsed_tactical_and_combat_mk(tmp_path):
     assert _db(tmp_path).lookup("COMBATMK").name == "Combat Mk. 1"
     # Trailing L is a common OCR misread of the tier digit 1
     assert _db(tmp_path).lookup("COMBATMKL").name == "Combat Mk. 1"
+
+
+def test_ocr_dropped_leading_letters_suffix_match(tmp_path):
+    assert _db(tmp_path).lookup("ERALENS").name == "Camera Lens"
+    assert _db(tmp_path).lookup("CHERIII").name == "Stitcher III"
+    assert _db(tmp_path).lookup("ERPUMP").name == "Water Pump"
+    assert _db(tmp_path).lookup("TBOARD").name == "Dart Board"
+    assert _db(tmp_path).lookup("MAMMO").name == "Medium Ammo"
+
+
+def test_ocr_partial_looting_mk_and_survivor(tmp_path):
+    assert _db(tmp_path).lookup("TINGMK").name == "Looting Mk. 1"
+    assert _db(tmp_path).lookup("TINGMKSURVIVOR").name == "Looting Mk. 3 (Survivor)"
+
+
+def test_ocr_ui_chrome_stripped_from_design_name(tmp_path):
+    assert (
+        _db(tmp_path).lookup("CHANDELIERDESIGN REQUIREDRESOURCES").name
+        == "Chandelier Design"
+    )
+    assert (
+        _db(tmp_path).lookup("STURDYWARDROBEDESIGN REQUIREDRESOURCES").name
+        == "Sturdy Wardrobe Design"
+    )
+
+
+def test_ocr_industrial_magnet_leading_damage(tmp_path):
+    assert _db(tmp_path).lookup("JSTRIALMAGNET").name == "Industrial Magnet"
+
+
+def test_ocr_spaceport_trench_key_middle_gap(tmp_path):
+    assert (
+        _db(tmp_path).lookup("SPACEPORTTRENCH KEY").name
+        == "Spaceport Trench Tower Key"
+    )
+
+
+def test_ocr_recycle_prefix_and_arpeggio(tmp_path):
+    assert _db(tmp_path).lookup("CYCLEARPEGGIOI").name == "Arpeggio I"
+    assert _db(tmp_path).lookup("RECYCLEBICYCL").name == "Bicycle Pump"
+    # Scrubbed remnant too short / ambiguous — must not invent a match
+    assert _db(tmp_path).lookup("RECYCLEADVA") is None
+
+
+def test_ocr_suffix_with_long_dropped_prefix(tmp_path):
+    db = _db(tmp_path)
+    with db._get_connection() as conn:
+        conn.execute(
+            "INSERT INTO items (name, action) VALUES (?, ?)",
+            ("Frequency Modulation Box", "Keep"),
+        )
+        conn.commit()
+    assert db.lookup("TIONBOX").name == "Frequency Modulation Box"
+
+
+def test_ocr_crude_explosives_collapsed(tmp_path):
+    assert _db(tmp_path).lookup("CRUDEEXPLOSIVES").name == "Crude Explosives"
+    assert _db(tmp_path).lookup("FLATEDFOOTBALL").name == "Deflated Football"

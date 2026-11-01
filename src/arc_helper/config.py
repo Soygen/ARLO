@@ -34,6 +34,7 @@ def get_app_dir() -> Path:
 
 
 APP_DIR = get_app_dir()
+DATA_DIR = APP_DIR / "data"
 
 
 def get_screen_resolution() -> tuple[int, int]:
@@ -243,7 +244,7 @@ class Settings(BaseSettings):
     tesseract_path: str | None = Field(default_factory=get_tesseract_path)
 
     # Database in app directory
-    database_path: Path = Field(default_factory=lambda: APP_DIR / "items.db")
+    database_path: Path = Field(default_factory=lambda: APP_DIR / "arlo.db")
 
     # Screen capture backend: auto | x11 | wayland (Linux only)
     screen_backend: str = Field(

@@ -47,6 +47,12 @@ def normalize_keep_labels(keep_for: str) -> str:
     text = re.sub(r"\bQuests(?!:)\s+", "Quests: ", text)
     text = re.sub(r"\bProjects(?!:)\s+", "Projects: ", text)
     text = re.sub(r"\bWorkshop(?!:)\s+", "Workshop: ", text)
+    # Section header only — leave "Research Station" / "Research Points" alone
+    text = re.sub(
+        r"\bResearch(?!:)(?!\s+(?:Station|Points)\b)\s+",
+        "Research: ",
+        text,
+    )
     return text
 
 
@@ -293,12 +299,21 @@ class OverlayWindow:
             self.action_label.config(text=f"\u2192 {action_str}", fg=color)
             self.accent_bar.config(bg=color)
 
-            # Info line
+            # Info line (sell / stack / remaining need / buy from trader)
             info_parts: list[str] = []
             if recommendation.sell_price is not None:
                 info_parts.append(f"Sell: {recommendation.sell_price:,}\u20a1")
             if recommendation.stack_size is not None:
                 info_parts.append(f"Stack: {recommendation.stack_size}")
+            need_total = 0
+            if recommendation.quest_needed:
+                need_total += recommendation.quest_needed
+            if recommendation.project_needed:
+                need_total += recommendation.project_needed
+            if need_total > 0:
+                info_parts.append(f"Need: {need_total}")
+            if recommendation.buy_from:
+                info_parts.append(f"Buy: {recommendation.buy_from}")
             self.info_label.config(text="    \u00b7    ".join(info_parts))
 
             # Detail: keep reason and/or recycle yield, with HR when both exist
@@ -443,6 +458,10 @@ class StatusWindow:
 
     def set_error(self, message: str) -> None:
         self.status_label.config(text=f"\u25cf {message}", fg="#FF4444")
+
+    def set_info(self, message: str, *, fg: str = "#5AD4A0") -> None:
+        """Non-error status line (e.g. progress import flash)."""
+        self.status_label.config(text=f"\u25cf {message}", fg=fg)
 
     def hide(self) -> None:
         self.window.withdraw()

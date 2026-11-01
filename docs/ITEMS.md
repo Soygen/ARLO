@@ -1,18 +1,35 @@
 ## Item Database
 
-Items are stored in `items.db` (SQLite database) with the following columns: `name`, `action`, `recycle_for`, `keep_for`, `sell_price`, and `stack_size`. The database updates automatically from the [MetaForge API](https://metaforge.app/arc-raiders) on every app launch, with the [Arc Raiders Wiki](https://arcraiders.wiki/wiki/Loot) as a fallback.
+Catalog data is one SQLite file `arlo.db` at the app root (tables for items, quests, projects, traders) plus readable CSVs under `data/` (`items.csv`, `quests.csv`, `projects.csv`, `traders.csv`) for diffs and manual edits. The items table columns are `name`, `action`, `recycle_for`, `keep_for`, `sell_price`, and `stack_size`. Quest/project requirement tables power remaining-need totals after a progress import; trader tables power overlay `Buy:` hints. The catalog updates automatically on every app launch (throttled to 24h).
+
+### Source of truth
+
+Neither MetaForge nor the wiki is complete alone. Default hybrid mode picks per field:
+
+| Field | Source of truth | Notes |
+|-------|-----------------|-------|
+| Item name, category, rarity, sell price, stack size | **MetaForge** Items API | Wiki Loot only if MetaForge is down |
+| Quest catalog, prerequisites, turn-ins | **MetaForge** Quests API + quest-tree | Wiki Quests page enriches / fills gaps |
+| Recycle yields (`recycle_for`) | **MetaForge** recycle table, then **wiki** Loot for gaps | MetaForge has more weapon/tier rows; wiki has nature/trinket rows MetaForge omits (e.g. Olives) |
+| Workshop upgrade keep (`Workshop: Station N (Qx)`) | **Wiki** `Workshop` / `Scrappy` / `Outpost` | Not the Loot Uses column — it often copies a sibling material’s quantity |
+| Outpost room expansions (`Workshop: Outpost Room N (Qx)`) | **Curated** (MetaForge rooms page) | Wiki Workshop Upgrade tables are empty for Chalet / expansions; progress uses `workshop.outpost.rooms` count |
+| Blueprint research costs (`Research: Foo Blueprint (Qx)`) | **Wiki** `Research Points` crafting table | Filtered by learned recipes in `account-sync` `resources.blueprints` |
+| Research Items (convert to RP) | **MetaForge** `item_type` + wiki RP yields | Action prefers convert-to-RP over Sell; station upgrade keeps still apply |
+| Project requirements + schedule | **Wiki** Projects directory | `Type` / `Start` / `End`; expired temporary projects stay in the catalog but are excluded from keep / `Need:` |
+| Trader shop inventories (`Buy:`) | **Wiki** Traders directory | |
 
 ### Automatic Updates on Launch
 
 Every time `ARLO.exe` (or `uv run arc-helper`) starts, it checks for item database updates. This is throttled to once per 24 hours so it doesn't slow down repeated launches. The update runs in merge mode, meaning your manual action overrides are always preserved.
 
-The updater pulls data from three MetaForge sources:
+Concrete endpoints / pages:
 
-- **Items API** (`/api/arc-raiders/items`) - Item names, categories, sell prices, stack sizes, rarity
-- **Recycle components** (Supabase `arc_item_recycle_components`) - What each item recycles into
-- **Quests API** (`/api/arc-raiders/quests`) - Which items are needed for which quests
+- **Items API** (`/api/arc-raiders/items`) — catalog, prices, stacks
+- **Recycle components** (Supabase `arc_item_recycle_components`) — primary recycles; wiki Loot fills missing rows
+- **Quests API** (`/api/arc-raiders/quests` + `/quest-tree`) → `data/quests.csv` + quest tables in `arlo.db`
+- **Wiki** (`Loot`, `Quests`, `Workshop`, `Scrappy`, `Outpost`, `Projects`, `Traders`) — workshop/project/trader side catalogs and recycle gap-fill as in the table above
 
-If MetaForge is unreachable, the updater automatically falls back to scraping the Arc Raiders Wiki. If both are down, the app starts normally with whatever database it already has.
+If MetaForge is unreachable, the updater falls back to the wiki for items. If both are down, the app starts with whatever databases it already has.
 
 The throttle timestamp is stored in `.last_wiki_update` in the app directory. Delete this file to force an update on the next launch.
 
@@ -86,7 +103,7 @@ In merge mode the updater will:
 If you fork this repo, the included GitHub Actions workflow at `.github/workflows/update-db.yml` can sync the database on a schedule:
 
 - Runs weekly on Mondays at 6:00 UTC in merge mode
-- Auto-commits updated `items.csv` and `items.db` if changes are detected
+- Auto-commits updates under `data/` if changes are detected
 - Can be triggered manually from the **Actions** tab on GitHub
 
 No secrets or configuration needed - just push the workflow file and it works.
@@ -95,7 +112,7 @@ No secrets or configuration needed - just push the workflow file and it works.
 
 ### Manual CSV Management
 
-You can also edit `items.csv` directly. The CSV has the following columns:
+You can also edit `data/items.csv` directly. The CSV has the following columns:
 
 ```csv
 name,action,recycle_for,keep_for,sell_price,stack_size
@@ -118,7 +135,7 @@ The `sell_price` and `stack_size` columns are optional for backwards compatibili
 
 ### Managing the Database via Calibration Tool
 
-1. Edit `items.csv` in Excel, Google Sheets, or any text editor
+1. Edit `data/items.csv` in Excel, Google Sheets, or any text editor
 2. Run `Calibrate.exe` (or `uv run arc-calibrate`)
 3. In the "Item Database" section at the bottom:
    - Click **"Load CSV..."** to import your updated CSV file
