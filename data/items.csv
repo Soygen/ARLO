@@ -4,19 +4,24 @@ name,action,recycle_for,keep_for,sell_price,stack_size
 """Velocity"" Ship Model",Sell,,,3000,3
 """Wind Sprite"" Ship Model",Sell,,,1000,10
 Abyss (Outfit),Sell,,,,
+Acne Scar (Face Style),Sell,,,,
 Acoustic Guitar,Keep,"4x Metal Parts, 6x Wires",Projects: Trophy Display (1x),7000,1
 Action Economy,Sell,,,,1
-Adrenaline Shot,Use,"1x Chemicals, 1x plastic-parts",Quick Use consumable,300,5
-Advanced ARC Powercell,Keep,2x ARC Powercell,Projects: Soul's Offering (15x),640,5
+Adrenaline Shot,Keep,"1x Chemicals, 1x Plastic Parts",Research: Defibrillator Blueprint (5x),300,5
+Advanced ARC Powercell,Keep,2x ARC Powercell,"Research: Jolt Mine Blueprint (3x), Tactical Mk. 3 (Defensive) Blueprint (2x); Projects: Soul's Offering 2 (15x)",640,5
 Advanced Camera,Use,1x Calculator,Quick Use consumable,1000,1
 Advanced Camera Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Advanced Electrical Components,Keep,"1x Electrical Components, 1x Wires","Workshop: Gear Bench 3 (5x) Utility Station 3 (5x); Projects: Expedition 1 (5x), Expedition 2 (5x), Expedition 3 (5x), Expedition 4 (5x), Outpost (3x)",1750,5
-Advanced Mechanical Components,Keep,"1x Mechanical Components, 1x Steel Spring",Workshop: Gunsmith 3 (5x); Projects: Expedition 5 (5x),1750,5
+Advanced Electrical Components,Keep,"1x Electrical Components, 1x Wires","Workshop: Gear Bench 3 (5x) Utility Station 3 (5x); Research: Powered Descender Blueprint (1x); Projects: Expedition 1 (5x), Expedition 2 (5x), Expedition 3 (5x), Expedition 4 (5x), Outpost (3x)",1750,5
+Advanced Mechanical Components,Keep,"1x Mechanical Components, 1x Steel Spring","Workshop: Gunsmith 3 (5x); Research: Complex Gun Parts Blueprint (1x), Silencer II Blueprint (1x), Vertical Grip III Blueprint (1x); Projects: Expedition 5 (5x)",1750,5
+Adventurer (Backpack),Sell,,,,
 Aeronaut (Outfit),Sell,,,,
+Afro Fade (Hair),Sell,,,,
 Agave,Sell,3x Assorted Seeds,,1000,10
 Agave Juice,Use,,Quick Use consumable,1800,5
+Agriculturalist (Backpack),Sell,,,,
 Air Freshener,Sell,,,2000,5
-Alarm Clock,Recycle,"6x plastic-parts, 1x Processor",,1000,3
+Airtight Container (Backpack Attachment),Sell,,,,
+Alarm Clock,Recycle,"6x Plastic Parts, 1x Processor",,1000,3
 Alien Duck,Sell,,,1000,15
 Alpine Wardrobe,Sell,,,,
 Alpine Wardrobe Design,Sell,,,5000,1
@@ -99,14 +104,9 @@ Amplified Osprey (Ergonomic Bolt),Keep,,Equippable Weapon,20800,1
 Amplified Osprey (Tracker Rounds),Keep,,Equippable Weapon,20800,1
 "Amplified Osprey (Tracker Rounds, Ergonomic Bolt)",Keep,,Equippable Weapon,20800,1
 Amplified Rascal,Keep,,Equippable Weapon,20800,1
-Amplified Rascal,Keep,,Equippable Weapon,20800,1
-Amplified Rascal (High Velocity),Keep,,Equippable Weapon,20800,1
 Amplified Rascal (High Velocity),Keep,,Equippable Weapon,20800,1
 "Amplified Rascal (High Velocity, Incendiary Grenades)",Keep,,Equippable Weapon,20800,1
-"Amplified Rascal (High Velocity, Incendiary Grenades)",Keep,,Equippable Weapon,20800,1
 "Amplified Rascal (High Velocity, Sprint Shooting)",Keep,,Equippable Weapon,20800,1
-"Amplified Rascal (High Velocity, Sprint Shooting)",Keep,,Equippable Weapon,20800,1
-"Amplified Rascal (High Velocity, Sprint Shooting, Incendiary Grenades)",Keep,,Equippable Weapon,20800,1
 "Amplified Rascal (High Velocity, Sprint Shooting, Incendiary Grenades)",Keep,,Equippable Weapon,20800,1
 Amplified Rascal (Incendiary Grenades),Keep,,Equippable Weapon,20800,1
 Amplified Rascal (Sprint Shooting),Keep,,Equippable Weapon,20800,1
@@ -125,7 +125,7 @@ Anchor (Backpack Charm),Sell,,,,
 Anchor (Outfit),Sell,,,,
 Ancient Fort Security Code,Keep,,Unlocks locked areas,,1
 Anemometer (Backpack Charm),Sell,,,,
-Angled Grip I,Keep,6x plastic-parts,Equippable Mods,640,1
+Angled Grip I,Keep,6x Plastic Parts,Equippable Mods,640,1
 Angled Grip II,Keep,"1x Duct Tape, 1x Mechanical Components",Equippable Mods,2000,1
 Angled Grip II Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Angled Grip III,Keep,"2x Duct Tape, 1x Mod Components",Equippable Mods,5000,1
@@ -135,7 +135,7 @@ Anniversary Panettone (Backpack Attachment),Sell,,,,
 Annoyed (Emote),Sell,,,,
 Anomalia (Outfit),Sell,,,,
 Antenna Attachment (Backpack Attachment),Sell,,,,
-Antiseptic,Keep,10x Chemicals,Workshop: Medical Lab 3 (8x); Quests: Doctor's Orders (2x),1000,5
+Antiseptic,Keep,10x Chemicals,"Workshop: Medical Lab 3 (8x); Quests: Doctor's Orders (2x); Research: Tactical Mk. 3 (Revival) Blueprint (3x), Vita Spray Blueprint (5x)",1000,5
 Antler Talisman (Backpack Charm),Sell,,,,
 Anvil Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Anvil I,Keep,"2x Mechanical Components, 2x Simple Gun Parts",Equippable Weapon,5000,1
@@ -145,18 +145,18 @@ Anvil IV,Keep,"5x Mechanical Components, 5x Simple Gun Parts",Equippable Weapon,
 Aphelion Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Aphelion Rifle,Keep,"2x Magnetic Accelerator, 1x Complex Gun Parts",Equippable Weapon,27500,1
 Apricot,Keep,3x Assorted Seeds,Workshop: Scrappy 3 (3x) Scrappy 5 (12x),640,10
-ARC Alloy,Keep,2x Metal Parts,"Workshop: Medical Lab 1 (6x) Explosives Station 1 (6x) Utility Station 1 (6x); Quests: Clearer Skies (3x) Shoring Up Defenses (1x); Projects: Expedition 1 (80x), Expedition 2 (80x), Expedition 3 (80x), Expedition 4 (80x), Expedition 5 (80x), Outpost (10x), Soul's Offering (15x)",200,15
-ARC Circuitry,Keep,2x ARC Alloy,Workshop: Refiner 3 (10x); Quests: Nothing Ventured (6x); Projects: Expedition 5 (20x),1000,5
+ARC Alloy,Keep,2x Metal Parts,Workshop: Medical Lab 1 (6x) Explosives Station 1 (6x) Utility Station 1 (6x); Quests: Clearer Skies (3x) Shoring Up Defenses (1x); Research: Rascal Blueprint (15x); Projects: Soul's Offering 1 (15x),200,15
+ARC Circuitry,Keep,2x ARC Alloy,"Workshop: Refiner 3 (10x); Quests: Nothing Ventured (6x); Research: Combat Mk. 3 (Flanking) Blueprint (5x), Looting Mk. 3 (Safekeeper) Blueprint (5x), Lure Grenade Blueprint (6x), Tactical Mk. 3 (Defensive) Blueprint (5x), Tactical Mk. 3 (Revival) Blueprint (5x); Projects: Expedition 5 (20x)",1000,5
 ARC Conductive Coupler,Keep,,Quests: Sizing Things Up (1x),100,1
 ARC Coolant,Recycle,16x Chemicals,,1000,3
-ARC Data Module,Keep,,Workshop: Research Station 4 (3x),2000,3
-ARC Flex Rubber,Recycle,16x Rubber Parts,,1000,3
+ARC Data Module,Keep until uses complete; then convert to research points,,Workshop: Research Station 4 (3x); Converts to 200 Research Points,2000,3
+ARC Flex Rubber,Keep until uses complete; recycle after,16x Rubber Parts,"Research: Angled Grip II Blueprint (5x), Stable Stock II Blueprint (5x), Vertical Grip II Blueprint (5x)",1000,3
 ARC Insulated Coupler,Keep,,Topside Material - crafting ingredient,100,1
-ARC Motion Core,Keep,2x ARC Alloy,Workshop: Refiner 2 (5x); Quests: Nothing Ventured (6x); Projects: Expedition 4 (20x),1000,5
-ARC Performance Steel,Keep until uses complete; recycle after,12x Metal Parts,Quests: To The Skies (1x); Projects: Trophy Display (10x),1000,3
+ARC Motion Core,Keep,2x ARC Alloy,Workshop: Refiner 2 (5x); Quests: Nothing Ventured (6x); Research: Vertical Grip III Blueprint (6x); Projects: Expedition 4 (20x),1000,5
+ARC Performance Steel,Keep until uses complete; recycle after,12x Metal Parts,Quests: To The Skies (1x); Research: Silencer II Blueprint (5x); Projects: Trophy Display 3 (10x),1000,3
 ARC Plated Coupler,Keep,,Topside Material - crafting ingredient,100,1
 ARC Powercell,Keep,,Workshop: Refiner 1 (5x),270,5
-ARC Synthetic Resin,Keep until uses complete; recycle after,14x plastic-parts,Quests: To The Skies (1x); Projects: Trophy Display (10x),1000,3
+ARC Synthetic Resin,Keep until uses complete; recycle after,14x Plastic Parts,Quests: To The Skies (1x); Projects: Trophy Display 4 (10x),1000,3
 ARC Thermo Lining,Keep until uses complete; recycle after,16x Fabric,Quests: To The Skies (1x),1000,3
 Arcade Duck,Sell,,,7000,15
 Archeologist (Backpack),Sell,,,,
@@ -203,7 +203,7 @@ Barstool Design,Sell,,,5000,1
 Baseball (Backpack Charm),Sell,,,,
 Basic (Raider Tool),Sell,,,,
 Basic Camera,Use,5x Plastic Parts,Quick Use consumable,640,1
-Bastion Cell,Keep until uses complete; recycle after,"3x ARC Alloy, 1x Advanced Mechanical Components","Workshop: Gear Bench 3 (6x); Quests: Settled in Full (1x); Projects: Expedition 5 (5x), Trophy Display (5x)",3000,3
+Bastion Cell,Keep until uses complete; recycle after,"3x ARC Alloy, 1x Advanced Mechanical Components",Workshop: Gear Bench 3 (6x); Quests: Settled in Full (1x); Research: Torrente Blueprint (3x); Projects: Trophy Display 3 (5x),3000,3
 Bastion Mace (Raider Tool),Sell,,,,
 Battered Aviary Table,Sell,,,,
 Battered Aviary Table Design,Sell,,,5000,1
@@ -225,14 +225,14 @@ Battered Lab Cabinet (Wide) Design,Sell,,,5000,1
 Battered Lab Cabinet Design,Sell,,,5000,1
 Battered Lab Chair,Sell,,,,
 Battered Lab Chair Design,Sell,,,5000,1
-Battered Paperback,Keep,,Workshop: Research Station 1 (5x),270,5
+Battered Paperback,Keep until uses complete; then convert to research points,,Workshop: Research Station 1 (5x); Converts to 50 Research Points,270,5
 Battered Shelf,Sell,,,,
 Battered Shelf Design,Sell,,,5000,1
 Battered Stash,Sell,,,,
 Battered Stash Design,Sell,,,5000,1
 Battered Weapon Rack,Sell,,,,
 Battered Weapon Rack Design,Sell,,,5000,1
-Battery,Keep,2x Metal Parts,"Quests: After Rain Comes (2x) Clamoring for Attention (1x) Trash Into Treasure (1x); Projects: Expedition 1 (30x), Expedition 2 (30x), Expedition 3 (25x)",250,15
+Battery,Keep,2x Metal Parts,"Quests: After Rain Comes (2x) Clamoring for Attention (1x) Trash Into Treasure (1x); Research: Surge Coil Blueprint (10x); Projects: Expedition 1 (30x), Expedition 2 (30x), Expedition 3 (25x)",250,15
 Batting Helmet (Scrappy Outfit),Sell,,,,
 Beam Resonance Tech,Sell,,,,1
 Beanie (Scrappy Outfit),Sell,,,,
@@ -245,7 +245,7 @@ Bettina II,Keep,"2x Advanced Mechanical Components, 2x Heavy Gun Parts",Equippab
 Bettina III,Keep,"2x Advanced Mechanical Components, 3x Heavy Gun Parts",Equippable Weapon,14000,1
 Bettina IV,Keep,"3x Advanced Mechanical Components, 3x Heavy Gun Parts",Equippable Weapon,18000,1
 Bicycle Pump,Keep until uses complete; recycle after,"4x Canister, 10x Metal Parts",Quests: The League (1x),2000,3
-Binoculars,Use,"4x plastic-parts, 2x Rubber Parts",Quick Use consumable,640,1
+Binoculars,Use,"4x Plastic Parts, 2x Rubber Parts",Quick Use consumable,640,1
 Binoculars (Backpack Charm),Sell,,,,
 Bird House (Backpack Attachment),Sell,,,,
 Bison Driver,Recycle if short on materials; Sell otherwise,"2x ARC Motion Core, 2x ARC Alloy",,2500,3
@@ -253,7 +253,7 @@ Black & White (Origin Color),Sell,,,,
 Black (Hiker Colour),Sell,,,,
 Black Eye (Face Style),Sell,,,,
 Blanket Roll (Backpack Attachment),Sell,,,,
-Blaze Grenade,Use,"4x Metal Parts, 2x oil",Quick Use consumable,1600,5
+Blaze Grenade,Use,"4x Metal Parts, 2x Oil",Quick Use consumable,1600,5
 Blaze Grenade Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Blaze Grenade Trap,Use,,Quick Use consumable,1000,3
 Blindspot (Outfit),Sell,,,,
@@ -280,7 +280,7 @@ Bobcat II,Keep,"3x Advanced Mechanical Components, 3x Light Gun Parts",Equippabl
 Bobcat III,Keep,"4x Advanced Mechanical Components, 4x Light Gun Parts",Equippable Weapon,22000,1
 Bobcat IV,Keep,"5x Advanced Mechanical Components, 4x Light Gun Parts",Equippable Weapon,27000,1
 Bog Walker (Outfit),Sell,,,,
-Bombardier Cell,Keep until uses complete; recycle after,"2x Advanced Mechanical Components, 2x ARC Alloy","Workshop: Refiner 3 (6x); Projects: Expedition 3 (2x), Trophy Display (8x)",3000,3
+Bombardier Cell,Keep until uses complete; recycle after,"2x Advanced Mechanical Components, 2x ARC Alloy","Workshop: Refiner 3 (6x); Quests: Bombing Run (1x); Research: Hullcracker Blueprint (5x), Rascal Blueprint (2x); Projects: Trophy Display 5 (8x)",3000,3
 Bomber Helmet (Scrappy Outfit),Sell,,,,
 Bonded Bolts (Backpack Charm),Sell,,,,
 Bone Saw (Backpack Charm),Sell,,,,
@@ -298,7 +298,7 @@ Brigade (Outfit),Sell,,,,
 Brigade Helmet (Scrappy Outfit),Sell,,,,
 Broken Compass,Keep until uses complete; sell after,,Quests: A Path Not Yours (1x),,1
 Broken Flashlight,Recycle,"2x Battery, 6x Metal Parts",,1000,3
-Broken Guidance System,Keep until uses complete; recycle after,4x Processor,Projects: Expedition 3 (1x),2000,3
+Broken Guidance System,Keep until uses complete; recycle after,4x Processor,Research: Tagging Grenade Blueprint (2x); Projects: Expedition 3 (1x),2000,3
 Broken Handcuffs,Sell,,,270,5
 Broken Handheld Radio,Recycle if short on materials; Sell otherwise,"3x Sensors, 2x Wires",,2000,3
 Broken Taser,Recycle,"2x Battery, 2x Wires",,1000,3
@@ -310,7 +310,7 @@ Bucket (Backpack Attachment),Sell,,,,
 Bucket (Scrappy Outfit),Sell,,,,
 Buff Rock (Scrappy Appearance),Sell,,,,
 Buh-bye! (Emote),Sell,,,,
-Bully Fragmenter,Keep until uses complete; recycle after,,"Workshop: Research Station 3 (6x); Quests: Bait Fetch Blast (1x); Quests: Bait, Fetch, Blast (1x)",5000,3
+Bully Fragmenter,Keep until uses complete; recycle after,,"Workshop: Research Station 3 (6x); Quests: Bait Fetch Blast (1x); Research: Anvil Blueprint (5x); Quests: Bait, Fetch, Blast (1x)",5000,3
 Bulwark Stencil,Sell,,,5000,1
 Buoy (Backpack Charm),Sell,,,,
 Bureau Ceiling Lamp,Sell,,,,
@@ -335,11 +335,11 @@ Cable Stripper,Keep,2x Metal Parts,Workshop: Outpost Room 1 (3x),270,15
 Cafeteria Table,Sell,,,,
 Cafeteria Table Design,Sell,,,5000,1
 Calculator,Keep,"1x Wires, 2x Plastic Parts",Workshop: Research Station 2 (3x),640,3
-Camera Lens,Recycle,8x plastic-parts,,640,5
+Camera Lens,Keep until uses complete; recycle after,8x Plastic Parts,Research: Osprey Blueprint (1x),640,5
 Can't Hear You (Emote),Sell,,,,
 Candle Holder,Recycle,8x Metal Parts,,640,3
 Candleberries,Sell,2x Assorted Seeds,,460,10
-Canister,Keep,3x plastic-parts,Projects: Expedition 4 (15x),300,15
+Canister,Keep,3x Plastic Parts,"Research: Extended Medium Mag II Blueprint (3x), Looting Mk. 3 (Safekeeper) Blueprint (5x); Projects: Expedition 4 (15x)",300,15
 Canned Tomatoes (Backpack Charm),Sell,,,,
 Cans (Backpack Attachment),Sell,,,,
 Canteen (Backpack Attachment),Sell,,,,
@@ -375,7 +375,7 @@ Chap (Outfit),Sell,,,,
 Chattering Teeth (Backpack Charm),Sell,,,,
 Check Compass (Emote),Sell,,,,
 Cheer (Emote),Sell,,,,
-Chemicals,Keep,,"Workshop: Explosives Station 1 (50x); Projects: Expedition 3 (100x), Expedition 4 (100x)",50,50
+Chemicals,Keep,,"Workshop: Explosives Station 1 (50x); Research: Remote Raider Flare Blueprint (25x), Vita Spray Blueprint (50x); Projects: Expedition 3 (100x), Expedition 4 (100x)",50,50
 Choo-Choo (Emote),Sell,,,,
 Circular Saw (Backpack Attachment),Sell,,,,
 Clap Prayer (Emote),Sell,,,,
@@ -387,7 +387,7 @@ Coins,Keep,,Projects: Trophy Display (1x),,
 Colorful Shoes,Sell,,,10000,1
 Colorful Shoes,Sell,,,7000,1
 Colorful Shoes,Sell,,,3000,3
-Combat Mk. 1,Keep,"3x plastic-parts, 3x Rubber Parts",Equippable Augment,640,1
+Combat Mk. 1,Keep,"3x Plastic Parts, 3x Rubber Parts",Equippable Augment,640,1
 Combat Mk. 2,Keep,"1x Electrical Components, 1x Magnet",Equippable Augment,2000,1
 Combat Mk. 3 (Aggressive),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,1
 Combat Mk. 3 (Aggressive) Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
@@ -395,135 +395,179 @@ Combat Mk. 3 (Flanking),Keep,"1x Advanced Electrical Components, 1x Processor",E
 Combat Mk. 3 (Flanking) Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Come Here (Emote),Sell,,,,
 Come On (Emote),Sell,,,,
-Comet Igniter,Keep until uses complete; recycle after,"2x ARC Alloy, 2x crude-explosives",Quests: Collision Course (1x) Nothing Ventured (3x),1000,3
+Comet Igniter,Keep until uses complete; recycle after,"2x ARC Alloy, 2x Crude Explosives","Quests: Collision Course (1x) Nothing Ventured (3x); Research: Deadline Blueprint (5x), Explosive Mine Blueprint (3x)",1000,3
 Compact Combustion Charges,Sell,,,,1
 Compensator I,Keep,5x Metal Parts,Equippable Mods,640,1
 Compensator II,Keep,"1x Wires, 1x Mechanical Components",Equippable Mods,2000,1
 Compensator II Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Compensator III,Keep,"2x Wires, 1x Mod Components",Equippable Mods,5000,1
 Compensator III Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Complex Gun Parts,Keep,3x Simple Gun Parts,Topside Material - crafting ingredient,3000,3
-Draped Debris G,Sell,,,,
+Complex Gun Parts,Keep,3x Simple Gun Parts,"Research: Bettina Blueprint (1x), Complex Gun Parts Blueprint (2x), Hullcracker Blueprint (1x)",3000,3
+Complex Gun Parts Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
+Computer Mouse (Backpack Charm),Sell,,,,
+Conch Shell (Backpack Charm),Sell,,,,
+Conductor Hat (Scrappy Outfit),Sell,,,,
+Console Chest,Sell,,,,
+Console Chest Design,Sell,,,5000,1
+Coolant,Recycle,"5x Chemicals, 2x Oil",,1000,3
+Cooling Coil,Keep until uses complete; recycle after,"6x Chemicals, 2x Steel Spring","Research: Compensator II Blueprint (1x), Silencer I Blueprint (1x); Projects: Expedition 2 (4x)",1000,3
+Cooling Fan,Keep until uses complete; recycle after,"14x Plastic Parts, 4x Wires","Research: Powered Descender Blueprint (2x), Torrente Blueprint (1x); Projects: Expedition 1 (5x)",2000,3
+Cornicello (Backpack Charm),Sell,,,,
+Corsaro (Outfit),Sell,,,,
+Cosmo (Outfit),Sell,,,,
+Counter (Backpack Charm),Sell,,,,
+Courier (Backpack),Sell,,,,
+Cowbell (Backpack Charm),Sell,,,,
+Cowboy Hat (Scrappy Outfit),Sell,,,,
+Cracked Bioscanner,Keep until uses complete; recycle after,"3x Battery, 3x Rubber Parts",Workshop: Medical Lab 2 (2x),1000,3
+Craftsman (Backpack),Sell,,,,
+Crash Mat,Use,"6x Fabric, 3x Plastic Parts",Quick Use consumable,1200,5
+Crash Mat Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
+Cresta (Outfit),Sell,,,,
+Crimson Racer (Aviator Colour),Sell,,,,
+Crude Explosives,Keep,3x Chemicals,Workshop: Explosives Station 2 (5x); Research: Trailblazer Blueprint (5x),270,10
+Crumpled Plastic Bottle,Recycle,4x Plastic Parts,,270,3
+Cultist (Backpack),Sell,,,,
+Curly Mullet (Hair),Sell,,,,
+Curly Ponytail (Hair),Sell,,,,
+Curly Short (Hair),Sell,,,,
+Curtain Fade (Hair),Sell,,,,
+Dam Control Tower Key,Keep,,Unlocks locked areas,100,1
+Dam Controlled Access Zone Key,Keep,,Unlocks locked areas,100,1
+Dam Staff Room Key,Keep,,Unlocks locked areas,100,1
+Dam Surveillance Key,Keep,,Unlocks locked areas,100,1
+Dam Testing Annex Key,Keep,,Unlocks locked areas,100,1
+Dam Utility Key,Sell,,,100,1
+Damaged ARC Motion Core,Recycle,2x ARC Alloy,,640,5
+Damaged ARC Powercell,Recycle,1x ARC Alloy,,293,5
+Damaged Fireball Burner,Recycle,1x ARC Alloy,,270,3
+Damaged Heat Sink,Keep until uses complete; recycle after,"6x Metal Parts, 2x Wires",Workshop: Utility Station 2 (2x),1000,3
+Damaged Hornet Driver,Recycle,2x ARC Alloy,,640,3
+Damaged Leaper Pulse Unit,Recycle,3x ARC Alloy,,1000,3
+Damaged Rocketeer Driver,Recycle,3x ARC Alloy,,1000,3
+Damaged Snitch Scanner,Sell,,,659,3
+Damaged Tick Pod,Recycle,1x ARC Alloy,,270,3
+Damaged Wasp Driver,Recycle,1x ARC Alloy,,270,3
+Dart Board,Sell,,,2000,3
+Dead Eye (Outfit),Sell,,,,
+Dead Flowers,Keep until uses complete; sell after,,"Projects: Soul's Offering 1 (1x), Soul's Offering 2 (3x)",640,5
+Deadline,Use,1x Explosive Compound,Quick Use consumable,6000,1
+Deadline Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
+Deadwire (Outfit),Sell,,,,
+Deadwire Helmet (Scrappy Outfit),Sell,,,,
+Deer Skull (Backpack Charm),Sell,,,,
+Defibrillator,Use,"1x Moss, 1x Plastic Parts",Quick Use consumable,1000,3
+Defibrillator Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
+Deflated Football,Keep until uses complete; recycle after,"9x Fabric, 9x Rubber Parts",Quests: The League (1x),1000,3
+Degraded ARC Rubber,Recycle,11x Rubber Parts,,640,3
+Deprecated Anvil Splitter,Sell or recycle,"1x Mod Components, 1x Processor",Deprecated — sell or recycle,7000,1
+Depth Gauge (Backpack Charm),Sell,,,,
+Desk Lamp,Sell,,,2000,1
+Devotee (Outfit),Sell,,,,
+Differential Microphone,Keep until uses complete; recycle after,"1x Speaker Component, 2x Wires",Workshop: Research Station 3 (3x),1000,3
+Diner Ceiling Lamp,Sell,,,,
+Diner Ceiling Lamp Design,Sell,,,5000,1
+Diner Cupboard,Sell,,,,
+Diner Cupboard Design,Sell,,,5000,1
+Diner Shelf,Sell,,,,
+Diner Shelf Design,Sell,,,5000,1
+Diner Sofa,Sell,,,,
+Diner Sofa Design,Sell,,,5000,1
+Diner Stool,Sell,,,,
+Diner Stool Design,Sell,,,5000,1
+Diner Table,Sell,,,,
+Diner Table Design,Sell,,,5000,1
+Dirt Full (Face Style),Sell,,,,
+Dirt Spray (Face Style),Sell,,,,
+Diver (Backpack),Sell,,,,
+Diver Helmet (Scrappy Outfit),Sell,,,,
+Diving Bell (Emote),Sell,,,,
+Diving Goggles,Recycle,12x Rubber Parts,,640,3
+Diving Goggles (Backpack Charm),Sell,,,,
+Dockmaster's Detector,Use,,Quick Use consumable,1000,1
+Dodger's Note,Keep until uses complete; sell after,,Quests: Outstanding Balance (1x),100,1
+Dog Collar,Keep until uses complete; recycle after,"8x Fabric, 1x Metal Parts",Workshop: Scrappy 2 (1x),640,3
+Dolabra,Keep,1x Magnetic Accelerator,Equippable Weapon,27500,1
+Dolabra Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
+Don't Shoot (Emote),Sell,,,,
+Doodly Duck,Sell,,,3000,15
+Door Blocker,Use,2x Metal Parts,Quick Use consumable,270,3
+Dragon's Breath Stencil,Sell,,,5000,1
+Draped Debris A,Sell,,,,
+Draped Debris A Design,Sell,,,5000,1
+Draped Debris B,Sell,,,,
+Draped Debris B Design,Sell,,,5000,1
+Draped Debris C,Sell,,,,
+Draped Debris C Design,Sell,,,5000,1
+Draped Debris E,Sell,,,,
+Draped Debris E Design,Sell,,,5000,1
+Draped Debris F,Sell,,,,
+Draped Debris F Design,Sell,,,5000,1
 Draped Debris G,Sell,,,,
 Draped Debris G Design,Sell,,,5000,1
-Draped Debris G Design,Sell,,,5000,1
-Dried-Out ARC Resin,Recycle,9x plastic-parts,,640,3
-Dried-Out ARC Resin,Recycle,9x plastic-parts,,640,3
-Driftcoat (Outfit),Sell,,,,
+Dried-Out ARC Resin,Keep until uses complete; recycle after,9x Plastic Parts,"Research: Extended Light Mag II Blueprint (5x), Extended Medium Mag II Blueprint (5x), Extended Shotgun Mag II Blueprint (5x)",640,3
 Driftcoat (Outfit),Sell,,,,
 Drum (Backpack Attachment),Sell,,,,
 Duct Tape,Keep,3x Fabric,Projects: Expedition 5 (25x),300,15
-Duct Tape,Keep,3x Fabric,Projects: Expedition 5 (25x),300,15
-Durable Cloth,Keep,6x Fabric,"Workshop: Medical Lab 2 (5x); Quests: Doctor's Orders (1x); Projects: Expedition 1 (35x), Expedition 2 (35x), Expedition 3 (30x), Expedition 4 (30x), Expedition 5 (30x)",640,10
-Durable Cloth,Keep,6x Fabric,"Workshop: Medical Lab 2 (5x); Quests: Doctor's Orders (1x); Projects: Expedition 1 (35x), Expedition 2 (35x), Expedition 3 (30x), Expedition 4 (30x), Expedition 5 (30x)",640,10
-Dusty Camo Stencil,Sell,,,5000,1
+Durable Cloth,Keep,6x Fabric,"Workshop: Medical Lab 2 (5x); Quests: Doctor's Orders (1x); Research: Crash Mat Blueprint (5x); Projects: Expedition 1 (35x), Expedition 2 (35x), Expedition 3 (30x), Expedition 4 (30x), Expedition 5 (30x)",640,10
 Dusty Camo Stencil,Sell,,,5000,1
 Dusty Film Reel,Keep until uses complete; sell after,,Quests: A Dead End (1x),100,1
-Dusty Film Reel,Keep until uses complete; sell after,,Quests: A Dead End (1x),100,1
 Dweller (Outfit),Sell,,,,
-Dweller (Outfit),Sell,,,,
-Electrical Components,Keep,"3x plastic-parts, 3x Rubber Parts","Workshop: Gear Bench 2 (5x) Utility Station 2 (5x); Quests: Fragmented Logs (1x); Projects: Expedition 1 (30x), Expedition 2 (20x), Expedition 3 (20x), Expedition 4 (20x)",640,10
-Electrical Components,Keep,"3x plastic-parts, 3x Rubber Parts","Workshop: Gear Bench 2 (5x) Utility Station 2 (5x); Quests: Fragmented Logs (1x); Projects: Expedition 1 (30x), Expedition 2 (20x), Expedition 3 (20x), Expedition 4 (20x)",640,10
+Electrical Components,Keep,"3x Plastic Parts, 3x Rubber Parts","Workshop: Gear Bench 2 (5x) Utility Station 2 (5x); Quests: Fragmented Logs (1x); Projects: Expedition 1 (30x), Expedition 2 (20x), Expedition 3 (20x), Expedition 4 (20x)",640,10
 Electrician (Backpack),Sell,,,,
 Elephant Obelisk,Sell,,,10000,1
-Elephant Obelisk,Sell,,,10000,1
-Embedded Blast Engineering,Sell,,,,1
 Embedded Blast Engineering,Sell,,,,1
 Emperor Beacon,Use,,Quick Use consumable,1000,3
-Emperor Beacon,Use,,Quick Use consumable,1000,3
-Emperor Gateway Conduit,Keep,,Unlocks locked areas,1000,1
 Emperor Gateway Conduit,Keep,,Unlocks locked areas,1000,1
 Emperor Gateway Conduit Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Emperor Gateway Conduit Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Emperor Modulator,Keep,,Workshop: Gunsmith 3 (1x),7000,1
-Emperor Modulator,Keep,,Workshop: Gunsmith 3 (1x),7000,1
-Empty Wine Bottle,Sell,,,1000,5
 Empty Wine Bottle,Sell,,,1000,5
 Empty Wine Bottle (Backpack Charm),Sell,,,,
 Empyrean Stencil,Sell,,,5000,1
-Empyrean Stencil,Sell,,,5000,1
-Energy Clip,Keep,,Ammo,200,5
 Energy Clip,Keep,,Ammo,200,5
 Engineer (Backpack),Sell,,,,
 Envoy (Backpack),Sell,,,,
 Epoxy Bucket,Keep until uses complete; recycle after,8x Chemicals,Workshop: Outpost Room 2 (3x),1000,5
-Epoxy Bucket,Keep until uses complete; recycle after,8x Chemicals,Workshop: Outpost Room 2 (3x),1000,5
-Equalizer,Keep,,Equippable Weapon,27500,1
 Equalizer,Keep,,Equippable Weapon,27500,1
 Equalizer Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Equalizer Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Equatorial Sundial,Sell,,,3000,3
-Equatorial Sundial,Sell,,,3000,3
-Espresso Machine Parts,Keep until uses complete; sell after,,Quests: Espresso (1x),100,1
+Equatorial Sundial,Keep until uses complete; sell after,,Quests: Clean Hands (1x),3000,3
 Espresso Machine Parts,Keep until uses complete; sell after,,Quests: Espresso (1x),100,1
 ESR Analyzer,Keep until uses complete; sell after,,Quests: A Reveal In Ruins (1x),100,1
-ESR Analyzer,Keep until uses complete; sell after,,Quests: A Reveal In Ruins (1x),100,1
-Exodus Modules,Keep,"2x Magnet, 2x Processor","Projects: Expedition 1 (1x), Expedition 2 (1x), Expedition 3 (1x), Expedition 4 (2x), Trophy Display (5x)",2750,3
-Exodus Modules,Keep,"2x Magnet, 2x Processor","Projects: Expedition 1 (1x), Expedition 2 (1x), Expedition 3 (1x), Expedition 4 (2x), Trophy Display (5x)",2750,3
-Exodus Technical Handbook,Keep,,Workshop: Research Station 3 (3x),1000,5
-Exodus Technical Handbook,Keep,,Workshop: Research Station 3 (3x),1000,5
-Experimental Seed Sample,Keep until uses complete; sell after,,Quests: The Root of the Matter (1x),100,1
+Exodus Modules,Keep,"2x Magnet, 2x Processor",Projects: Trophy Display 5 (5x),2750,3
+Exodus Technical Handbook,Keep until uses complete; then convert to research points,,Workshop: Research Station 3 (3x); Converts to 150 Research Points,1000,5
 Experimental Seed Sample,Keep until uses complete; sell after,,Quests: The Root of the Matter (1x),100,1
 Expired Pasta,Sell,,,1000,15
-Expired Pasta,Sell,,,1000,15
-Expired Respirator,Keep until uses complete; recycle after,"4x Fabric, 8x Rubber Parts","Projects: Soul's Offering (1x), Trophy Display (3x)",640,3
-Expired Respirator,Keep until uses complete; recycle after,"4x Fabric, 8x Rubber Parts","Projects: Soul's Offering (1x), Trophy Display (3x)",640,3
+Expired Respirator,Keep until uses complete; recycle after,"4x Fabric, 8x Rubber Parts","Projects: Trophy Display 2 (3x), Soul's Offering 1 (1x)",640,3
 Expired Security Code,Keep,,Unlocks locked areas,10,1
-Expired Security Code,Keep,,Unlocks locked areas,10,1
-Explosive Compound,Keep,1x crude-explosives,Workshop: Explosives Station 3 (5x),1000,5
-Explosive Compound,Keep,1x crude-explosives,Workshop: Explosives Station 3 (5x),1000,5
-Explosive Mine,Use,"1x Sensors, 2x Oil",Quick Use consumable,1500,3
+Explosive Compound,Keep,1x Crude Explosives,Workshop: Explosives Station 3 (5x),1000,5
 Explosive Mine,Use,"1x Sensors, 2x Oil",Quick Use consumable,1500,3
 Explosive Mine Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Explosive Mine Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Extended Barrel I,Keep,5x Metal Parts,Equippable Mods,1000,1
 Extended Barrel I,Keep,5x Metal Parts,Equippable Mods,1000,1
 Extended Barrel II,Keep,"1x Mechanical Components, 1x Wires",Equippable Mods,3000,1
-Extended Barrel II,Keep,"1x Mechanical Components, 1x Wires",Equippable Mods,3000,1
-Extended Barrel II Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Extended Barrel II Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Extended Barrel III,Keep,"1x Mod Components, 1x Wires",Equippable Mods,5000,1
-Extended Barrel III,Keep,"1x Mod Components, 1x Wires",Equippable Mods,5000,1
-Extended Barrel III Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Extended Barrel III Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Extended Burst Cycles,Sell,,,,1
-Extended Burst Cycles,Sell,,,,1
-Extended Light Mag I,Keep,6x plastic-parts,Equippable Mods,640,1
-Extended Light Mag I,Keep,6x plastic-parts,Equippable Mods,640,1
-Extended Light Mag II,Keep,"1x Mechanical Components, 1x Steel Spring",Equippable Mods,2000,1
+Extended Light Mag I,Keep,6x Plastic Parts,Equippable Mods,640,1
 Extended Light Mag II,Keep,"1x Mechanical Components, 1x Steel Spring",Equippable Mods,2000,1
 Extended Light Mag II Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Extended Light Mag II Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Extended Light Mag III,Keep,"1x Mod Components, 2x Steel Spring",Equippable Mods,5000,1
 Extended Light Mag III,Keep,"1x Mod Components, 2x Steel Spring",Equippable Mods,5000,1
 Extended Light Mag III Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Extended Light Mag III Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Extended Medium Mag I,Keep,6x plastic-parts,Equippable Mods,640,1
-Extended Medium Mag I,Keep,6x plastic-parts,Equippable Mods,640,1
-Extended Medium Mag II,Keep,"1x Mechanical Components, 1x Steel Spring",Equippable Mods,2000,1
+Extended Medium Mag I,Keep,6x Plastic Parts,Equippable Mods,640,1
 Extended Medium Mag II,Keep,"1x Mechanical Components, 1x Steel Spring",Equippable Mods,2000,1
 Extended Medium Mag II Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Extended Medium Mag II Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Extended Medium Mag III,Keep,"1x Mod Components, 2x Steel Spring",Equippable Mods,5000,1
 Extended Medium Mag III,Keep,"1x Mod Components, 2x Steel Spring",Equippable Mods,5000,1
 Extended Medium Mag III Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Extended Medium Mag III Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Extended Shotgun Mag I,Keep,6x plastic-parts,Equippable Mods,640,1
-Extended Shotgun Mag I,Keep,6x plastic-parts,Equippable Mods,640,1
-Extended Shotgun Mag II,Keep,"1x Mechanical Components, 1x Steel Spring",Equippable Mods,2000,1
+Extended Shotgun Mag I,Keep,6x Plastic Parts,Equippable Mods,640,1
 Extended Shotgun Mag II,Keep,"1x Mechanical Components, 1x Steel Spring",Equippable Mods,2000,1
 Extended Shotgun Mag II Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Extended Shotgun Mag II Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Extended Shotgun Mag III,Keep,"1x Mod Components, 2x Steel Spring",Equippable Mods,5000,1
-Extended Shotgun Mag III,Keep,"1x Mod Components, 2x Steel Spring",Equippable Mods,5000,1
-Extended Shotgun Mag III Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Extended Shotgun Mag III Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Eye Band (Face Style),Sell,,,,
 Eye Scar (Face Style),Sell,,,,
 Eye Stripe (Face Style),Sell,,,,
 Eyebrow Bandaid (Face Style),Sell,,,,
 Eyeliner (Face Style),Sell,,,,
-Fabric,Keep,,Workshop: Gear Bench 1 (30x) Medical Lab 1 (50x),50,50
 Fabric,Keep,,Workshop: Gear Bench 1 (30x) Medical Lab 1 (50x),50,50
 Face 01 (Face),Sell,,,,
 Face 02 (Face),Sell,,,,
@@ -544,113 +588,70 @@ Face 16 (Face),Sell,,,,
 Face 17 (Face),Sell,,,,
 Face 18 (Face),Sell,,,,
 Faculty Closet,Sell,,,,
-Faculty Closet,Sell,,,,
-Faculty Closet Design,Sell,,,5000,1
 Faculty Closet Design,Sell,,,5000,1
 Faculty Dresser,Sell,,,,
-Faculty Dresser,Sell,,,,
-Faculty Dresser Design,Sell,,,5000,1
 Faculty Dresser Design,Sell,,,5000,1
 Faded Flush (Aviator Color),Sell,,,,
-Faded Flush (Aviator Color),Sell,,,,
-Faded Photograph,Sell,,,640,15
 Faded Photograph,Sell,,,640,15
 Familiar Duck,Sell,,,7000,15
-Familiar Duck,Sell,,,7000,15
-Fancy Plate,Keep until uses complete; sell after,,Projects: Soul's Offering (2x),7000,3
-Fancy Plate,Keep until uses complete; sell after,,Projects: Soul's Offering (2x),7000,3
+Fancy Plate,Keep until uses complete; sell after,,Projects: Soul's Offering 3 (2x),7000,3
 Fax Machine (Backpack Attachment),Sell,,,,
 Fax Machine - Black Yellow (Backpack Attachment),Sell,,,,
 Fencer Glasses (Scrappy Outfit),Sell,,,,
 Ferro I,Keep,"2x Metal Parts, 1x Rubber Parts",Equippable Weapon,475,1
-Ferro I,Keep,"2x Metal Parts, 1x Rubber Parts",Equippable Weapon,475,1
-Ferro II,Keep,"4x Metal Parts, 3x Rubber Parts",Equippable Weapon,1000,1
 Ferro II,Keep,"4x Metal Parts, 3x Rubber Parts",Equippable Weapon,1000,1
 Ferro III,Keep,"6x Metal Parts, 1x Simple Gun Parts",Equippable Weapon,2000,1
-Ferro III,Keep,"6x Metal Parts, 1x Simple Gun Parts",Equippable Weapon,2000,1
 Ferro IV,Keep,"1x Mechanical Components, 2x Simple Gun Parts",Equippable Weapon,2900,1
-Ferro IV,Keep,"1x Mechanical Components, 2x Simple Gun Parts",Equippable Weapon,2900,1
-Fertilizer,Keep,2x Assorted Seeds,Quests: Unexpected Initiative (1x); Projects: Soul's Offering (5x),1000,5
-Fertilizer,Keep,2x Assorted Seeds,Quests: Unexpected Initiative (1x); Projects: Soul's Offering (5x),1000,5
+Fertilizer,Keep,2x Assorted Seeds,Quests: Unexpected Initiative (1x); Projects: Soul's Offering 3 (5x),1000,5
 Fez (Scrappy Outfit),Sell,,,,
 Field Kitchen (Backpack Attachment),Sell,,,,
 Field Phone (Backpack),Sell,,,,
 Fiero (Outfit),Sell,,,,
-Fiero (Outfit),Sell,,,,
-Film Reel,Sell,,,2000,3
 Film Reel,Sell,,,2000,3
 Film Reel (Backpack Charm),Sell,,,,
 Fine Wristwatch,Sell,,,3000,3
-Fine Wristwatch,Sell,,,3000,3
 Finger Gun Rapid Fire (Emote),Sell,,,,
 Finger Gun Single Shot (Emote),Sell,,,,
-Finger Gun Single Shot (Emote),Sell,,,,
 Finger Guns Wave (Emote),Sell,,,,
-Fireball Burner,Keep until uses complete; recycle after,"1x ARC Alloy, 1x crude-explosives",Workshop: Refiner 2 (8x); Quests: Test Case (1x); Quests: What Goes Around (1x),640,3
-Fireball Burner,Keep until uses complete; recycle after,"1x ARC Alloy, 1x crude-explosives",Workshop: Refiner 2 (8x); Quests: Test Case (1x); Quests: What Goes Around (1x),640,3
-Firecracker,Use,3x plastic-parts,Quick Use consumable,270,5
-Firecracker,Use,3x plastic-parts,Quick Use consumable,270,5
-Firefly Burner,Keep until uses complete; recycle after,"2x ARC Alloy, 2x crude-explosives",Quests: Test Case (1x); Projects: Expedition 3 (5x),1000,3
-Firefly Burner,Keep until uses complete; recycle after,"2x ARC Alloy, 2x crude-explosives",Quests: Test Case (1x); Projects: Expedition 3 (5x),1000,3
+Fireball Burner,Keep until uses complete; recycle after,"1x ARC Alloy, 1x Crude Explosives",Workshop: Refiner 2 (8x); Quests: Test Case (1x); Quests: What Goes Around (1x),640,3
+Firecracker,Use,3x Plastic Parts,Quick Use consumable,270,5
+Firefly Burner,Keep until uses complete; recycle after,"2x ARC Alloy, 2x Crude Explosives",Quests: Test Case (1x); Projects: Expedition 3 (5x),1000,3
 Fireworks Box,Use,1x Explosive Compound,Quick Use consumable,2000,1
-Fireworks Box,Use,1x Explosive Compound,Quick Use consumable,2000,1
-Fireworks Box Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Fireworks Box Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 First Aid Kit (Backpack Attachment),Sell,,,,
 First Wave Compass,Keep until uses complete; sell after,,Quests: Broken Monument (1x),100,1
-First Wave Compass,Keep until uses complete; sell after,,Quests: Broken Monument (1x),100,1
 First Wave Rations,Keep until uses complete; sell after,,Quests: Broken Monument (1x),100,1
-First Wave Rations,Keep until uses complete; sell after,,Quests: Broken Monument (1x),100,1
-First Wave Tape,Keep until uses complete; sell after,,Quests: Broken Monument (1x),100,1
 First Wave Tape,Keep until uses complete; sell after,,Quests: Broken Monument (1x),100,1
 Fish (Backpack Charm),Sell,,,,
 Fish Trap (Backpack Attachment),Sell,,,,
 Fist in Air (Emote),Sell,,,,
 Fist Shakes (Emote),Sell,,,,
 Flame Spray,Use,"1x Canister, 1x Fireball Burner",Quick Use consumable,2000,1
-Flame Spray,Use,"1x Canister, 1x Fireball Burner",Quick Use consumable,2000,1
-Flashy Duck,Sell,,,3000,15
 Flashy Duck,Sell,,,3000,15
 Flight Recorder (Backpack Attachment),Sell,,,,
 Fling Coin (Emote),Sell,,,,
 Flippers (Backpack Attachment),Sell,,,,
 Flirty Greeting (Emote),Sell,,,,
 Floor Lamp,Sell,,,,
-Floor Lamp,Sell,,,,
-Floor Lamp Design,Sell,,,5000,1
 Floor Lamp Design,Sell,,,5000,1
 Floppy Disk (Backpack Charm),Sell,,,,
 Flow Controller,Keep until uses complete; recycle after,"1x Advanced Mechanical Components, 1x Sensors",Quests: Snap And Salvage (1x),3000,3
-Flow Controller,Keep until uses complete; recycle after,"1x Advanced Mechanical Components, 1x Sensors",Quests: Snap And Salvage (1x),3000,3
-Flushing Terminal Key,Keep until uses complete; sell after,,Quests: The Stench of Corruption (1x),100,1
 Flushing Terminal Key,Keep until uses complete; sell after,,Quests: The Stench of Corruption (1x),100,1
 Fluted Rotor Core,Keep,,Topside Material - crafting ingredient,5000,3
-Fluted Rotor Core,Keep,,Topside Material - crafting ingredient,5000,3
-Food Wrapper,Sell,,,640,15
 Food Wrapper,Sell,,,640,15
 Football (Backpack Attachment),Sell,,,,
 Formal Bow (Emote),Sell,,,,
 Fortuna Stencil,Sell,,,5000,1
-Fortuna Stencil,Sell,,,5000,1
-Fossilized Lightning,Sell,3x Explosive Compound,,4000,1
-Fossilized Lightning,Sell,3x Explosive Compound,,4000,1
+Fossilized Lightning,Keep,3x Explosive Compound,Research: Deadline Blueprint (1x),4000,1
 Freckles (Face Style),Sell,,,,
-Free Loadout Augment,Keep,"6x plastic-parts, 6x Rubber Parts",Equippable Augment,660,1
-Free Loadout Augment,Keep,"6x plastic-parts, 6x Rubber Parts",Equippable Augment,660,1
+Free Loadout Augment,Keep,"6x Plastic Parts, 6x Rubber Parts",Equippable Augment,660,1
 French Braids (Hair),Sell,,,,
 Frequency Modulation Box,Keep until uses complete; recycle after,"1x Advanced Electrical Components, 1x Speaker Component",Projects: Expedition 2 (5x),3000,3
-Frequency Modulation Box,Keep until uses complete; recycle after,"1x Advanced Electrical Components, 1x Speaker Component",Projects: Expedition 2 (5x),3000,3
-Fried Motherboard,Keep until uses complete; recycle after,"2x Electrical Components, 5x plastic-parts",Workshop: Utility Station 3 (3x),2000,3
-Fried Motherboard,Keep until uses complete; recycle after,"2x Electrical Components, 5x plastic-parts",Workshop: Utility Station 3 (3x),2000,3
-Frigate Diagnostic Node,Sell,,,3000,1
-Frigate Diagnostic Node,Sell,,,3000,1
-Frigate Inductor,Keep,"2x Advanced ARC Powercell, 2x ARC Circuitry",Workshop: Research Station 4 (1x),7000,1
+Fried Motherboard,Keep until uses complete; recycle after,"2x Electrical Components, 5x Plastic Parts",Workshop: Utility Station 3 (3x),2000,3
+Frigate Diagnostic Node,Convert to research points,,Converts to 1000 Research Points,3000,1
 Frigate Inductor,Keep,"2x Advanced ARC Powercell, 2x ARC Circuitry",Workshop: Research Station 4 (1x),7000,1
 Frosty Duck,Sell,,,3000,15
-Frosty Duck,Sell,,,3000,15
 Fruit Mix,Use,,Quick Use consumable,1800,5
-Fruit Mix,Use,,Quick Use consumable,1800,5
-Frying Pan,Recycle,8x Metal Parts,,640,3
 Frying Pan,Recycle,8x Metal Parts,,640,3
 Fuel Canister (Backpack Attachment),Sell,,,,
 Fuel Jockey (Backpack),Sell,,,,
@@ -659,10 +660,9 @@ G-Suit (Outfit),Sell,,,,
 Game Console (Backpack Attachment),Sell,,,,
 Gardening Sheers (Backpack Charm),Sell,,,,
 Garlic Press,Recycle,12x Metal Parts,,1000,3
-Garlic Press,Recycle,12x Metal Parts,,1000,3
 Garnet Stencil,Sell,,,5000,1
 Gas Canister (Backpack Attachment),Sell,,,,
-Gas Grenade,Use,"1x Chemicals, 1x Rubber Parts",Quick Use consumable,270,3
+Gas Grenade,Keep,"1x Chemicals, 1x Rubber Parts",Research: Smoke Grenade Blueprint (3x),270,3
 Gas Grenade Trap,Use,,Quick Use consumable,300,3
 Gas Mask (Backpack Attachment),Sell,,,,
 Gas Mine,Use,"1x Chemicals, 1x Rubber Parts",Quick Use consumable,270,3
@@ -670,7 +670,7 @@ Gas Mine Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Gauge Box (Backpack Attachment),Sell,,,,
 Gear String (Backpack Charm),Sell,,,,
 Gearshifter (Outfit),Sell,,,,
-Geiger Counter,Keep until uses complete; recycle after,"3x Battery, 1x Exodus Modules",Projects: Trophy Display (3x),3500,3
+Geiger Counter,Keep until uses complete; recycle after,"3x Battery, 1x Exodus Modules",Projects: Trophy Display 5 (3x),3500,3
 Gel Patches (Face Style),Sell,,,,
 Gentle Duck,Sell,,,1000,15
 Geometric Fabric Chair,Sell,,,,
@@ -723,8 +723,8 @@ Headphones,Recycle,"7x Rubber Parts, 1x Speaker Component",,1000,3
 Heart (Emote),Sell,,,,
 Hearthkeeper (Backpack),Sell,,,,
 Heavy Ammo,Keep,,Ammo,12,60
-Heavy Fuze Grenade,Use,"1x oil, 2x Rubber Parts",Quick Use consumable,1600,3
-Heavy Gun Parts,Keep,2x Simple Gun Parts,Topside Material - crafting ingredient,700,5
+Heavy Fuze Grenade,Use,"1x Oil, 2x Rubber Parts",Quick Use consumable,1600,3
+Heavy Gun Parts,Keep,2x Simple Gun Parts,Research: Shotgun Choke II Blueprint (1x),700,5
 Heavy Gun Parts Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Heavy Shield,Keep,"2x ARC Circuitry, 1x Voltage Converter",Equippable Shield,5500,1
 Heel Click (Emote),Sell,,,,
@@ -741,7 +741,7 @@ Hit Chest (Emote),Sell,,,,
 Holly Bush,Sell,,,,
 Holly Bush Design,Sell,,,5000,1
 Horizontal Grip,Keep,"1x Mod Components, 2x Duct Tape",Equippable Mods,7000,1
-Hornet Driver,Keep until uses complete; recycle after,"1x ARC Alloy, 1x Electrical Components",Workshop: Gear Bench 2 (5x); Quests: Test Case (1x) The Trifecta (2x); Projects: Trophy Display (15x),1000,3
+Hornet Driver,Keep until uses complete; recycle after,"1x ARC Alloy, 1x Electrical Components","Workshop: Gear Bench 2 (5x); Quests: Test Case (1x) The Trifecta (2x); Research: Bantam Blueprint (8x), Showstopper Blueprint (5x), Surge Coil Blueprint (3x); Projects: Trophy Display 2 (15x)",1000,3
 Hornet Hunter (Outfit),Sell,,,,
 Hornet Hunter (Scrappy Outfit),Sell,,,,
 Horns (Emote),Sell,,,,
@@ -749,7 +749,7 @@ Hose (Backpack Attachment),Sell,,,,
 Hot Air Balloon (Backpack Charm),Sell,,,,
 Hotel Chair,Sell,,,,
 Hotel Chair Design,Sell,,,5000,1
-Household Cleaner,Recycle,11x Chemicals,,640,3
+Household Cleaner,Keep until uses complete; recycle after,11x Chemicals,"Research: Gas Mine Blueprint (3x), Smoke Grenade Blueprint (1x)",640,3
 Howdy (Emote),Sell,,,,
 Howl (Emote),Sell,,,,
 Hullcracker Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
@@ -776,12 +776,12 @@ Il Toro II,Keep,"3x Mechanical Components, 3x Simple Gun Parts",Equippable Weapo
 Il Toro III,Keep,"4x Mechanical Components, 4x Simple Gun Parts",Equippable Weapon,10000,1
 Il Toro IV,Keep,"5x Mechanical Components, 5x Simple Gun Parts",Equippable Weapon,13000,1
 Impure ARC Coolant,Recycle,12x Chemicals,,640,3
-Industrial Battery,Keep until uses complete; recycle after,"2x Battery, 7x Chemicals",Workshop: Gear Bench 3 (3x); Quests: Taking Stock (3x),1000,3
+Industrial Battery,Keep until uses complete; recycle after,"2x Battery, 7x Chemicals","Workshop: Gear Bench 3 (3x); Quests: Taking Stock (3x); Research: Jolt Mine Blueprint (1x), Pulse Mine Blueprint (3x), Showstopper Blueprint (3x)",1000,3
 Industrial Charger,Keep until uses complete; recycle after,"5x Metal Parts, 1x Voltage Converter","Projects: Expedition 3 (3x), Expedition 4 (3x)",1000,3
 Industrial Magnet,Recycle,"2x Magnet, 4x Metal Parts",,1000,3
 Infrared Transmitter (Backpack Attachment),Sell,,,,
 Instant Film Camera (Backpack Charm),Sell,,,,
-Insulation Roll,Keep until uses complete; recycle after,2x Durable Cloth,Workshop: Outpost Room 3 (3x); Projects: Soul's Offering (1x),3000,3
+Insulation Roll,Keep until uses complete; recycle after,2x Durable Cloth,Workshop: Outpost Room 3 (3x); Projects: Soul's Offering 3 (1x),3000,3
 Integrated Binoculars,Use,,Quick Use consumable,,1
 Integrated Defibrillator,Use,,Quick Use consumable,,1
 Integrated Shield Recharger,Use,,Quick Use consumable,,1
@@ -807,7 +807,7 @@ Lab Ceiling Light,Sell,,,,
 Lab Ceiling Light Design,Sell,,,5000,1
 Lab Stool,Sell,,,,
 Lab Stool Design,Sell,,,5000,1
-Laboratory Reagents,Keep until uses complete; recycle after,"16x Chemicals, 3x crude-explosives",Workshop: Explosives Station 3 (3x),2000,3
+Laboratory Reagents,Keep until uses complete; recycle after,"16x Chemicals, 3x Crude Explosives",Workshop: Explosives Station 3 (3x),2000,3
 Lance Keychain (Backpack Charm),Sell,,,,
 Lance's Mixtape (5th edition),Keep until uses complete; sell after,,Projects: Expedition 5 (3x),10000,3
 Lance's Mixtape (Backpack Charm),Sell,,,,
@@ -815,20 +815,20 @@ Large Radiopack (Backpack Attachment),Sell,,,,
 Laser Level,Keep,"2x Mechanical Components, 2x Steel Spring",Workshop: Outpost Room 3 (3x),2000,3
 Laser Trap: Lure,Use,,Quick Use consumable,,3
 Launcher Ammo,Keep,,Ammo,250,24
-Leaper Pulse Unit,Keep until uses complete; recycle after,"1x Advanced Mechanical Components, 3x ARC Alloy","Workshop: Utility Station 3 (4x); Quests: Into The Fray (1x); Projects: Expedition 1 (3x), Expedition 2 (3x), Trophy Display (10x)",3000,3
+Leaper Pulse Unit,Keep until uses complete; recycle after,"1x Advanced Mechanical Components, 3x ARC Alloy",Workshop: Utility Station 3 (4x); Quests: Into The Fray (1x); Research: Venator Blueprint (3x); Projects: Trophy Display 3 (10x),3000,3
 Leg Stretch (Emote),Sell,,,,
 Lemon,Keep,3x Assorted Seeds,Workshop: Scrappy 3 (3x),640,10
 Lemons (Backpack Charm),Sell,,,,
 Leviathan (Outfit),Sell,,,,
-Li'l Smoke Grenade,Use,"1x Chemicals, 1x plastic-parts",Quick Use consumable,300,5
+Li'l Smoke Grenade,Use,"1x Chemicals, 1x Plastic Parts",Quick Use consumable,300,5
 Library Book,Sell,,,100,1
 LiDAR Scanner,Keep until uses complete; sell after,,Quests: A Lay of the Land (1x),100,1
 Light Ammo,Keep,,Ammo,4,100
 Light Bulb,Keep until uses complete; sell after,,"Projects: Expedition 1 (5x), Expedition 2 (4x)",2000,3
 Light Gun Parts,Keep,2x Simple Gun Parts,Topside Material - crafting ingredient,700,5
 Light Gun Parts Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Light Impact Grenade,Use,"1x Chemicals, 1x plastic-parts",Quick Use consumable,270,5
-Light Shield,Keep,4x plastic-parts,Equippable Shield,640,1
+Light Impact Grenade,Use,"1x Chemicals, 1x Plastic Parts",Quick Use consumable,270,5
+Light Shield,Keep,4x Plastic Parts,Equippable Shield,640,1
 Lightweight Stock,Keep,"1x Duct Tape, 1x Mod Components",Equippable Mods,5000,1
 Lightweight Stock Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Lip Scar (Face Style),Sell,,,,
@@ -837,7 +837,7 @@ Lizzy (Backpack Charm),Sell,,,,
 Lone Survivor (Backpack),Sell,,,,
 Long Afro (Hair),Sell,,,,
 Long Bangs (Hair),Sell,,,,
-Looting Mk. 1,Keep,"3x plastic-parts, 3x Rubber Parts",Equippable Augment,640,1
+Looting Mk. 1,Keep,"3x Plastic Parts, 3x Rubber Parts",Equippable Augment,640,1
 Looting Mk. 2,Keep,"1x Electrical Components, 1x Magnet",Equippable Augment,2000,1
 Looting Mk. 3 (Cautious),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,1
 Looting Mk. 3 (Safekeeper),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,1
@@ -853,7 +853,7 @@ Macrame (Outfit),Sell,,,,
 Maestro (Outfit),Sell,,,,
 Magazine Geometry 101,Sell,,,,1
 Magnet,Keep,2x Metal Parts,Projects: Expedition 5 (15x),300,15
-Magnetic Accelerator,Keep,"1x Advanced Mechanical Components, 1x ARC Motion Core","Workshop: Gunsmith 3 (3x); Projects: Expedition 1 (3x), Expedition 5 (3x), Trophy Display (10x)",5500,3
+Magnetic Accelerator,Keep,"1x Advanced Mechanical Components, 1x ARC Motion Core",Workshop: Gunsmith 3 (3x); Projects: Trophy Display 4 (10x),5500,3
 Magnetron,Keep until uses complete; recycle after,"1x Magnetic Accelerator, 1x Steel Spring",Quests: Snap And Salvage (1x),6000,3
 Mailbox (Backpack Attachment),Sell,,,,
 Major Aiva's Mementos,Keep until uses complete; sell after,,Quests: The Major’s Footlocker (1x),100,1
@@ -861,12 +861,12 @@ Major Aiva's Patch,Keep until uses complete; sell after,,Quests: Echoes of Victo
 Maps (Backpack Attachment),Sell,,,,
 Marano Market Business Card,Sell,,,100,1
 Marco (Outfit),Sell,,,,
-Mask Fragment,Keep until uses complete; sell after,,Projects: Soul's Offering (1x),7000,3
+Mask Fragment,Keep until uses complete; sell after,,Projects: Soul's Offering 3 (1x),7000,3
 Mastery Medal (Backpack Charm),Sell,,,,
 Mastery Medal (Backpack Charm),Sell,,,,
 Matador (Outfit),Sell,,,,
-Matriarch Reactor,Keep until uses complete; recycle after,"1x Power Rod, 1x Magnetic Accelerator",Quests: Nothing Gained (1x); Projects: Trophy Display (3x),11000,1
-Mechanical Components,Keep,"3x Metal Parts, 2x Rubber Parts",Workshop: Gunsmith 2 (5x); Projects: Expedition 5 (20x),640,10
+Matriarch Reactor,Keep until uses complete; recycle after,"1x Power Rod, 1x Magnetic Accelerator",Quests: Nothing Gained (1x); Projects: Trophy Display 5 (3x),11000,1
+Mechanical Components,Keep,"3x Metal Parts, 2x Rubber Parts","Workshop: Gunsmith 2 (5x); Research: Angled Grip II Blueprint (1x), Combat Mk. 3 (Flanking) Blueprint (3x), Extended Shotgun Mag II Blueprint (1x), Venator Blueprint (1x), Vertical Grip II Blueprint (1x); Projects: Expedition 5 (20x)",640,10
 Medium Ammo,Keep,,Ammo,6,80
 Medium Gun Parts,Keep,2x Simple Gun Parts,Topside Material - crafting ingredient,700,5
 Medium Gun Parts Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
@@ -875,7 +875,7 @@ Memorialist (Backpack),Sell,,,,
 Messy Backslick (Hair),Sell,,,,
 Metal Brackets,Recycle,8x Metal Parts,,640,3
 Metal Parts,Keep,,"Workshop: Gunsmith 1 (20x) Refiner 1 (60x); Projects: Expedition 1 (150x), Expedition 2 (150x), Expedition 3 (150x), Expedition 4 (150x), Expedition 5 (150x)",75,50
-Microscope,Recycle if short on materials; Sell otherwise,"1x Advanced Mechanical Components, 3x Magnet",,3000,3
+Microscope,Keep until uses complete; recycle after,"1x Advanced Mechanical Components, 3x Magnet",Research: Vita Shot Blueprint (2x),3000,3
 Middle Fade (Hair),Sell,,,,
 Military Paint (Face Style),Sell,,,,
 Military Paint White (Face Style),Sell,,,,
@@ -892,7 +892,7 @@ Mohawk (Hair),Sell,,,,
 Moisture Meter,Keep until uses complete; sell after,,Quests: Unexpected Initiative (1x),100,1
 Moon Lander (Backpack Charm),Sell,,,,
 Moss,Keep,3x Assorted Seeds,Topside Material - crafting ingredient,500,10
-Motor,Keep until uses complete; recycle after,"2x Mechanical Components, 2x oil",Workshop: Refiner 3 (3x),2000,3
+Motor,Keep until uses complete; recycle after,"2x Mechanical Components, 2x Oil",Workshop: Refiner 3 (3x),2000,3
 Mountaineer's Detector,Use,,Quick Use consumable,2000,1
 Mouse - Black Yellow (Backpack Charm),Sell,,,,
 MRI Duck,Sell,,,10000,15
@@ -902,11 +902,111 @@ Multicolored Geometric Sofa Design,Sell,,,5000,1
 Mushroom,Keep,,Workshop: Scrappy 5 (12x),1000,10
 Music Album,Sell,,,3000,3
 Music Box,Sell,,,5000,3
+Mutton Chops (Facial Hair),Sell,,,,
+Muzzle Brake I,Keep,5x Metal Parts,Equippable Mods,640,1
+Muzzle Brake II,Keep,"1x Mechanical Components, 1x Wires",Equippable Mods,2000,1
+Muzzle Brake II Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
+Muzzle Brake III,Keep,"1x Mod Components, 2x Wires",Equippable Mods,5000,1
+Muzzle Brake III Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
+Nascosto (Outfit),Sell,,,,
+Needs A Shower (Emote),Sell,,,,
+Neutral Makeup (Face Style),Sell,,,,
+No (Emote),Sell,,,,
+Noisemaker,Use,1x Speaker Component,Quick Use consumable,640,3
+Nomad Jug (Backpack Attachment),Sell,,,,
+Nose Stripe (Face Style),Sell,,,,
+Now listen here you (Emote),Sell,,,,
+Noxious (Outfit),Sell,,,,
+Number Plate,Recycle,3x Metal Parts,,270,3
+Nutrient Meter,Keep until uses complete; sell after,,Quests: Unexpected Initiative (1x),100,1
+Nutrient Tube (Backpack Charm),Sell,,,,
+Ochre Stencil,Sell,,,5000,1
+Offering Display Table,Sell,,,,
+Offering Display Table Design,Sell,,,,1
+Official Shutdown Documentation,Keep until uses complete; sell after,,Quests: Last Entry (1x),100,1
+Oil,Keep,3x Chemicals,Projects: Expedition 4 (25x),300,15
+Oil Splatter (Face Style),Sell,,,,
+Old World Books,Keep until uses complete; sell after,,Quests: Cold Storage (1x),100,1
+Olives,Keep,2x Assorted Seeds,Workshop: Scrappy 4 (6x),640,10
+Ombra (Outfit),Sell,,,,
+Orange Camo (Origin Outfit),Sell,,,,
+Origami (Backpack Charm),Sell,,,,
+Origin (Backpack),Sell,,,,
+Origin (Outfit),Sell,,,,
+Ornate Den Bed,Sell,,,,
+Ornate Den Bed Design,Sell,,,5000,1
+Ornate Den Shelf,Sell,,,,
+Ornate Den Shelf Design,Sell,,,5000,1
+Ornate Stash,Sell,,,,
+Ornate Stash Design,Sell,,,5000,1
+Ornate Wardrobe,Sell,,,,
+Ornate Wardrobe Design,Sell,,,5000,1
+Osprey Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
+Osprey I,Keep,"1x Advanced Mechanical Components, 2x Medium Gun Parts",Equippable Weapon,7000,1
+Osprey II,Keep,"1x Advanced Mechanical Components, 2x Medium Gun Parts",Equippable Weapon,10000,1
+Osprey III,Keep,"2x Advanced Mechanical Components, 3x Medium Gun Parts",Equippable Weapon,13000,1
+Osprey IV,Keep,"3x Advanced Mechanical Components, 3x Medium Gun Parts",Equippable Weapon,17000,1
+Oxygen Respirator (Backpack Attachment),Sell,,,,
+Padded Stock,Keep,"1x Mod Components, 1x Duct Tape",Equippable Mods,5000,1
+Padded Stock Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
+Pager (Backpack Charm),Sell,,,,
+Painted Box,Sell,,,2000,3
+Painted Mask (Face Style),Sell,,,,
+Painted Mask Black (Face Style),Sell,,,,
+Paramedic (Backpack),Sell,,,,
+Passenger (Backpack),Sell,,,,
+Patchwork (Outfit),Sell,,,,
+Patchwork (Warden Color),Sell,,,,
+Pathfinder (Backpack),Sell,,,,
+Patrol (Outfit),Sell,,,,
+Patrol Car Key,Keep,,Unlocks locked areas,100,1
+Peace (Emote),Sell,,,,
+Peace (Emote),Sell,,,,
+Pendola Pass Observatory Key,Keep,,Unlocks locked areas,100,1
+Pendola Pass Old Town Key,Keep,,Unlocks locked areas,100,1
+Pendola Pass Railyard Key,Keep,,Unlocks locked areas,100,1
+Pendola Pass Train Station Key,Keep,,Unlocks locked areas,100,1
+Photoelectric Cloak,Use,"1x Advanced Electrical Components, 1x Speaker Component",Quick Use consumable,5000,1
+Picnic Basket (Backpack Attachment),Sell,,,,
+Pilgrim (Backpack),Sell,,,,
+Pilgrim's Peak Security Code,Keep,,Unlocks locked areas,,1
+Pillows (Backpack Attachment),Sell,,,,
+Pilot Helmet (Scrappy Outfit),Sell,,,,
+Pink Rabbit's Foot (Backpack Charm),Sell,,,,
+Pirate Hat (Scrappy Outfit),Sell,,,,
+Pirate Hat - Black Yellow (Scrappy Outfit),Sell,,,,
+Place Flag (Emote),Sell,,,,
+Planks,Keep,,Workshop: Research Station 1 (35x) Outpost Room 2 (35x); Research: White Flag Blueprint (5x); Projects: Outpost (3x),100,50
+Plastic Parts,Keep,,"Workshop: Gear Bench 1 (25x) Utility Station 1 (50x); Projects: Expedition 2 (200x), Expedition 5 (100x)",60,50
+Plastic Trash,Sell,,,640,5
+Playing Cards,Sell,,,5000,3
+Pneumatic Actuator,Keep,,Topside Material - crafting ingredient,5000,3
+Pocket Extinguisher (Backpack Attachment),Sell,,,,
+Pocket Radar (Backpack Charm),Sell,,,,
+Pointing Dance (Emote),Sell,,,,
+Polished Den Bed,Sell,,,,
+Polished Den Bed Design,Sell,,,5000,1
+Polished Den Shelf,Sell,,,,
+Polished Den Shelf Design,Sell,,,5000,1
+Polished Diner Chair,Sell,,,,
+Polished Diner Chair Design,Sell,,,5000,1
+Polished Faculty Chair,Sell,,,,
+Polished Faculty Chair Design,Sell,,,5000,1
+Polished Faculty Table,Sell,,,,
+Polished Faculty Table Design,Sell,,,5000,1
+Polished Round Sofa,Sell,,,,
+Polished Round Sofa Design,Sell,,,5000,1
+Polished Stash,Sell,,,,
+Polished Stash Design,Sell,,,5000,1
+Polished Study Sofa,Sell,,,,
+Polished Study Sofa Design,Sell,,,5000,1
+Polished Wardrobe,Sell,,,,
+Polished Wardrobe Design,Sell,,,5000,1
 Polished Weapon Rack,Sell,,,150,
 Polished Weapon Rack Design,Sell,,,5000,1
-Polluted Air Filter,Recycle,"6x Fabric, 2x oil",,1000,3
+Polluted Air Filter,Recycle,"6x Fabric, 2x Oil",,1000,3
 Pop Helmet (Scrappy Outfit),Sell,,,,
-Pop Trigger,Keep until uses complete; recycle after,"1x crude-explosives, 1x ARC Alloy",Workshop: Explosives Station 2 (5x); Quests: To The Skies (1x); Projects: Trophy Display (15x),640,3
+Pop Trigger,Keep until uses complete; recycle after,"1x Crude Explosives, 1x ARC Alloy",Workshop: Explosives Station 2 (5x); Quests: To The Skies (1x); Research: Trigger 'Nade Blueprint (2x); Projects: Trophy Display 1 (15x),640,3
 Portable Jammer (Backpack Charm),Sell,,,,
 Portable TV,Keep until uses complete; recycle after,"2x Battery, 6x Wires",Quests: Movie Night (1x); Projects: Expedition 4 (1x),2000,1
 Possibly Toxic Plant,Keep until uses complete; sell after,,Quests: A New Type of Plant (1x),100,1
@@ -928,7 +1028,7 @@ Printed Fabric Chair,Sell,,,,
 Printed Fabric Chair Design,Sell,,,5000,1
 Printed Lab Sofa,Sell,,,,
 Printed Lab Sofa Design,Sell,,,5000,1
-Processor,Keep,"1x plastic-parts, 1x Wires",Topside Material - crafting ingredient,500,5
+Processor,Keep,"1x Plastic Parts, 1x Wires",Topside Material - crafting ingredient,500,5
 Project Heartwood Blueprints,Keep until uses complete; sell after,,Quests: Stable Housing (1x),100,1
 Project Pathos Empathy Core,Keep until uses complete; sell after,,Quests: Empathetic Prototypes (1x),,1
 Projector,Recycle,"1x Processor, 2x Wires",,1000,3
@@ -940,11 +1040,11 @@ Punch Hands (Emote),Sell,,,,
 Punching (Emote),Sell,,,,
 Purification System Blueprint,Sell,,,,1
 Purple Glam (Face Style),Sell,,,,
-Queen Reactor,Keep until uses complete; recycle after,"1x Magnetic Accelerator, 1x Power Rod",Quests: Nothing Gained (1x); Projects: Trophy Display (3x),11000,1
+Queen Reactor,Keep until uses complete; recycle after,"1x Magnetic Accelerator, 1x Power Rod",Quests: Nothing Gained (1x); Projects: Trophy Display 4 (3x),11000,1
 Rabbit's Foot (Backpack Charm),Sell,,,,
 Rachetta (Outfit),Sell,,,,
 Radial Press,Keep,1x Advanced Mechanical Components,Workshop: Gunsmith 3 (3x),3000,3
-Radio,Keep until uses complete; recycle after,"1x Sensors, 1x Speaker Component",Projects: Expedition 5 (2x),1000,3
+Radio,Keep until uses complete; recycle after,"1x Sensors, 1x Speaker Component",Research: Trigger 'Nade Blueprint (2x); Projects: Expedition 5 (2x),1000,3
 Radio (Backpack Charm),Sell,,,,
 Radio Mountaineer (Backpack),Sell,,,,
 Radio Relay,Recycle if short on materials; Sell otherwise,"2x Sensors, 2x Speaker Component",,3000,3
@@ -952,10 +1052,10 @@ Radio Renegade (Outfit),Sell,,,,
 Radiopack (Backpack Attachment),Sell,,,,
 Raider Flag,Keep until uses complete; sell after,,Quests: A Symbol of Unification (1x),100,1
 Raider Hatch Key,Keep,,Unlocks locked areas,2000,1
-Raider Logbook,Keep,,Workshop: Research Station 2 (3x),640,5
+Raider Logbook,Keep until uses complete; then convert to research points,,Workshop: Research Station 2 (3x); Converts to 100 Research Points,640,5
 Raider Tokens,Sell,,,,
 Raider's Refuge Security Code,Keep,,Unlocks locked areas,,1
-Railway Lantern,Keep until uses complete; sell after,,Projects: Soul's Offering (2x),3000,3
+Railway Lantern,Keep until uses complete; sell after,,Projects: Soul's Offering 2 (2x),3000,3
 Rainy Day Hat (Scrappy Outfit),Sell,,,,
 Rascal,Keep,"1x Advanced Mechanical Components, 2x Heavy Gun Parts",Equippable Weapon,7000,1
 Rascal Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
@@ -971,7 +1071,7 @@ Reaver (Outfit),Sell,,,,
 Reaver Tool (Raider Tool),Sell,,,,
 Receding (Hair),Sell,,,,
 Record Player (Backpack Attachment),Sell,,,,
-Recorder,Use,10x plastic-parts,Quick Use consumable,1000,1
+Recorder,Use,10x Plastic Parts,Quick Use consumable,1000,1
 Red (Radio Renegade Color),Sell,,,,
 Red Coral Jewelry,Sell,,,5000,3
 Red Light Stick,Use,1x Chemicals,Quick Use consumable,150,5
@@ -980,8 +1080,8 @@ Red Study Sofa,Sell,,,,
 Red Study Sofa Design,Sell,,,5000,1
 Reinforced Reception Security Code,Keep,,Unlocks locked areas,,1
 Reliquary (Backpack),Sell,,,,
-Remote Control,Recycle,"7x plastic-parts, 1x Sensors",,1000,3
-Remote Raider Flare,Keep,"1x Chemicals, 1x Rubber Parts",Projects: Soul's Offering (10x),270,3
+Remote Control,Recycle,"7x Plastic Parts, 1x Sensors",,1000,3
+Remote Raider Flare,Keep,"1x Chemicals, 1x Rubber Parts",Projects: Soul's Offering 2 (10x),270,3
 Remote Raider Flare Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Renegade Censer (Backpack Attachment),Sell,,,,
 Renegade I,Keep,"1x Advanced Mechanical Components, 2x Medium Gun Parts",Equippable Weapon,7000,1
@@ -1012,18 +1112,18 @@ Riven Tides Hotel Keycard No. 404,Keep,,Unlocks locked areas,100,1
 Riven Tides Secure Storage Keycard,Keep,,Unlocks locked areas,100,1
 Road Flare (Backpack Charm),Sell,,,,
 Roamer (Outfit),Sell,,,,
-Rock Salt,Keep until uses complete; sell after,,Projects: Soul's Offering (2x),640,5
+Rock Salt,Keep until uses complete; sell after,,Projects: Soul's Offering 1 (2x),640,5
 Rocket Thruster,Recycle if short on materials; Sell otherwise,"2x Synthesized Fuel, 6x Metal Parts",,2000,3
-Rocketeer Driver,Keep until uses complete; recycle after,"2x Advanced Electrical Components, 3x ARC Alloy","Workshop: Explosives Station 3 (3x); Quests: Nothing Ventured (3x) Out of the Shadows (1x); Projects: Expedition 5 (3x), Trophy Display (8x)",3000,3
+Rocketeer Driver,Keep until uses complete; recycle after,"2x Advanced Electrical Components, 3x ARC Alloy","Workshop: Explosives Station 3 (3x); Quests: Nothing Ventured (3x) Out of the Shadows (1x); Research: Bettina Blueprint (5x), Seeker Grenade Blueprint (1x); Projects: Trophy Display 4 (8x)",3000,3
 Roots,Sell,1x Assorted Seeds,,640,10
-Rope,Keep,5x Fabric,Topside Material - crafting ingredient,300,5
+Rope,Keep,5x Fabric,Research: Grappling Hook Blueprint (10x),300,5
 Rosary,Sell,,,2000,3
 Rotary Encoder,Keep until uses complete; recycle after,"2x Electrical Components, 2x Processor",Quests: With a View (1x),3000,3
 Royal Steed (Backpack Charm),Sell,,,,
 Rubber Bands,Sell,,,,3
 Rubber Duck,Sell,,,1000,15
 Rubber Duck (Backpack Charm),Sell,,,,
-Rubber Pad,Recycle,18x Rubber Parts,,1000,3
+Rubber Pad,Keep until uses complete; recycle after,18x Rubber Parts,Research: Stable Stock II Blueprint (1x),1000,3
 Rubber Parts,Keep,,Workshop: Gunsmith 1 (30x); Projects: Expedition 1 (200x),50,50
 Ruined Accordion,Recycle if short on materials; Sell otherwise,"18x Rubber Parts, 3x Steel Spring",,2000,3
 Ruined Augment,Recycle,"2x Plastic Parts, 2x Rubber Parts",,270,1
@@ -1031,13 +1131,13 @@ Ruined Baton,Recycle,"6x Metal Parts, 3x Rubber Parts",,640,3
 Ruined Emperor Beacon,Sell,,,1000,8
 Ruined Handcuffs,Recycle,8x Metal Parts,,640,3
 Ruined Parachute,Recycle,10x Fabric,,640,3
-Ruined Riot Shield,Recycle,"10x plastic-parts, 6x Rubber Parts",,1000,3
+Ruined Riot Shield,Recycle,"10x Plastic Parts, 6x Rubber Parts",,1000,3
 Ruined Tactical Vest,Recycle,"5x Fabric, 1x Magnet",,640,3
-Rusted Bolts,Keep until uses complete; recycle after,8x Metal Parts,Projects: Trophy Display (3x),640,3
+Rusted Bolts,Keep until uses complete; recycle after,8x Metal Parts,Projects: Trophy Display 1 (3x),640,3
 Rusted Gear,Keep until uses complete; recycle after,"2x Mechanical Components, 4x Metal Parts",Workshop: Gunsmith 3 (3x),2000,3
 Rusted Shut Medical Kit,Keep until uses complete; recycle after,"1x Antiseptic, 2x Syringe",Workshop: Medical Lab 3 (3x),2000,3
-Rusted Tools,Keep until uses complete; recycle after,"8x Metal Parts, 1x Steel Spring",Workshop: Gunsmith 2 (3x),1000,3
-Rusty ARC Steel,Recycle,8x Metal Parts,,640,3
+Rusted Tools,Keep until uses complete; recycle after,"8x Metal Parts, 1x Steel Spring",Workshop: Gunsmith 2 (3x); Research: Anvil Blueprint (1x),1000,3
+Rusty ARC Steel,Keep until uses complete; recycle after,8x Metal Parts,"Research: Barricade Kit Blueprint (3x), Compensator II Blueprint (5x), Extended Barrel II Blueprint (5x), Muzzle Brake II Blueprint (5x), Shotgun Choke II Blueprint (5x), Silencer I Blueprint (5x)",640,3
 Ryder (Outfit),Sell,,,,
 Sacrifice Stencil,Sell,,,5000,1
 Sailor (Backpack),Sell,,,,
@@ -1058,15 +1158,15 @@ Secret Meeting Info,Keep until uses complete; sell after,,Quests: Furtive Meetin
 Security Chair,Sell,,,,
 Security Chair Design,Sell,,,5000,1
 Seed Vault Box Key,Keep until uses complete; sell after,,Quests: Last Entry (1x),100,1
-Seeker Grenade,Use,1x crude-explosives,Quick Use consumable,640,5
+Seeker Grenade,Use,1x Crude Explosives,Quick Use consumable,640,5
 Seeker Grenade Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Sensors,Keep,"1x Metal Parts, 1x Wires",Projects: Expedition 1 (20x),500,5
-Sentinel Firing Core,Keep until uses complete; recycle after,"2x ARC Alloy, 2x Mechanical Components",Workshop: Gunsmith 3 (4x); Quests: Wires Crossed (1x),2000,3
+Sensors,Keep,"1x Metal Parts, 1x Wires","Research: Explosive Mine Blueprint (2x), Tagging Grenade Blueprint (2x); Projects: Expedition 1 (20x)",500,5
+Sentinel Firing Core,Keep until uses complete; recycle after,"2x ARC Alloy, 2x Mechanical Components",Workshop: Gunsmith 3 (4x); Quests: Wires Crossed (1x); Research: Osprey Blueprint (3x),2000,3
 Serac Stencil,Sell,,,5000,1
 Sextant,Sell,,,2000,5
 Sextant (Backpack Charm),Sell,,,,
 Sforza (Outfit),Sell,,,,
-Shaker,Use,10x plastic-parts,Quick Use consumable,1000,1
+Shaker,Use,10x Plastic Parts,Quick Use consumable,1000,1
 Shark Bite (Face Style),Sell,,,,
 Sheath (Outfit),Sell,,,,
 Sheet Metal,Keep,,Workshop: Outpost Room 1 (20x) Outpost Room 3 (40x); Projects: Outpost (5x),100,50
@@ -1088,8 +1188,8 @@ Shotgun Silencer,Keep,"1x Mod Components, 1x Wires",Equippable Mods,5000,1
 Shotgun Silencer Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Showstopper,Use,"2x Battery, 1x Electrical Components",Quick Use consumable,2100,5
 Showstopper Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Shrapnel Grenade,Use,"1x crude-explosives, 1x Metal Parts",Quick Use consumable,800,5
-Shredder Gyro,Keep until uses complete; recycle after,"3x ARC Alloy, 3x Mechanical Components","Projects: Expedition 2 (10x), Trophy Display (5x)",2000,3
+Shrapnel Grenade,Use,"1x Crude Explosives, 1x Metal Parts",Quick Use consumable,800,5
+Shredder Gyro,Keep until uses complete; recycle after,"3x ARC Alloy, 3x Mechanical Components",Research: Il Toro Blueprint (5x); Projects: Trophy Display 3 (5x),2000,3
 Sideburns (Facial Hair),Sell,,,,
 Sidecut Dreads (Hair),Sell,,,,
 Signal Amplifier,Recycle if short on materials; Sell otherwise,"2x Electrical Components, 2x Voltage Converter",,3000,3
@@ -1099,9 +1199,9 @@ Silencer II,Keep,"1x Mod Components, 2x Wires",Equippable Mods,5000,1
 Silencer II Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Silencer III,Keep,"1x Mod Components, 3x Wires",Equippable Mods,7000,1
 Silver Teaspoon Set,Sell,,,3000,3
-Simple Gun Parts,Keep,2x Metal Parts,Topside Material - crafting ingredient,330,10
+Simple Gun Parts,Keep,2x Metal Parts,"Research: Burletta Blueprint (8x), Heavy Gun Parts Blueprint (5x), Light Gun Parts Blueprint (5x), Medium Gun Parts Blueprint (5x)",330,10
 Skulker Driver,Sell,,,1000,3
-Skulker Targeter,Keep until uses complete; recycle after,"1x ARC Alloy, 1x Simple Gun Parts",Workshop: Research Station 2 (5x),1000,3
+Skulker Targeter,Keep until uses complete; recycle after,"1x ARC Alloy, 1x Simple Gun Parts",Workshop: Research Station 2 (5x); Research: Canto Blueprint (10x),1000,3
 Skull Paint (Face Style),Sell,,,,
 Skull Pantomime (Emote),Sell,,,,
 Sledgehammer (Raider Tool),Sell,,,,
@@ -1114,37 +1214,25 @@ Small Lab Cabinet,Sell,,,,
 Small Lab Cabinet Design,Sell,,,5000,1
 Smelly (Emote),Sell,,,,
 Smoke Grenade,Use,"1x Canister, 2x Chemicals",Quick Use consumable,1000,5
-Smoke Grenade,Use,"1x Canister, 2x Chemicals",Quick Use consumable,1000,5
 Smoke Grenade Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Smoke Grenade Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Smoke Grenade Trap,Use,,Quick Use consumable,640,3
 Smoke Grenade Trap,Use,,Quick Use consumable,640,3
 Smokey Eye (Face Style),Sell,,,,
 Smokey Eye Red (Face Style),Sell,,,,
 Snake Tattoo (Face Style),Sell,,,,
 Snap Blast Grenade,Use,"1x Chemicals, 1x Magnet",Quick Use consumable,800,3
-Snap Blast Grenade,Use,"1x Chemicals, 1x Magnet",Quick Use consumable,800,3
-Snap Hook,Use,"1x Power Rod, 3x Rope",Quick Use consumable,14000,1
 Snap Hook,Use,"1x Power Rod, 3x Rope",Quick Use consumable,14000,1
 Snap Hook Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Snap Hook Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Snitch Scanner,Keep until uses complete; recycle after,"1x ARC Alloy, 2x Electrical Components",Workshop: Utility Station 2 (6x); Quests: The Trifecta (2x) Wires Crossed (1x),1000,3
 Snitch Scanner,Keep until uses complete; recycle after,"1x ARC Alloy, 2x Electrical Components",Workshop: Utility Station 2 (6x); Quests: The Trifecta (2x) Wires Crossed (1x),1000,3
 Snow Rescue Kit (Backpack Attachment),Sell,,,,
-Snowball,Sell,,,10,5
 Snowball,Sell,,,10,5
 Snowglobe (Backpack Charm),Sell,,,,
 Snowy Mountain Pick (Raider Tool),Sell,,,,
 Soccer Finals Ticket (Backpack Charm),Sell,,,,
 Soda Can (Backpack Charm),Sell,,,,
 Solare (Outfit),Sell,,,,
-Solare (Outfit),Sell,,,,
 Soldier (Backpack),Sell,,,,
 Solid Green Chair,Sell,,,,
-Solid Green Chair,Sell,,,,
 Solid Green Chair Design,Sell,,,5000,1
-Solid Green Chair Design,Sell,,,5000,1
-Solid-Core Casting Tech,Sell,,,,1
 Solid-Core Casting Tech,Sell,,,,1
 Soot (Face Style),Sell,,,,
 Sorry (Emote),Sell,,,,
@@ -1153,208 +1241,120 @@ Space Shuttle Keychain (Backpack Charm),Sell,,,,
 Space Wrench (Raider Tool),Sell,,,,
 Spacecraft Module (Backpack Attachment),Sell,,,,
 Spaceport Container Storage Key,Keep,,Unlocks locked areas,100,1
-Spaceport Container Storage Key,Keep,,Unlocks locked areas,100,1
-Spaceport Control Tower Key,Keep,,Unlocks locked areas,100,1
 Spaceport Control Tower Key,Keep,,Unlocks locked areas,100,1
 Spaceport Trench Tower Key,Keep,,Unlocks locked areas,100,1
-Spaceport Trench Tower Key,Keep,,Unlocks locked areas,100,1
-Spaceport Warehouse Key,Keep,,Unlocks locked areas,100,1
 Spaceport Warehouse Key,Keep,,Unlocks locked areas,100,1
 Spaceship Souvenir (Backpack Attachment),Sell,,,,
-Speaker Component,Keep,"2x plastic-parts, 3x Rubber Parts","Projects: Expedition 4 (15x), Expedition 5 (15x)",500,5
-Speaker Component,Keep,"2x plastic-parts, 3x Rubber Parts","Projects: Expedition 4 (15x), Expedition 5 (15x)",500,5
+Speaker Component,Keep,"2x Plastic Parts, 3x Rubber Parts","Projects: Expedition 4 (15x), Expedition 5 (15x)",500,5
 Speckled (Scrappy Appearance),Sell,,,,
 Speckled Face Art (Face Style),Sell,,,,
 Spectrometer,Recycle if short on materials; Sell otherwise,"1x Advanced Electrical Components, 1x Sensors",,3000,3
-Spectrometer,Recycle if short on materials; Sell otherwise,"1x Advanced Electrical Components, 1x Sensors",,3000,3
-Spectrum Analyzer,Recycle if short on materials; Sell otherwise,"1x Exodus Modules, 1x Sensors",,3500,3
 Spectrum Analyzer,Recycle if short on materials; Sell otherwise,"1x Exodus Modules, 1x Sensors",,3500,3
 Spider Tattoo (Face Style),Sell,,,,
 Spinning Top (Backpack Attachment),Sell,,,,
 Spit In Hands (Emote),Sell,,,,
 Sport Face Paint (Face Style),Sell,,,,
 Sport Face Paint Blue (Face Style),Sell,,,,
-Spotter Relay,Keep until uses complete; recycle after,"1x ARC Alloy, 1x Electrical Components",Quests: Ruins And Reverberations (1x); Projects: Trophy Display (10x),1000,3
-Spotter Relay,Keep until uses complete; recycle after,"1x ARC Alloy, 1x Electrical Components",Quests: Ruins And Reverberations (1x); Projects: Trophy Display (10x),1000,3
+Spotter Relay,Keep until uses complete; recycle after,"1x ARC Alloy, 1x Electrical Components",Quests: Combat Recon (1x) Ruins And Reverberations (1x); Projects: Trophy Display 2 (10x),1000,3
 Spotting Scope (Backpack Charm),Sell,,,,
 Sprayed Eyes (Face Style),Sell,,,,
 Sprayed Eyes Red (Face Style),Sell,,,,
-Spring Cushion,Recycle if short on materials; Sell otherwise,"2x Durable Cloth, 2x Steel Spring",,2000,3
 Spring Cushion,Recycle if short on materials; Sell otherwise,"2x Durable Cloth, 2x Steel Spring",,2000,3
 Spyglass (Backpack Charm),Sell,,,,
 Spyglass Staff (Raider Tool),Sell,,,,
 Squat (Emote),Sell,,,,
 Stable Stock I,Keep,6x Rubber Parts,Equippable Mods,640,1
-Stable Stock I,Keep,6x Rubber Parts,Equippable Mods,640,1
-Stable Stock II,Keep,"1x Duct Tape, 1x Mechanical Components",Equippable Mods,2000,1
 Stable Stock II,Keep,"1x Duct Tape, 1x Mechanical Components",Equippable Mods,2000,1
 Stable Stock II Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Stable Stock II Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Stable Stock III,Keep,"2x Duct Tape, 1x Mod Components",Equippable Mods,5000,1
 Stable Stock III,Keep,"2x Duct Tape, 1x Mod Components",Equippable Mods,5000,1
 Stable Stock III Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Stable Stock III Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Stack of Movie Tapes,Keep until uses complete; sell after,,Quests: Movie Night (1x),100,1
 Stack of Movie Tapes,Keep until uses complete; sell after,,Quests: Movie Night (1x),100,1
 Stapler (Backpack Charm),Sell,,,,
 Static (Outfit),Sell,,,,
-Static (Outfit),Sell,,,,
-Statuette,Sell,,,3000,3
 Statuette,Sell,,,3000,3
 Steamwright (Backpack),Sell,,,,
-Steel Cable,Keep until uses complete; recycle after,1x Wires,Workshop: Outpost Room 1 (3x),270,5
-Steel Cable,Keep until uses complete; recycle after,1x Wires,Workshop: Outpost Room 1 (3x),270,5
-Steel Spring,Keep,2x Metal Parts,"Projects: Expedition 1 (15x), Expedition 2 (15x), Expedition 3 (15x)",300,15
-Steel Spring,Keep,2x Metal Parts,"Projects: Expedition 1 (15x), Expedition 2 (15x), Expedition 3 (15x)",300,15
-Stella Montis Archives Key,Keep,,Unlocks locked areas,100,1
+Steel Cable,Keep until uses complete; recycle after,1x Wires,"Workshop: Outpost Room 1 (3x); Research: Extended Barrel II Blueprint (1x), Muzzle Brake II Blueprint (1x), Tether Launcher Blueprint (3x), Yank Grenade Blueprint (8x)",270,5
+Steel Spring,Keep,2x Metal Parts,"Research: Canto Blueprint (5x); Projects: Expedition 1 (15x), Expedition 2 (15x), Expedition 3 (15x)",300,15
 Stella Montis Archives Key,Keep,,Unlocks locked areas,100,1
 Stella Montis Assembly Admin Key,Keep,,Unlocks locked areas,100,1
-Stella Montis Assembly Admin Key,Keep,,Unlocks locked areas,100,1
-Stella Montis Medical Storage Key,Keep,,Unlocks locked areas,100,1
 Stella Montis Medical Storage Key,Keep,,Unlocks locked areas,100,1
 Stella Montis Security Checkpoint Key,Keep,,Unlocks locked areas,100,1
-Stella Montis Security Checkpoint Key,Keep,,Unlocks locked areas,100,1
-Stencil Parts,Keep,,Basic Material - crafting ingredient,1,500
 Stencil Parts,Keep,,Basic Material - crafting ingredient,1,500
 Step Dance (Emote),Sell,,,,
 Sterilized Bandage,Use,"1x Antiseptic, 1x Fabric",Quick Use consumable,2000,3
-Sterilized Bandage,Use,"1x Antiseptic, 1x Fabric",Quick Use consumable,2000,3
-Stiletto Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Stiletto Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Stiletto I,Keep,,Equippable Weapon,3800,1
-Stiletto I,Keep,,Equippable Weapon,3800,1
-Stiletto II,Keep,,Equippable Weapon,6000,1
 Stiletto II,Keep,,Equippable Weapon,6000,1
 Stiletto III,Keep,,Equippable Weapon,8000,1
-Stiletto III,Keep,,Equippable Weapon,8000,1
-Stiletto IV,Keep,,Equippable Weapon,11000,1
 Stiletto IV,Keep,,Equippable Weapon,11000,1
 Stitcher I,Keep,"3x Metal Parts, 2x Rubber Parts",Equippable Weapon,800,1
-Stitcher I,Keep,"3x Metal Parts, 2x Rubber Parts",Equippable Weapon,800,1
-Stitcher II,Keep,"6x Metal Parts, 6x Rubber Parts",Equippable Weapon,2000,1
 Stitcher II,Keep,"6x Metal Parts, 6x Rubber Parts",Equippable Weapon,2000,1
 Stitcher III,Keep,"12x Metal Parts, 1x Simple Gun Parts",Equippable Weapon,3000,1
-Stitcher III,Keep,"12x Metal Parts, 1x Simple Gun Parts",Equippable Weapon,3000,1
-Stitcher IV,Keep,"2x Mechanical Components, 2x Simple Gun Parts",Equippable Weapon,5000,1
 Stitcher IV,Keep,"2x Mechanical Components, 2x Simple Gun Parts",Equippable Weapon,5000,1
 Straw (Scrappy Outfit),Sell,,,,
-Striker (Outfit),Sell,,,,
 Striker (Outfit),Sell,,,,
 Stubble (Facial Hair),Sell,,,,
 Stubble Beard (Facial Hair),Sell,,,,
 Study Armchair,Sell,,,,
 Study Armchair,Sell,,,,
-Study Armchair,Sell,,,,
-Study Armchair,Sell,,,,
-Study Armchair Design,Sell,,,5000,1
-Study Armchair Design,Sell,,,5000,1
 Study Armchair Design,Sell,,,5000,1
 Study Armchair Design,Sell,,,5000,1
 Study Ceiling Lamp,Sell,,,,
-Study Ceiling Lamp,Sell,,,,
-Study Ceiling Lamp Design,Sell,,,5000,1
 Study Ceiling Lamp Design,Sell,,,5000,1
 Study Piano,Sell,,,,
-Study Piano,Sell,,,,
-Study Piano Design,Sell,,,5000,1
 Study Piano Design,Sell,,,5000,1
 Study TV Stand,Sell,,,,
-Study TV Stand,Sell,,,,
-Study TV Stand Design,Sell,,,5000,1
 Study TV Stand Design,Sell,,,5000,1
 Sturdy Aviary Table,Sell,,,,
-Sturdy Aviary Table,Sell,,,,
-Sturdy Aviary Table Design,Sell,,,5000,1
 Sturdy Aviary Table Design,Sell,,,5000,1
 Sturdy Bureau Chair,Sell,,,,
-Sturdy Bureau Chair,Sell,,,,
-Sturdy Bureau Chair Design,Sell,,,5000,1
 Sturdy Bureau Chair Design,Sell,,,5000,1
 Sturdy Bureau Sofa,Sell,,,,
-Sturdy Bureau Sofa,Sell,,,,
-Sturdy Bureau Sofa Design,Sell,,,5000,1
 Sturdy Bureau Sofa Design,Sell,,,5000,1
 Sturdy Den Bed,Sell,,,,
-Sturdy Den Bed,Sell,,,,
-Sturdy Den Bed Design,Sell,,,5000,1
 Sturdy Den Bed Design,Sell,,,5000,1
 Sturdy Den Shelf,Sell,,,,
-Sturdy Den Shelf,Sell,,,,
-Sturdy Den Shelf Design,Sell,,,5000,1
 Sturdy Den Shelf Design,Sell,,,5000,1
 Sturdy Faculty Chair,Sell,,,,
-Sturdy Faculty Chair,Sell,,,,
-Sturdy Faculty Chair Design,Sell,,,5000,1
 Sturdy Faculty Chair Design,Sell,,,5000,1
 Sturdy Faculty Table,Sell,,,,
-Sturdy Faculty Table,Sell,,,,
-Sturdy Faculty Table Design,Sell,,,5000,1
 Sturdy Faculty Table Design,Sell,,,5000,1
 Sturdy Lab Cabinet,Sell,,,,
-Sturdy Lab Cabinet,Sell,,,,
-Sturdy Lab Cabinet (Wide),Sell,,,,
 Sturdy Lab Cabinet (Wide),Sell,,,,
 Sturdy Lab Cabinet (Wide) Design,Sell,,,5000,1
-Sturdy Lab Cabinet (Wide) Design,Sell,,,5000,1
-Sturdy Lab Cabinet Design,Sell,,,5000,1
 Sturdy Lab Cabinet Design,Sell,,,5000,1
 Sturdy Lab Chair,Sell,,,,
-Sturdy Lab Chair,Sell,,,,
-Sturdy Lab Chair Design,Sell,,,5000,1
 Sturdy Lab Chair Design,Sell,,,5000,1
 Sturdy Shelf,Sell,,,,
-Sturdy Shelf,Sell,,,,
-Sturdy Shelf Design,Sell,,,5000,1
 Sturdy Shelf Design,Sell,,,5000,1
 Sturdy Stash,Sell,,,,
-Sturdy Stash,Sell,,,,
-Sturdy Stash Design,Sell,,,5000,1
 Sturdy Stash Design,Sell,,,5000,1
 Sturdy Wardrobe,Sell,,,,
-Sturdy Wardrobe,Sell,,,,
-Sturdy Wardrobe Design,Sell,,,5000,1
 Sturdy Wardrobe Design,Sell,,,5000,1
 Sturdy Weapon Rack,Sell,,,,
-Sturdy Weapon Rack,Sell,,,,
-Sturdy Weapon Rack Design,Sell,,,5000,1
 Sturdy Weapon Rack Design,Sell,,,5000,1
 Subterranean (Outfit),Sell,,,,
-Subterranean (Outfit),Sell,,,,
-Succulent (Backpack Charm),Sell,,,,
 Succulent (Backpack Charm),Sell,,,,
 Sundial (Backpack Charm),Sell,,,,
 Surge Coil,Use,"1x Electrical Components, 1x Sensors",Quick Use consumable,2100,3
-Surge Coil,Use,"1x Electrical Components, 1x Sensors",Quick Use consumable,2100,3
-Surge Coil Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Surge Coil Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Surge Shield Recharger,Use,1x Electrical Components,Quick Use consumable,1200,5
-Surge Shield Recharger,Use,1x Electrical Components,Quick Use consumable,1200,5
-Surgeon (Outfit),Sell,,,,
 Surgeon (Outfit),Sell,,,,
 Surgeon Hat (Scrappy Outfit),Sell,,,,
-Surveyor Vault,Keep until uses complete; recycle after,"1x ARC Alloy, 1x Mechanical Components",Workshop: Medical Lab 3 (5x); Quests: Mixed Signals (1x) Wires Crossed (1x); Projects: Trophy Display (5x),1000,3
-Surveyor Vault,Keep until uses complete; recycle after,"1x ARC Alloy, 1x Mechanical Components",Workshop: Medical Lab 3 (5x); Quests: Mixed Signals (1x) Wires Crossed (1x); Projects: Trophy Display (5x),1000,3
-Synthesized Fuel,Keep,"1x oil, 1x plastic-parts",Workshop: Explosives Station 2 (3x),700,5
-Synthesized Fuel,Keep,"1x oil, 1x plastic-parts",Workshop: Explosives Station 2 (3x),700,5
-Syringe,Keep,"2x Chemicals, 3x plastic-parts",Quests: Doctor's Orders (1x),500,5
-Syringe,Keep,"2x Chemicals, 3x plastic-parts",Quests: Doctor's Orders (1x),500,5
-Tactical Mk. 1,Keep,"3x plastic-parts, 3x Rubber Parts",Equippable Augment,640,1
-Tactical Mk. 1,Keep,"3x plastic-parts, 3x Rubber Parts",Equippable Augment,640,1
-Tactical Mk. 2,Keep,"1x Electrical Components, 1x Magnet",Equippable Augment,2000,1
+Surveyor Vault,Keep until uses complete; recycle after,"1x ARC Alloy, 1x Mechanical Components",Workshop: Medical Lab 3 (5x); Quests: Mixed Signals (1x) Wires Crossed (1x); Projects: Trophy Display 1 (5x),1000,3
+Synthesized Fuel,Keep,"1x Oil, 1x Plastic Parts",Workshop: Explosives Station 2 (3x),700,5
+Syringe,Keep,"2x Chemicals, 3x Plastic Parts","Quests: Doctor's Orders (1x); Research: Defibrillator Blueprint (3x), Vita Shot Blueprint (2x)",500,5
+Tactical Mk. 1,Keep,"3x Plastic Parts, 3x Rubber Parts",Equippable Augment,640,1
 Tactical Mk. 2,Keep,"1x Electrical Components, 1x Magnet",Equippable Augment,2000,1
 Tactical Mk. 3 (Defensive),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,1
-Tactical Mk. 3 (Defensive),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,1
-Tactical Mk. 3 (Defensive) Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Tactical Mk. 3 (Defensive) Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Tactical Mk. 3 (Healing),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,1
-Tactical Mk. 3 (Healing),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,1
-Tactical Mk. 3 (Healing) Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Tactical Mk. 3 (Healing) Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Tactical Mk. 3 (Revival),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,1
 Tactical Mk. 3 (Revival) Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Tactical Mk. 3 (Smoke),Keep,"1x Advanced Electrical Components, 1x Processor",Equippable Augment,5000,1
 Tactical Mk. 3 (Smoke) Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
-Tagging Grenade,Use,"1x plastic-parts, 1x Sensors",Quick Use consumable,1000,3
+Tagging Grenade,Use,"1x Plastic Parts, 1x Sensors",Quick Use consumable,1000,3
 Tagging Grenade Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Tangerine (Warden Color),Sell,,,,
 Targeted Component Trial,Sell,,,,1
@@ -1378,9 +1378,9 @@ Thick Mustache (Facial Hair),Sell,,,,
 Think About It (Emote),Sell,,,,
 Thruster Hammer (Raider Tool),Sell,,,,
 Tick Hunter (Outfit),Sell,,,,
-Tick Pod,Keep until uses complete; recycle after,"2x ARC Alloy, 2x Chemicals",Workshop: Medical Lab 2 (8x); Projects: Trophy Display (15x),640,3
+Tick Pod,Keep until uses complete; recycle after,"2x ARC Alloy, 2x Chemicals",Workshop: Medical Lab 2 (8x); Projects: Trophy Display 1 (15x),640,3
 Tick Trophy (Backpack Attachment),Sell,,,,
-Toaster,Keep until uses complete; recycle after,"5x plastic-parts, 3x Wires",Workshop: Refiner 2 (3x),1000,3
+Toaster,Keep until uses complete; recycle after,"5x Plastic Parts, 3x Wires",Workshop: Refiner 2 (3x),1000,3
 Toolbag (Backpack Attachment),Sell,,,,
 Top Mounted Optics Retrofittings,Sell,,,,1
 Torch Ginger,Recycle,3x Chemicals,,300,15
@@ -1398,7 +1398,7 @@ Tortoise Stencil,Sell,,,5000,1
 Toy Plane (Backpack Charm),Sell,,,,
 Toy Robot (Backpack Charm),Sell,,,,
 Traffic Band (Backpack Charm),Sell,,,,
-Trailblazer,Use,2x crude-explosives,Quick Use consumable,2200,3
+Trailblazer,Use,2x Crude Explosives,Quick Use consumable,2200,3
 Trailblazer Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Train Model,Sell,,,1000,10
 Train Whistle (Backpack Attachment),Sell,,,,
@@ -1418,11 +1418,11 @@ Tropical Duck,Sell,,,1000,15
 Tufted Sofa,Sell,,,,
 Tufted Sofa Design,Sell,,,5000,1
 Turban (Scrappy Outfit),Sell,,,,
-Turbine Compressor,Keep until uses complete; recycle after,"1x ARC Circuitry, 1x ARC Motion Core",Projects: Expedition 4 (5x),5000,3
-Turbo Pump,Recycle if short on materials; Sell otherwise,"1x Mechanical Components, 3x oil",,2000,3
+Turbine Compressor,Keep until uses complete; recycle after,"1x ARC Circuitry, 1x ARC Motion Core",Research: Trailblazer Blueprint (1x); Projects: Expedition 4 (5x),5000,3
+Turbo Pump,Recycle if short on materials; Sell otherwise,"1x Mechanical Components, 3x Oil",,2000,3
 Twig Trinket (Backpack Charm),Sell,,,,
 Unknown ARC Circuitry,Sell,,,,1
-Unusable Weapon,Recycle if short on materials; Sell otherwise,"4x Metal Parts, 5x Simple Gun Parts",,2000,3
+Unusable Weapon,Keep until uses complete; recycle after,"4x Metal Parts, 5x Simple Gun Parts","Research: Heavy Gun Parts Blueprint (1x), Light Gun Parts Blueprint (1x), Medium Gun Parts Blueprint (1x), Tether Launcher Blueprint (1x)",2000,3
 Urchin Harvester (Backpack),Sell,,,,
 Valente (Outfit),Sell,,,,
 Vanguard (Outfit),Sell,,,,
@@ -1438,7 +1438,7 @@ Venator IV,Keep,"3x Advanced Mechanical Components, 3x Medium Gun Parts",Equippa
 Venetian Dresser,Sell,,,,
 Venetian Dresser Design,Sell,,,5000,1
 Verdigris Stencil,Sell,,,5000,1
-Vertical Grip I,Keep,6x plastic-parts,Equippable Mods,640,1
+Vertical Grip I,Keep,6x Plastic Parts,Equippable Mods,640,1
 Vertical Grip II,Keep,"1x Duct Tape, 1x Mechanical Components",Equippable Mods,2000,1
 Vertical Grip II Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Vertical Grip III,Keep,"2x Mechanical Components, 2x Duct Tape",Equippable Mods,5000,1
@@ -1469,13 +1469,13 @@ Warehouse Desk Design,Sell,,,5000,1
 Warehouse Dresser,Sell,,,,
 Warehouse Dresser Design,Sell,,,5000,1
 Warm Up (Emote),Sell,,,,
-Wasp Driver,Keep until uses complete; recycle after,"1x ARC Alloy, 1x Electrical Components",Workshop: Gunsmith 2 (8x); Quests: The Trifecta (2x); Projects: Trophy Display (20x),640,3
+Wasp Driver,Keep until uses complete; recycle after,"1x ARC Alloy, 1x Electrical Components",Workshop: Gunsmith 2 (8x); Quests: The Trifecta (2x); Research: Stiletto Blueprint (15x); Projects: Trophy Display 2 (20x),640,3
 Wasp Hunter (Outfit),Sell,,,,
 Wasp Hunter Helmet (Scrappy Outfit),Sell,,,,
 Water Bottle (Backpack Charm),Sell,,,,
 Water Bottle Empty (Emote),Sell,,,,
 Water Filter,Recycle,"3x Canister, 2x Rubber Parts",,1000,3
-Water Pump,Keep until uses complete; recycle after,"4x Metal Parts, 2x oil",Quests: Unexpected Initiative (1x),1000,3
+Water Pump,Keep until uses complete; recycle after,"4x Metal Parts, 2x Oil",Quests: Unexpected Initiative (1x),1000,3
 Waterskin (Backpack Attachment),Sell,,,,
 Wave (Emote),Sell,,,,
 Weapons Case (Backpack Attachment),Sell,,,,
@@ -1487,14 +1487,14 @@ Welded Pickaxe (Raider Tool),Sell,,,,
 Welsummer (Scrappy Appearance),Sell,,,,
 Whaler (Raider Tool),Sell,,,,
 Whistle Bundle (Backpack Charm),Sell,,,,
-White Flag,Use,"5x Fabric, 1x plastic-parts",Quick Use consumable,640,5
+White Flag,Use,"5x Fabric, 1x Plastic Parts",Quick Use consumable,640,5
 White Flag Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 White Indigo (Warden Color),Sell,,,,
 Wicker Basket (Backpack Attachment),Sell,,,,
 Winter Table,Sell,,,,
 Winter Table Design,Sell,,,5000,1
 Wire Spool (Backpack Charm),Sell,,,,
-Wires,Keep,2x Rubber Parts,"Quests: After Rain Comes (5x) Clamoring for Attention (3x) Eyes On The Prize (3x) Trash Into Treasure (6x); Quests: Flickering Threat (4x); Projects: Expedition 1 (30x), Expedition 2 (25x), Expedition 3 (25x)",200,15
+Wires,Keep,2x Rubber Parts,"Quests: After Rain Comes (5x) Clamoring for Attention (3x) Eyes On The Prize (3x) Trash Into Treasure (6x); Research: Extended Light Mag II Blueprint (5x); Quests: Flickering Threat (4x); Projects: Expedition 1 (30x), Expedition 2 (25x), Expedition 3 (25x)",200,15
 Wolfpack,Use,"1x ARC Motion Core, 1x Explosive Compound",Quick Use consumable,6000,1
 Wolfpack Blueprint,Keep,,"Learn, sell, or trade to other players",5000,1
 Work Light,Sell,,,,

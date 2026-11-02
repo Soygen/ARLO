@@ -23,7 +23,10 @@ from update_db import write_traders_catalog
 
 TABBER_HTML = """
 <div id="mw-content-text">
-  <div class="tabber__panel" id="tabber-stage-1">
+  <a class="tabber__tab" role="tab" id="tabber-Construct_Vaultos_Offering_(1)-label"
+     href="#tabber-Construct_Vaultos_Offering_(1)">Construct Vaulto's Offering (1)</a>
+  <div class="tabber__panel" role="tabpanel" id="tabber-Construct_Vaultos_Offering_(1)"
+       aria-labelledby="tabber-Construct_Vaultos_Offering_(1)-label">
     <ul>
       <li>15× ARC Alloy</li>
       <li>2× Rock Salt</li>
@@ -48,17 +51,59 @@ REQ_TABLE_HTML = """
 def test_requirements_from_tabber_stops_at_rewards():
     root = BeautifulSoup(TABBER_HTML, "html.parser")
     pairs = _requirements_from_tabbers(root)
-    assert ("ARC Alloy", 15) in pairs
-    assert ("Rock Salt", 2) in pairs
-    assert not any("Stiletto" in n for n, _ in pairs)
+    assert ("ARC Alloy", 15, 1) in pairs
+    assert ("Rock Salt", 2, 1) in pairs
+    assert not any("Stiletto" in n for n, _, _ in pairs)
 
 
 def test_requirements_from_requirement_table():
     root = BeautifulSoup(REQ_TABLE_HTML, "html.parser")
     pairs = _requirements_from_tables(root)
     assert _aggregate_requirements(pairs) == [
-        ("Tick Pod", 15),
-        ("Rusted Bolts", 3),
+        ("Tick Pod", 15, None),
+        ("Rusted Bolts", 3, None),
+    ]
+
+
+STAGED_TABBER_HTML = """
+<div id="mw-content-text">
+  <div class="tabber">
+    <a class="tabber__tab" role="tab" id="tabber-Roaming_Threats_(1)-label"
+       href="#tabber-Roaming_Threats_(1)">Roaming Threats (1)</a>
+    <a class="tabber__tab" role="tab" id="tabber-Soaring_Menaces_(2)-label"
+       href="#tabber-Soaring_Menaces_(2)">Soaring Menaces (2)</a>
+    <div class="tabber__panel" role="tabpanel" id="tabber-Roaming_Threats_(1)"
+         aria-labelledby="tabber-Roaming_Threats_(1)-label">
+      <table>
+        <tr><th>Requirement</th><th>Reward</th></tr>
+        <tr><td>15× Tick Pod</td><td>10× Mod Components</td></tr>
+        <tr><td>3× Rusted Bolts</td><td>3× Power Rod</td></tr>
+      </table>
+    </div>
+    <div class="tabber__panel" role="tabpanel" id="tabber-Soaring_Menaces_(2)"
+         aria-labelledby="tabber-Soaring_Menaces_(2)-label">
+      <table>
+        <tr><th>Requirement</th><th>Reward</th></tr>
+        <tr><td>20× Wasp Driver</td><td>20× Raider Tokens</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+"""
+
+
+def test_staged_tabber_tables_keep_stage_numbers():
+    root = BeautifulSoup(STAGED_TABBER_HTML, "html.parser")
+    pairs = _requirements_from_tabbers(root)
+    assert ("Tick Pod", 15, 1) in pairs
+    assert ("Rusted Bolts", 3, 1) in pairs
+    assert ("Wasp Driver", 20, 2) in pairs
+    # Tables inside tabbers must not also appear unstaged
+    assert _requirements_from_tables(root) == []
+    assert _aggregate_requirements(pairs) == [
+        ("Tick Pod", 15, 1),
+        ("Rusted Bolts", 3, 1),
+        ("Wasp Driver", 20, 2),
     ]
 
 
@@ -71,21 +116,25 @@ def test_write_and_query_projects(tmp_path: Path):
                 {
                     "item_id": "tick-pod",
                     "quantity": 15,
+                    "stage": 1,
                     "item": {"id": "tick-pod", "name": "Tick Pod"},
                 },
                 {
                     "item_id": "wasp-driver",
                     "quantity": 20,
+                    "stage": 2,
                     "item": {"id": "wasp-driver", "name": "Wasp Driver"},
                 },
             ],
         }
     ]
-    write_projects_catalog(
+    project_map = write_projects_catalog(
         projects,
         csv_path=tmp_path / "projects.csv",
         db_path=tmp_path / "projects.db",
     )
+    assert project_map["tick pod"] == ["Trophy Display 1 (15x)"]
+    assert project_map["wasp driver"] == ["Trophy Display 2 (20x)"]
     catalog = ProjectCatalog(tmp_path / "projects.db")
     assert catalog.count() == 1
     rem = catalog.remaining_for_item(
@@ -269,3 +318,10 @@ def test_format_keep_for_drops_inactive_wiki_projects():
         "Projects: Expedition 1 (5x) High-Gain Antenna (15x)",
         inactive_projects={"high-gain antenna"},
     ) == "Projects: Expedition 1 (5x)"
+
+
+def test_format_keep_for_prefers_staged_project_labels():
+    assert format_keep_for(
+        "Projects: Trophy Display (15x)",
+        project_uses=["Trophy Display 2 (20x)"],
+    ) == "Projects: Trophy Display 2 (20x)"
