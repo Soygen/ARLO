@@ -35,6 +35,8 @@ def _db(tmp_path):
                 ("Crude Explosives", "Keep"),
                 ("Deflated Football", "Sell"),
                 ("Bicycle Pump", "Keep"),
+                ("Deprecated Anvil Splitter", "Sell or recycle"),
+                ("Amplified Fragments", "Keep"),
             ],
         )
         conn.commit()
@@ -152,3 +154,17 @@ def test_ocr_suffix_with_long_dropped_prefix(tmp_path):
 def test_ocr_crude_explosives_collapsed(tmp_path):
     assert _db(tmp_path).lookup("CRUDEEXPLOSIVES").name == "Crude Explosives"
     assert _db(tmp_path).lookup("FLATEDFOOTBALL").name == "Deflated Football"
+
+
+def test_ocr_recycle_dialog_deprecated_anvil_with_output_tooltip(tmp_path):
+    # Recycle panel title remnant + hovered Amplified Fragments tooltip
+    db = _db(tmp_path)
+    assert (
+        db.lookup("EDEPRECATEDANVILS AMPLIFIEDFRAGMENTS").name
+        == "Amplified Fragments"
+    )
+    # Title-only OCR (truncated DEPRECATED ANVIL SPLITTER)
+    assert (
+        db.lookup("EDEPRECATEDANVILS").name == "Deprecated Anvil Splitter"
+    )
+    assert db.lookup("AMPLIFIEDFRAGMENTS").name == "Amplified Fragments"

@@ -2160,6 +2160,13 @@ def generate_action(item: GameItem) -> tuple[str, str, str]:
             return ("Recycle if short on materials; Sell otherwise", recycle_for, "") if item.sell_price >= 2000 else ("Recycle", recycle_for, "")
         return "Sell", "", ""
 
+    # Retired mods/items (e.g. MetaForge ``Deprecated Anvil Splitter``)
+    if item.name.lower().startswith("deprecated "):
+        note = keep_for or "Deprecated — sell or recycle"
+        if can_recycle:
+            return "Sell or recycle", recycle_for, note
+        return "Sell", "", note
+
     if has_uses:
         return "Keep", recycle_for, keep_for
     if can_recycle:
