@@ -39,6 +39,7 @@ dependencies = [
     { name = "pillow" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
+    { name = "pygobject", marker = "sys_platform == 'linux'" },
     { name = "pynput" },
     { name = "pytesseract" },
     { name = "python-dotenv" },
@@ -53,9 +54,6 @@ dev = [
     { name = "pytest" },
     { name = "ruff" },
 ]
-wayland = [
-    { name = "pygobject", marker = "sys_platform == 'linux'" },
-]
 
 [package.metadata]
 requires-dist = [
@@ -67,7 +65,7 @@ requires-dist = [
     { name = "pillow", specifier = ">=10.0.0" },
     { name = "pydantic", specifier = ">=2.0.0" },
     { name = "pydantic-settings", specifier = ">=2.0.0" },
-    { name = "pygobject", marker = "sys_platform == 'linux' and extra == 'wayland'", specifier = ">=3.50" },
+    { name = "pygobject", marker = "sys_platform == 'linux'", specifier = ">=3.50" },
     { name = "pyinstaller", marker = "extra == 'dev'", specifier = ">=6.0.0" },
     { name = "pynput", specifier = ">=1.7.0" },
     { name = "pytesseract", specifier = ">=0.3.10" },
