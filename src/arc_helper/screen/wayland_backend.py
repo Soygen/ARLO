@@ -22,7 +22,7 @@ _INSTALL_HINT = (
     "Wayland capture needs PyGObject + GStreamer.\n"
     "  Arch:        sudo pacman -S --needed cairo pkgconf gcc gstreamer gst-plugins-base gst-plugin-pipewire\n"
     "  Debian:      sudo apt install libcairo2-dev libgirepository1.0-dev pkg-config gcc gstreamer1.0-pipewire gstreamer1.0-plugins-base\n"
-    "  then:        uv sync --all-extras\n"
+    "  then:        uv sync\n"
     "Or force X11 capture with SCREEN_BACKEND=x11 in .env (requires an X11 session)."
 )
 
