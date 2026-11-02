@@ -17,6 +17,9 @@ dependencies = [
     "pynput>=1.7.0",
     "evdev>=1.6; sys_platform == 'linux'",
     "python-xlib>=0.17; sys_platform == 'linux'",
+    # Wayland capture (portal/PipeWire). Always on Linux so plain `uv sync` /
+    # `uv run` is enough — no repeated `uv sync --extra wayland`.
+    "pygobject>=3.50; sys_platform == 'linux'",
 ]
 
 [project.optional-dependencies]
@@ -26,9 +29,8 @@ dev = [
     "pyinstaller>=6.0.0",
     "pytest>=8.0",
 ]
-wayland = [
-    "pygobject>=3.50; sys_platform == 'linux'",
-]
+# Kept as a no-op alias so older docs / `uv sync --extra wayland` still work.
+wayland = []
 
 [project.scripts]
 arc-helper = "arc_helper.main:main"
