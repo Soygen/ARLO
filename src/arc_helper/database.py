@@ -83,28 +83,23 @@ def _scrub_ocr_query(name: str) -> str:
     if not text:
         return ""
     text = _OCR_UI_NOISE_RE.sub(" ", text)
-    # Leading action verb from recycle/confirm panels (spaced or glued)
+    # Leading action verb from recycle/confirm panels (spaced or glued).
+    # OCR often mangles RECYCLE to CYCLE/RECYC or leaves a lone leading E
+    # glued onto DEPRECATED… titles ("EDEPRECATEDANVILS").
     text = re.sub(
-        r"^(?:recycle|keep|sell)(?:\s+|(?=[A-Za-z]))",
+        r"^(?:recycl(?:e)?|cycle|keep|sell)(?:\s+|(?=[A-Za-z]))",
         "",
         text,
         flags=re.IGNORECASE,
     )
+    text = re.sub(r"^e(?=deprecated)", "", text, flags=re.IGNORECASE)
     return " ".join(text.split())
 
 
-def _pick_row_by_ocr_key(
-    clean_name: str, rows: list[sqlite3.Row]
+def _pick_row_by_single_ocr_key(
+    scrubbed: str, rows: list[sqlite3.Row]
 ) -> sqlite3.Row | None:
-    """Resolve OCR noise against catalog names using alphanumeric keys.
-
-    Handles dropped spaces/punct (``LOOTINGMK``), digit↔letter swaps
-    (``…STH EDITION`` vs ``…5TH EDITION``), truncated tier suffixes
-    (``LOOTINGMK`` → shortest ``Looting Mk. …`` when the digit was lost),
-    dropped leading letters (``ERALENS`` → ``Camera Lens``), and UI chrome
-    glued onto the name (``…DESIGN REQUIREDRESOURCES``).
-    """
-    scrubbed = _scrub_ocr_query(clean_name)
+    """Match one scrubbed OCR fragment against catalog keys."""
     target = _match_key(scrubbed)
     folded = _ocr_fold_key(scrubbed)
     if not target:
@@ -211,6 +206,43 @@ def _pick_row_by_ocr_key(
             )
             return group[0]
     return None
+
+
+def _pick_row_by_ocr_key(
+    clean_name: str, rows: list[sqlite3.Row]
+) -> sqlite3.Row | None:
+    """Resolve OCR noise against catalog names using alphanumeric keys.
+
+    Handles dropped spaces/punct (``LOOTINGMK``), digit↔letter swaps
+    (``…STH EDITION`` vs ``…5TH EDITION``), truncated tier suffixes
+    (``LOOTINGMK`` → shortest ``Looting Mk. …`` when the digit was lost),
+    dropped leading letters (``ERALENS`` → ``Camera Lens``), UI chrome
+    glued onto the name (``…DESIGN REQUIREDRESOURCES``), and recycle-dialog
+    OCR that joins the panel title with the hovered tooltip name
+    (``EDEPRECATEDANVILS AMPLIFIEDFRAGMENTS``).
+    """
+    scrubbed = _scrub_ocr_query(clean_name)
+    if not scrubbed:
+        return None
+
+    hit = _pick_row_by_single_ocr_key(scrubbed, rows)
+    if hit is not None:
+        return hit
+
+    # Recycle/confirm panels often OCR as two uppercase lines joined with a
+    # space (truncated title + tooltip). Try each token; prefer the last unique
+    # hit so the hovered tooltip wins over dialog-title chrome.
+    tokens = scrubbed.split()
+    if len(tokens) < 2:
+        return None
+    last_hit: sqlite3.Row | None = None
+    for tok in tokens:
+        if len(_match_key(tok)) < 6:
+            continue
+        tok_hit = _pick_row_by_single_ocr_key(tok, rows)
+        if tok_hit is not None:
+            last_hit = tok_hit
+    return last_hit
 
 
 class Item(BaseModel):
