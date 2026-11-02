@@ -158,7 +158,7 @@ def test_apply_progress_no_remaining_clears_quest_needed(tmp_path: Path):
     out = apply_progress(item, profile, catalog)
     assert out.quest_needed is None
     assert "Quests:" not in (out.keep_for or "")
-    assert out.action == "Recycle"
+    assert out.action == "Crafting item"
 
 
 def test_parse_wiki_item_quantities():

@@ -647,7 +647,12 @@ def _filter_keep_for(
 
 
 def _rewrite_action(action: str, recycle_for: str | None, keep_for: str) -> str:
-    """When all progress clauses are gone, collapse keep / keep-until wording."""
+    """When all progress clauses are gone, collapse keep / keep-until wording.
+
+    Recyclable / material feedstock falls back to a neutral ``Crafting item``
+    instead of pushing Recycle/Sell — players still see recycle yield and can
+    decide. Trinket-style ``sell after`` stays Sell.
+    """
     if has_progress_keep(keep_for):
         return action
     al = (action or "").lower().strip()
@@ -667,13 +672,13 @@ def _rewrite_action(action: str, recycle_for: str | None, keep_for: str) -> str:
         or "recycle or sell" in al
         or "sell or recycle" in al
     )
-    # Bare "Keep" (workshop/project only, no dispose hint) → sell or recycle
+    # Keep / keep-until-recycle with a recycle yield → crafting feedstock
+    if recycles or (al == "keep" and (recycle_for or "").strip()):
+        return "Crafting item"
     if al == "keep":
-        return "Recycle" if (recycle_for or "").strip() else "Sell"
+        return "Sell"
     if sells and not recycles:
         return "Sell"
-    if recycles:
-        return "Recycle" if (recycle_for or "").strip() else "Sell"
     if sells:
         return "Sell"
     return action

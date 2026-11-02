@@ -68,7 +68,8 @@ The updater auto-generates action recommendations based on item category and use
 - **Basic/Refined/Topside Materials** - `Keep` (crafting ingredients)
 - **Trinkets** with no uses - `Sell`
 - **Recyclables** with workshop/quest uses - `Keep until uses complete; recycle after`
-- **Recyclables** with no uses - `Recycle`
+- **Recyclables** with no uses - `Crafting item` (neutral; recycle yield still shown)
+- After progress clears a keep-until-recycle item - `Crafting item` (not bare `Recycle`)
 - **Keys** - `Keep`
 - **Weapons / Mods / Augments / Shields** - `Keep` (player decision; attachments included)
 - **Blueprints** - `Keep` with note to learn, sell, or trade

@@ -238,6 +238,22 @@ def test_build_csv_rows_merge_overwrites_stale_keep_for():
     assert rows[0]["action"] == "Keep"
 
 
+def test_generate_action_recyclable_without_uses_is_crafting_item():
+    from update_db import generate_action, GameItem
+
+    item = GameItem(
+        name="Hand Drill",
+        category="Recyclable",
+        recycles_to="1x Mechanical Components",
+        sell_price=640,
+        stack_size=3,
+    )
+    action, recycle, keep = generate_action(item)
+    assert action == "Crafting item"
+    assert recycle == "1x Mechanical Components"
+    assert "crafting" in keep.lower()
+
+
 def test_generate_action_research_item_converts_to_rp():
     from update_db import generate_action, GameItem
 
