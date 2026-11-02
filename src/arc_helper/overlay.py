@@ -4,7 +4,7 @@ Displays item recommendations as a styled popup with action colors.
 """
 
 import tkinter as tk
-from typing import Callable
+from collections.abc import Callable
 
 from .clickthrough import make_click_through
 from .config import get_dpi_scale
@@ -40,7 +40,7 @@ class OverlayWindow:
 
         self.window = tk.Toplevel(root)
         self.window.title("ARLO")
-        self.window.attributes("-topmost", True)  # noqa: FBT003
+        self.window.attributes("-topmost", True)  # ruff: ignore[boolean-positional-value-in-call]
         self.window.attributes("-alpha", 0.92)
         self.window.overrideredirect(boolean=True)
         self.window.withdraw()
@@ -261,7 +261,7 @@ class StatusWindow:
 
         self.window = tk.Toplevel(root)
         self.window.title("ARLO Status")
-        self.window.attributes("-topmost", True)  # noqa: FBT003
+        self.window.attributes("-topmost", True)  # ruff: ignore[boolean-positional-value-in-call]
         self.window.attributes("-alpha", 0.8)
         self.window.overrideredirect(boolean=True)
         self.window.geometry("+10+10")

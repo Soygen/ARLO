@@ -38,8 +38,8 @@ except (ImportError, ValueError) as _e:
     raise ImportError(_INSTALL_HINT) from _e
 
 # portal imports gi itself, so it must stay behind the guard above
-from .portal import PortalError  # noqa: E402
-from .portal import ScreenCastSession  # noqa: E402
+from .portal import PortalError  # ruff: ignore[module-import-not-at-top-of-file]
+from .portal import ScreenCastSession  # ruff: ignore[module-import-not-at-top-of-file]
 
 FIRST_FRAME_TIMEOUT_S = 10.0
 KEEPALIVE_MS = 500
@@ -103,7 +103,7 @@ class WaylandBackend:
             sink.connect("new-sample", self._on_new_sample)
             if self._pipeline.set_state(Gst.State.PLAYING) == Gst.StateChangeReturn.FAILURE:
                 msg = f"GStreamer pipeline refused to start.{self._collect_bus_error()}"
-                raise OSError(msg)  # noqa: TRY301
+                raise OSError(msg)  # ruff: ignore[raise-within-try]
 
             if not self._first_frame.wait(FIRST_FRAME_TIMEOUT_S):
                 bus_error = self._collect_bus_error()
@@ -113,7 +113,7 @@ class WaylandBackend:
                     "If the screen-share dialog was approved, try moving the mouse "
                     "(some compositors only send frames on screen changes)."
                 )
-                raise OSError(msg)  # noqa: TRY301
+                raise OSError(msg)  # ruff: ignore[raise-within-try]
         except Exception:
             self.stop()  # release partial session/pipeline; safe and idempotent
             raise
@@ -216,14 +216,14 @@ class WaylandBackend:
             parts.append(f"{err.message} ({debug})")
         return f"\nGStreamer errors: {'; '.join(parts)}" if parts else ""
 
-    def _x11_logical_width(self) -> int:  # noqa: PLR6301
+    def _x11_logical_width(self) -> int:  # ruff: ignore[no-self-use]
         try:
             from Xlib import display as xlib_display
 
             xdisplay = xlib_display.Display()
             width = xdisplay.screen().width_in_pixels
             xdisplay.close()
-        except Exception as e:  # noqa: BLE001 - no XWayland: degrade gracefully
+        except Exception as e:  # ruff: ignore[blind-except] - no XWayland: degrade gracefully
             logger.warning(f"XWayland not reachable ({e}); assuming scale 1.0")
             return 0  # compute_scale(.., 0) -> 1.0
         return width

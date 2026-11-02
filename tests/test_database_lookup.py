@@ -6,7 +6,7 @@ from arc_helper.database import Database
 def _db(tmp_path):
     db = Database(db_path=tmp_path / "items.db")
     db.clear()  # pytest may reuse tmp_path across runs; guarantee an empty table
-    with db._get_connection() as conn:  # noqa: SLF001 - test seam
+    with db._get_connection() as conn:  # ruff: ignore[private-member-access] - test seam
         conn.executemany(
             "INSERT INTO items (name, action) VALUES (?, ?)",
             [

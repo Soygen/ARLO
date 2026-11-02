@@ -25,7 +25,7 @@ class MssBackend:
     def tk_scale(self) -> float:
         return 1.0
 
-    def grab(self, bbox: tuple[int, int, int, int]) -> Image.Image:  # noqa: PLR6301
+    def grab(self, bbox: tuple[int, int, int, int]) -> Image.Image:  # ruff: ignore[no-self-use]
         import mss
 
         left, top, right, bottom = bbox
@@ -39,7 +39,7 @@ class MssBackend:
             screenshot = sct.grab(monitor)
             return Image.frombytes("RGB", screenshot.size, screenshot.rgb)
 
-    def cursor_position(self) -> Point:  # noqa: PLR6301
+    def cursor_position(self) -> Point:  # ruff: ignore[no-self-use]
         if sys.platform == "win32":
             # Ensure we're DPI aware to get physical coordinates
             ctypes.windll.user32.SetProcessDPIAware()
@@ -58,7 +58,7 @@ class MssBackend:
         pos = pynput_mouse.Controller().position
         return Point(x=int(pos[0]), y=int(pos[1]))
 
-    def resolution(self) -> tuple[int, int]:  # noqa: PLR6301
+    def resolution(self) -> tuple[int, int]:  # ruff: ignore[no-self-use]
         if sys.platform == "win32":
             user32 = ctypes.windll.user32
             user32.SetProcessDPIAware()

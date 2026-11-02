@@ -56,7 +56,7 @@ class DebugOverlay:
 
         self.window = tk.Toplevel(root)
         self.window.title("Capture Area")
-        self.window.attributes("-topmost", True)  # noqa: FBT003
+        self.window.attributes("-topmost", True)  # ruff: ignore[boolean-positional-value-in-call]
         self.window.attributes("-alpha", 0.3)  # Semi-transparent
         self.window.overrideredirect(boolean=True)
         self.window.config(bg="red")
@@ -79,7 +79,7 @@ class DebugOverlay:
             h = phys_to_tk(self.settings.tooltip_capture.height)
 
             self.window.geometry(f"{w}x{h}+{x}+{y}")
-        except Exception:  # noqa: BLE001
+        except Exception:  # ruff: ignore[blind-except]
             pass
 
         # Schedule next update (every 50ms for smooth following)
@@ -246,7 +246,7 @@ class Scanner:
                 self._update_status("error")
                 self.state = ScannerState.STOPPED
                 break  # latch: no point scanning without capture
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # ruff: ignore[blind-except]
                 logger.error(f"Scanner error: {e}")
                 self._update_status("error")
                 time.sleep(1.0)  # Back off on error
@@ -512,7 +512,7 @@ def main() -> None:
             sys.path.insert(0, str(APP_DIR))
             from update_db import auto_update
             auto_update()
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # ruff: ignore[blind-except]
             logger.debug(f"Wiki auto-update unavailable: {e}")
 
         settings = get_settings()
@@ -524,7 +524,7 @@ def main() -> None:
         app = Application()
         app.run()
 
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # ruff: ignore[blind-except]
         logger.error(f"Fatal error in main: {e}")
         logger.error(traceback.format_exc())
         input("\nPress Enter to exit after error...")
