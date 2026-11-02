@@ -1,0 +1,82 @@
+{
+  "accountId": "4280071038815716698",
+  "lastSyncedAt": "2026-10-29T08:46:50.19+00:00",
+  "resources": {
+    "blueprints": {
+      "data": {
+        "count": 2,
+        "designs": [{"name": "Stash_01_D", "itemId": "ornate-stash-design"}],
+        "blueprints": [
+          {"name": "Anvil", "blueprintId": "anvil-recipe"},
+          {"name": "Vita Spray", "blueprintId": "vita-spray-recipe"}
+        ],
+        "stencils": [],
+        "pendingMetadataCount": 0
+      },
+      "syncedAt": "2026-10-29T08:46:48.317+00:00"
+    },
+    "player-stats": {
+      "data": {"stats": {"level": 23, "credits": 24525}},
+      "syncedAt": "2026-10-29T08:46:42.136+00:00"
+    },
+    "projects": {
+      "data": {
+        "authoritative": false,
+        "mappedProgress": {
+          "Trophy Display::tick-pod": {"state": "COMPLETED", "amount": 15},
+          "Trophy Display::Phase 1/5::tick-pod": {"state": "COMPLETED", "amount": 15},
+          "Trophy Display::wasp-driver": {"state": "IN_PROGRESS", "amount": 13},
+          "Trophy Display::Phase 2/5::wasp-driver": {"state": "IN_PROGRESS", "amount": 13},
+          "Trophy Display::hornet-driver": {"state": "IN_PROGRESS", "amount": 4},
+          "Sheltered Retreat::planks": {"state": "COMPLETED", "amount": 3},
+          "Sheltered Retreat::arc-alloy": {"state": "COMPLETED", "amount": 10},
+          "Sheltered Retreat::sheet-metal": {"state": "COMPLETED", "amount": 5},
+          "Sheltered Retreat::advanced-electrical-components": {"state": "COMPLETED", "amount": 3},
+          "Soul's Offering::arc-alloy": {"state": "COMPLETED", "amount": 15},
+          "Soul's Offering::rock-salt": {"state": "IN_PROGRESS", "amount": 1},
+          "Soul's Offering::dead-flowers": {"state": "COMPLETED", "amount": 1}
+        }
+      },
+      "syncedAt": "2026-10-29T08:46:45.091+00:00"
+    },
+    "quests": {
+      "data": {
+        "success": true,
+        "authoritative": false,
+        "user_quests": [
+          {"status": "COMPLETED", "quest_id": "collision-course", "rewards": [], "objectives": [], "requirements": []},
+          {"status": "COMPLETED", "quest_id": "clearer-skies", "rewards": [], "objectives": [], "requirements": []},
+          {"status": "COMPLETED", "quest_id": "the-trifecta", "rewards": [], "objectives": [], "requirements": []},
+          {"status": "COMPLETED", "quest_id": "trash-into-treasure", "rewards": [], "objectives": [], "requirements": []},
+          {"status": "AWAITING", "quest_id": "doctors-orders", "rewards": [], "objectives": [], "requirements": []},
+          {"status": "AWAITING", "quest_id": "the-league", "rewards": [], "objectives": [], "requirements": []},
+          {"status": "UNKNOWN", "quest_id": "to-the-skies", "rewards": [], "objectives": [], "requirements": []}
+        ]
+      },
+      "syncedAt": "2026-10-29T08:46:46.749+00:00"
+    },
+    "workshop": {
+      "data": {
+        "order": ["utilityStation", "gearBench", "refiner", "gunsmith", "medicalLab", "workbench", "explosivesStation", null],
+        "levels": {
+          "outpost": 2,
+          "refiner": 2,
+          "scrappy": 3,
+          "gunsmith": 3,
+          "gearBench": 3,
+          "workbench": 1,
+          "medicalLab": 2,
+          "utilityStation": 2,
+          "researchStation": 0,
+          "explosivesStation": 2
+        },
+        "outpost": {"v": 1, "items": {}, "rooms": []}
+      },
+      "syncedAt": "2026-10-29T08:46:43.651+00:00"
+    },
+    "raid-history": {
+      "data": {"synced": 0, "message": "Up to date", "partial": false, "success": true},
+      "syncedAt": "2026-10-29T08:46:50.19+00:00"
+    }
+  }
+}
