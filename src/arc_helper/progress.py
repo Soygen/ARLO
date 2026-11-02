@@ -432,9 +432,14 @@ def _project_clause_done(
     project = _norm_name(project_label)
     bucket = profile.project_items.get(project)
     if not bucket:
-        # Try prefix match for "Expedition 1" style names vs missing data
+        # Match "Expedition 1" / "Trophy Display 2" labels to a bare project
+        # bucket ("expedition" / "trophy display") and the reverse.
         for key, value in profile.project_items.items():
-            if key == project or key.startswith(project + " "):
+            if (
+                key == project
+                or key.startswith(project + " ")
+                or project.startswith(key + " ")
+            ):
                 bucket = value
                 break
     if not bucket:
