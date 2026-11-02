@@ -2219,6 +2219,9 @@ def merge_action(old_action: str, new_action: str, keep_for: str) -> str:
         and new_lower.startswith("keep")
     ):
         return new_action
+    # Bare Sell/Recycle → neutral Crafting item for recyclable feedstock
+    if is_bare_dispose_action(old_action) and new_lower == "crafting item":
+        return new_action
     return old_action or new_action
 
 
@@ -2275,8 +2278,10 @@ def generate_action(item: GameItem) -> tuple[str, str, str]:
     if category == "Recyclable":
         if has_uses:
             return "Keep until uses complete; recycle after", recycle_for, keep_for
+        # Don't push Recycle/Sell — many "recyclables" (Hand Drill, …) are
+        # crafting ingredients; show yield and let the player choose.
         if can_recycle:
-            return ("Recycle if short on materials; Sell otherwise", recycle_for, "") if item.sell_price >= 2000 else ("Recycle", recycle_for, "")
+            return "Crafting item", recycle_for, "Used in crafting"
         return "Sell", "", ""
 
     # Retired mods/items (e.g. MetaForge ``Deprecated Anvil Splitter``)
@@ -2289,7 +2294,7 @@ def generate_action(item: GameItem) -> tuple[str, str, str]:
     if has_uses:
         return "Keep", recycle_for, keep_for
     if can_recycle:
-        return "Recycle", recycle_for, ""
+        return "Crafting item", recycle_for, "Used in crafting"
     return "Sell", "", ""
 
 

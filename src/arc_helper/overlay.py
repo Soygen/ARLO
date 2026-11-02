@@ -20,6 +20,8 @@ ACTION_COLORS: dict[str, str] = {
     "SELL": "#FFD700",
     "RECYCLE": "#00CED1",
     "KEEP": "#32CD32",
+    # Neutral crafting feedstock (not a dispose imperative)
+    "CRAFTING": "#32CD32",
     "USE": "#FF69B4",
     "TRASH": "#FF4444",
     "UNKNOWN": "#888888",

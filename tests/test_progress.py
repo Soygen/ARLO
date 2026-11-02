@@ -87,7 +87,24 @@ def test_filter_all_quests_rewrites_action():
     )
     out = apply_progress(item, profile)
     assert not (out.keep_for or "").strip()
-    assert out.action == "Recycle"
+    # Neutral — don't push Recycle once quest needs are done
+    assert out.action == "Crafting item"
+
+
+def test_hand_drill_outpost_done_becomes_crafting_item():
+    """Crafting feedstock must not collapse to Recycle after workshop uses end."""
+    profile = ProgressProfile(workshop_levels={"outpost room": 2})
+    item = Item(
+        name="Hand Drill",
+        action="Keep until uses complete; recycle after",
+        recycle_for="1x Mechanical Components",
+        keep_for="Workshop: Outpost Room 2 (3x)",
+        sell_price=640,
+        stack_size=3,
+    )
+    out = apply_progress(item, profile)
+    assert not (out.keep_for or "").strip()
+    assert out.action == "Crafting item"
 
 
 def test_filter_workshop_tier():
