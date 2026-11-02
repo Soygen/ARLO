@@ -1154,84 +1154,149 @@ def _scope_content(soup: BeautifulSoup, project_name: str, href: str):
     return BeautifulSoup("".join(parts), "html.parser")
 
 
-def _requirements_from_tables(root) -> list[tuple[str, int]]:
-    """Pull (item_name, qty) from Requirement-column tables and qty tables."""
+def _table_requirement_pairs(table) -> list[tuple[str, int]]:
+    """Pull (item_name, qty) from one wiki table."""
     found: list[tuple[str, int]] = []
-    for table in root.find_all("table"):
-        header_row = table.find("tr")
-        if not header_row:
-            continue
-        headers = [
-            th.get_text(strip=True).lower() for th in header_row.find_all("th")
-        ]
-        if "requirement" in headers:
-            col = headers.index("requirement")
-            for row in table.find_all("tr")[1:]:
-                cells = row.find_all("td")
-                if len(cells) <= col:
-                    continue
+    header_row = table.find("tr")
+    if not header_row:
+        return found
+    headers = [
+        th.get_text(strip=True).lower() for th in header_row.find_all("th")
+    ]
+    if "requirement" in headers:
+        col = headers.index("requirement")
+        for row in table.find_all("tr")[1:]:
+            cells = row.find_all("td")
+            if len(cells) <= col:
+                continue
+            found.extend(
+                _parse_wiki_item_quantities(
+                    cells[col].get_text(" ", strip=True)
+                )
+            )
+        return found
+    # Headerless / odd tables (Converging Paths): whole-cell qty lists
+    if not headers:
+        for row in table.find_all("tr"):
+            for cell in row.find_all(["td", "th"]):
                 found.extend(
                     _parse_wiki_item_quantities(
-                        cells[col].get_text(" ", strip=True)
+                        cell.get_text(" ", strip=True)
                     )
                 )
-            continue
-        # Headerless / odd tables (Converging Paths): whole-cell qty lists
-        if not headers:
-            for row in table.find_all("tr"):
-                for cell in row.find_all(["td", "th"]):
-                    found.extend(
-                        _parse_wiki_item_quantities(
-                            cell.get_text(" ", strip=True)
-                        )
-                    )
     return found
 
 
-def _requirements_from_tabbers(root) -> list[tuple[str, int]]:
-    """First ``ul`` in a tabber panel when a Rewards heading follows (turn-ins)."""
+def _requirements_from_tables(root) -> list[tuple[str, int, int | None]]:
+    """Pull requirements from tables outside staged tabber panels.
+
+    When a page already has staged tabbers (Trophy Display, Soul's Offering),
+    skip leftover unstaged tables so Completion reward lists are not treated
+    as turn-in requirements.
+    """
+    if root.select_one(".tabber__panel"):
+        return []
+    found: list[tuple[str, int, int | None]] = []
+    for table in root.find_all("table"):
+        for name, qty in _table_requirement_pairs(table):
+            found.append((name, qty, None))
+    return found
+
+
+_TABBER_STAGE_RE = re.compile(
+    r"^(?P<label>.+?)\s*\((?P<stage>\d+)\)\s*$"
+)
+
+
+def _tabber_stage_number(panel) -> int | None:
+    """Stage index from tabber tab text like ``Soaring Menaces (2)``."""
+    label_id = panel.get("aria-labelledby") or ""
+    title = ""
+    if label_id:
+        root = panel
+        while root.parent is not None:
+            root = root.parent
+        tab = root.find(id=label_id) if hasattr(root, "find") else None
+        if tab is not None:
+            title = tab.get_text(" ", strip=True)
+    if not title:
+        # Fallback: panel id ``tabber-Soaring_Menaces_(2)``
+        pid = str(panel.get("id") or "")
+        pid = re.sub(r"^tabber-", "", pid)
+        title = pid.replace("_", " ")
+    m = _TABBER_STAGE_RE.match(title.strip())
+    if not m:
+        return None
+    try:
+        return int(m.group("stage"))
+    except ValueError:
+        return None
+
+
+def _tabber_panel_turn_in_pairs(panel) -> list[tuple[str, int]]:
+    """First ``ul`` in a tabber panel when a Rewards heading follows."""
     found: list[tuple[str, int]] = []
-    for panel in root.select(".tabber__panel"):
-        first_ul = None
-        has_rewards_after = False
-        for child in panel.children:
-            if not getattr(child, "name", None):
-                continue
-            if child.name == "ul" and first_ul is None:
-                first_ul = child
-                continue
-            if first_ul is not None:
-                text = child.get_text(" ", strip=True).lower()
-                if child.name in {"h2", "h3", "h4"} or "reward" in text[:20]:
-                    if "reward" in text:
-                        has_rewards_after = True
-                        break
-                # mw-heading wrapper
-                if "mw-heading" in (child.get("class") or []) and "reward" in text:
+    first_ul = None
+    has_rewards_after = False
+    for child in panel.children:
+        if not getattr(child, "name", None):
+            continue
+        if child.name == "ul" and first_ul is None:
+            first_ul = child
+            continue
+        if first_ul is not None:
+            text = child.get_text(" ", strip=True).lower()
+            if child.name in {"h2", "h3", "h4"} or "reward" in text[:20]:
+                if "reward" in text:
                     has_rewards_after = True
                     break
-        if first_ul is not None and has_rewards_after:
-            for li in first_ul.find_all("li", recursive=False):
-                found.extend(
-                    _parse_wiki_item_quantities(li.get_text(" ", strip=True))
-                )
+            if "mw-heading" in (child.get("class") or []) and "reward" in text:
+                has_rewards_after = True
+                break
+    if first_ul is not None and has_rewards_after:
+        for li in first_ul.find_all("li", recursive=False):
+            found.extend(
+                _parse_wiki_item_quantities(li.get_text(" ", strip=True))
+            )
+    return found
+
+
+def _requirements_from_tabbers(
+    root,
+) -> list[tuple[str, int, int | None]]:
+    """Requirements from staged tabber panels (tables + turn-in lists)."""
+    found: list[tuple[str, int, int | None]] = []
+    for panel in root.select(".tabber__panel"):
+        stage = _tabber_stage_number(panel)
+        for table in panel.find_all("table"):
+            for name, qty in _table_requirement_pairs(table):
+                found.append((name, qty, stage))
+        for name, qty in _tabber_panel_turn_in_pairs(panel):
+            found.append((name, qty, stage))
     return found
 
 
 def _aggregate_requirements(
-    pairs: list[tuple[str, int]],
-) -> list[tuple[str, int]]:
-    totals: dict[str, int] = {}
-    order: list[str] = []
-    for name, qty in pairs:
-        key = name.strip()
-        if not key:
+    pairs: list[tuple[str, int] | tuple[str, int, int | None]],
+) -> list[tuple[str, int, int | None]]:
+    """Sum quantities per (item, stage); preserve first-seen order."""
+    totals: dict[tuple[str, int | None], int] = {}
+    order: list[tuple[str, int | None]] = []
+    for pair in pairs:
+        if len(pair) == 3:
+            name, qty, stage = pair
+        else:
+            name, qty = pair  # type: ignore[misc]
+            stage = None
+        key_name = name.strip()
+        if not key_name:
             continue
+        key = (key_name, stage)
         if key not in totals:
             order.append(key)
             totals[key] = 0
         totals[key] += qty
-    return [(n, totals[n]) for n in order]
+    return [(n, totals[(n, s)], s) for n, s in order]
 
 
 _WIKI_DATE_FORMATS = (
@@ -1310,17 +1375,19 @@ def scrape_wiki_project_page(name: str, href: str) -> dict:
     root = _scope_content(soup, name, href)
     schedule = _parse_project_infobox(soup)
 
-    # Tables (including inside tabbers) + turn-in uls that precede Rewards
+    # Staged tabbers (Trophy Display / Soul's Offering) + unstaged tables
     pairs = _requirements_from_tables(root) + _requirements_from_tabbers(root)
     aggregated = _aggregate_requirements(pairs)
-    required_items = [
-        {
+    required_items = []
+    for item_name, qty, stage in aggregated:
+        entry = {
             "item_id": _slugify(item_name),
             "quantity": qty,
             "item": {"id": _slugify(item_name), "name": item_name},
         }
-        for item_name, qty in aggregated
-    ]
+        if stage is not None:
+            entry["stage"] = stage
+        required_items.append(entry)
     active = project_is_active(schedule)
     if schedule.get("ends_on") and not active:
         print(f"    (expired {schedule['ends_on']} — kept in catalog, excluded from keep)")
@@ -1434,11 +1501,23 @@ def write_projects_catalog(
         if not pid or not pname:
             continue
         reqs = project.get("required_items") or []
-        parts = [
-            f"{r.get('item_id')}:{r.get('quantity')}:{(r.get('item') or {}).get('name') or r.get('item_id')}"
-            for r in reqs
-            if isinstance(r, dict) and (r.get("item_id") or (r.get("item") or {}).get("name"))
-        ]
+        parts: list[str] = []
+        for r in reqs:
+            if not isinstance(r, dict):
+                continue
+            item = r.get("item") if isinstance(r.get("item"), dict) else {}
+            item_id = str(r.get("item_id") or item.get("id") or "").strip()
+            item_name = str(item.get("name") or "").strip() or item_id
+            if not item_id and not item_name:
+                continue
+            bit = f"{item_id}:{r.get('quantity')}:{item_name}"
+            stage = r.get("stage")
+            if stage is not None and str(stage).strip() != "":
+                try:
+                    bit = f"{bit}:{int(stage)}"
+                except (TypeError, ValueError):
+                    pass
+            parts.append(bit)
         project_type = str(project.get("project_type") or "").strip()
         starts_on = str(project.get("starts_on") or "").strip()
         ends_on = str(project.get("ends_on") or "").strip()
@@ -1473,12 +1552,20 @@ def write_projects_catalog(
                 qty = 1
             if not item_id:
                 continue
+            stage_val = 0
+            raw_stage = req.get("stage")
+            if raw_stage is not None and str(raw_stage).strip() != "":
+                try:
+                    stage_val = int(raw_stage)
+                except (TypeError, ValueError):
+                    stage_val = 0
             req_rows.append({
                 "project_id": pid,
                 "project_name": pname,
                 "item_id": item_id,
                 "item_name": item_name,
                 "quantity": str(qty),
+                "stage": str(stage_val),
             })
 
     project_rows.sort(key=lambda r: r["id"])
@@ -1517,7 +1604,8 @@ def write_projects_catalog(
                 item_id TEXT NOT NULL,
                 item_name TEXT NOT NULL,
                 quantity INTEGER NOT NULL,
-                PRIMARY KEY (project_id, item_id),
+                stage INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (project_id, item_id, stage),
                 FOREIGN KEY (project_id) REFERENCES projects(id)
             );
             CREATE INDEX idx_project_req_item_name
@@ -1540,9 +1628,16 @@ def write_projects_catalog(
         )
         conn.executemany(
             "INSERT INTO project_requirements "
-            "(project_id, item_id, item_name, quantity) VALUES (?, ?, ?, ?)",
+            "(project_id, item_id, item_name, quantity, stage) "
+            "VALUES (?, ?, ?, ?, ?)",
             [
-                (r["project_id"], r["item_id"], r["item_name"], int(r["quantity"]))
+                (
+                    r["project_id"],
+                    r["item_id"],
+                    r["item_name"],
+                    int(r["quantity"]),
+                    int(r.get("stage") or 0),
+                )
                 for r in req_rows
             ],
         )
@@ -1559,8 +1654,15 @@ def write_projects_catalog(
     for row in req_rows:
         if row["project_id"] not in active_ids:
             continue
+        label = row["project_name"]
+        try:
+            stage_n = int(row.get("stage") or 0)
+        except (TypeError, ValueError):
+            stage_n = 0
+        if stage_n > 0:
+            label = f"{label} {stage_n}"
         project_map.setdefault(row["item_name"].lower(), []).append(
-            f"{row['project_name']} ({row['quantity']}x)"
+            f"{label} ({row['quantity']}x)"
         )
     return project_map
 
@@ -1981,7 +2083,12 @@ def format_keep_for(
 
     def _project_active(entry: str) -> bool:
         pname = re.sub(r"\s*\(\d+x\)\s*$", "", entry).strip().lower()
-        return bool(pname) and pname not in inactive
+        # Staged labels ("Trophy Display 2") — expire check uses the base name.
+        base = re.sub(r"\s+\d+$", "", pname).strip()
+        return bool(pname) and pname not in inactive and base not in inactive
+
+    def _entry_label(entry: str) -> str:
+        return re.sub(r"\s*\(\d+x\)\s*$", "", entry).strip()
 
     # Split wiki into non-Projects preamble vs existing Projects body so we can
     # append catalog projects without a second "Projects:" header.
@@ -2012,11 +2119,9 @@ def format_keep_for(
         if quest_name and quest_name.lower() not in wiki_lower:
             quest_entries.append(entry)
 
-    seen_projects = {
-        re.sub(r"\s*\(\d+x\)\s*$", "", e).strip().lower() for e in project_entries
-    }
+    seen_projects = {_entry_label(e).lower() for e in project_entries}
     for entry in project_uses or []:
-        project_name = re.sub(r"\s*\(\d+x\)\s*$", "", entry).strip()
+        project_name = _entry_label(entry)
         key = project_name.lower()
         if (
             project_name
@@ -2026,6 +2131,20 @@ def format_keep_for(
         ):
             project_entries.append(entry)
             seen_projects.add(key)
+
+    # Prefer staged catalog labels ("Trophy Display 2") over bare wiki
+    # "Trophy Display" for the same project.
+    staged_bases = {
+        re.sub(r"\s+\d+$", "", _entry_label(e)).strip().lower()
+        for e in project_entries
+        if re.search(r"\s+\d+$", _entry_label(e))
+    }
+    if staged_bases:
+        project_entries = [
+            e
+            for e in project_entries
+            if _entry_label(e).lower() not in staged_bases
+        ]
 
     project_entries = _dedupe_keep_entries(project_entries)
     quest_entries = _dedupe_keep_entries(quest_entries)
@@ -2293,14 +2412,16 @@ def rebuild_database(csv_path: Path, db_path: Path) -> int:
         conn.close()
 
 
-def _parse_encoded_requirements(encoded: str) -> list[tuple[str, str, int]]:
-    """Parse ``item_id:qty:Name|...`` into ``(item_id, item_name, qty)``."""
-    out: list[tuple[str, str, int]] = []
+def _parse_encoded_requirements(
+    encoded: str,
+) -> list[tuple[str, str, int, int]]:
+    """Parse ``item_id:qty:Name`` or ``item_id:qty:Name:stage`` rows."""
+    out: list[tuple[str, str, int, int]] = []
     for part in (encoded or "").split("|"):
         part = part.strip()
         if not part:
             continue
-        bits = part.split(":", 2)
+        bits = part.split(":")
         if len(bits) < 2:
             continue
         item_id = bits[0].strip()
@@ -2308,9 +2429,17 @@ def _parse_encoded_requirements(encoded: str) -> list[tuple[str, str, int]]:
             qty = int(bits[1].strip())
         except ValueError:
             continue
-        item_name = bits[2].strip() if len(bits) > 2 else item_id
+        stage = 0
+        name_bits = bits[2:]
+        if name_bits and name_bits[-1].strip().isdigit() and len(name_bits) >= 2:
+            try:
+                stage = int(name_bits[-1].strip())
+                name_bits = name_bits[:-1]
+            except ValueError:
+                stage = 0
+        item_name = ":".join(name_bits).strip() if name_bits else item_id
         if item_id:
-            out.append((item_id, item_name or item_id, qty))
+            out.append((item_id, item_name or item_id, qty, stage))
     return out
 
 
@@ -2345,7 +2474,7 @@ def rebuild_quests_from_csv(
                         "parent_quest_id": parent,
                         "required_state": "COMPLETED",
                     })
-            for item_id, item_name, qty in _parse_encoded_requirements(
+            for item_id, item_name, qty, _stage in _parse_encoded_requirements(
                 row.get("required_items") or ""
             ):
                 req_rows.append({
@@ -2372,16 +2501,18 @@ def rebuild_projects_from_csv(
             name = (row.get("name") or "").strip()
             if not pid or not name:
                 continue
-            required_items = [
-                {
+            required_items = []
+            for item_id, item_name, qty, stage in _parse_encoded_requirements(
+                row.get("required_items") or ""
+            ):
+                entry = {
                     "item_id": item_id,
                     "quantity": qty,
                     "item": {"id": item_id, "name": item_name},
                 }
-                for item_id, item_name, qty in _parse_encoded_requirements(
-                    row.get("required_items") or ""
-                )
-            ]
+                if stage > 0:
+                    entry["stage"] = stage
+                required_items.append(entry)
             projects.append({
                 "id": pid,
                 "name": name,

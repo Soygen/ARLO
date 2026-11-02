@@ -159,6 +159,27 @@ def test_filter_project_item_completed():
     assert not (out.keep_for or "").strip()
 
 
+def test_filter_staged_project_label_uses_bare_progress_bucket():
+    """``Trophy Display 1`` must resolve to the ``trophy display`` progress bucket.
+
+    Without that match, finished stage-1 mats (Surveyor Vault) stay listed while
+    the player is already on later stages.
+    """
+    profile = ProgressProfile(
+        project_items={
+            "trophy display": {"surveyor-vault": "COMPLETED"},
+        }
+    )
+    item = Item(
+        name="Surveyor Vault",
+        action="Keep until uses complete; recycle after",
+        keep_for="Quests: Wires Crossed (1x); Projects: Trophy Display 1 (5x)",
+    )
+    out = apply_progress(item, profile)
+    assert "Trophy Display" not in (out.keep_for or "")
+    assert "Wires Crossed (1x)" in (out.keep_for or "")
+
+
 def test_filter_project_item_in_progress():
     profile = import_account_sync(FIXTURE)
     item = Item(
@@ -232,11 +253,13 @@ def test_future_project_stage_item_not_cleared_when_earlier_stages_done(
                     {
                         "item_id": "mask-fragment",
                         "quantity": 1,
+                        "stage": 3,
                         "item": {"id": "mask-fragment", "name": "Mask Fragment"},
                     },
                     {
                         "item_id": "arc-alloy",
                         "quantity": 15,
+                        "stage": 1,
                         "item": {"id": "arc-alloy", "name": "ARC Alloy"},
                     },
                 ],
@@ -257,7 +280,7 @@ def test_future_project_stage_item_not_cleared_when_earlier_stages_done(
     item = Item(
         name="Mask Fragment",
         action="Keep until uses complete; sell after",
-        keep_for="Projects: Soul's Offering (1x)",
+        keep_for="Projects: Soul's Offering 3 (1x)",
         sell_price=7000,
         stack_size=3,
     )
@@ -266,7 +289,7 @@ def test_future_project_stage_item_not_cleared_when_earlier_stages_done(
         profile,
         project_catalog=ProjectCatalog(tmp_path / "projects.db"),
     )
-    assert "Soul's Offering" in (out.keep_for or "")
+    assert "Soul's Offering 3" in (out.keep_for or "")
     assert out.action == item.action
 
 
