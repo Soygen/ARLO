@@ -86,7 +86,7 @@ QUESTS_DB = ARLO_DB
 PROJECTS_DB = ARLO_DB
 TRADERS_DB = ARLO_DB
 
-USER_AGENT = "ARLO/1.0 (Arc Raiders Loot Overlay - https://github.com/Soygen/ARLO)"
+USER_AGENT = "ARLO/0.4 (Arc Raiders Loot Overlay - https://github.com/jaredcat/arlo-plus)"
 
 QUICK_USE_CATEGORIES = {"Quick Use", "Shield", "Augment", "Mods", "Ammunition", "Key"}
 MATERIAL_CATEGORIES = {"Basic Material", "Refined Material", "Topside Material"}

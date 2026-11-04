@@ -1,24 +1,24 @@
 # ARLO - Arc Raiders Loot Overlay
 
-> **A big thanks to [Pabosik](https://github.com/Pabosik) for creating the original [PabsArcTooltip](https://github.com/Pabosik/PabsArcTooltip) that this project is built on. The core idea - an OCR-based screen overlay that reads item tooltips and tells you what to do with them - is entirely his. ARLO just builds on that foundation with some extra features.**
+> Fork of [Soygen/ARLO](https://github.com/Soygen/ARLO), which builds on [Pabosik/PabsArcTooltip](https://github.com/Pabosik/PabsArcTooltip). The OCR tooltip overlay idea is Pabosik’s; Soygen named and packaged ARLO. This repo ([jaredcat/arlo-plus](https://github.com/jaredcat/arlo-plus)) is the actively maintained line — Qt UI and map pins are in progress on `feat/map-overlay` for a future 1.0.0.
 
-A screen overlay tool for [Arc Raiders](https://store.steampowered.com/app/2073750/ARC_Raiders/) that detects items in your inventory and displays recommended actions (**keep**, **recycle**, **sell**) along with sell prices, stack sizes, and crafting details. The item database auto-syncs from the [MetaForge API](https://metaforge.app/arc-raiders) on every launch.
+A screen overlay tool for [Arc Raiders](https://store.steampowered.com/app/2073750/ARC_Raiders/) that detects items in your inventory and displays recommended actions (**keep**, **recycle**, **sell**) along with stack sizes, crafting details, and (in raid) sell prices. The item database auto-syncs from the [MetaForge API](https://metaforge.app/arc-raiders) on every launch.
 
-[![Example 1](https://github.com/Soygen/ARLO/raw/master/static/ARLO_01.png)](/Soygen/ARLO/blob/master/static/ARLO_01.png) [![Example 2](https://github.com/Soygen/ARLO/raw/master/static/ARLO_02.png)](/Soygen/ARLO/blob/master/static/ARLO_02.png) [![Example 3](https://github.com/Soygen/ARLO/raw/master/static/ARLO_03.png)](/Soygen/ARLO/blob/master/static/ARLO_03.png)
+[![Example 1](static/ARLO_01.png)](static/ARLO_01.png) [![Example 2](static/ARLO_02.png)](static/ARLO_02.png) [![Example 3](static/ARLO_03.png)](static/ARLO_03.png)
 
 ---
 
 ## Features
 
 - **Auto-sync on launch** - The item database updates from the MetaForge API every time you start the app (throttled to once per 24 hours). No manual steps needed.
-- **Sell price & stack size on the overlay** - See at a glance what an item sells for and how high it stacks
-- **440+ items** - Full item coverage including keys, mods, augments, shields, ammo, consumables, and recycle components
+- **In-raid sell price & stack size** - Sell price shows when the in-raid inventory trigger matches; stack size always available
 - **Quest-aware recommendations** - Items needed for quests are flagged to keep, with quest names shown
 - **Smart action generation** - Items are auto-categorized (keep materials, sell trinkets, recycle junk) based on API data
 - **Merge mode** - New items are added without overwriting your manual action overrides
 - **Hybrid catalog sync** - MetaForge for items/quests; wiki for workshop/projects/traders (see docs/ITEMS.md)
 - **Player progress import** - One-click MetaForge bookmarklet filters finished quests / workshop / projects from keep recommendations
-- **GitHub Actions** - Optional scheduled workflow that auto-updates the database weekly
+- **Linux X11 / Wayland** - Screen capture backends for both sessions
+- **GitHub Actions** - Weekly catalog sync; `main` = stable releases, `dev` = beta
 
 ---
 
@@ -35,14 +35,14 @@ The overlay popup displays:
 +--------------------------------------+
 |  ARC Alloy                           |
 |  -> Keep                             |
-|  Sell: 200   Stack: 15               |
+|  Sell: 200   Stack: 15               |  ← Sell price only in raid
 |  For: Workshop Explosives Station 1  |
 +--------------------------------------+
 ```
 
 - **Item name** at the top
 - **Action** color-coded (green = keep, gold = sell, turquoise = recycle, pink = use)
-- **Sell price** and **stack size** on the info line
+- **Sell price** (in raid) and **stack size** on the info line
 - **Details** - why you're keeping it (quests / workshop / projects) and recycle yield (`♻`), when both apply
 
 ---
@@ -67,7 +67,7 @@ The overlay popup displays:
 
 ### Option 1: Pre-built Release (Recommended)
 
-1. Download the latest release from the [Releases](https://github.com/Soygen/ARLO/releases) page
+1. Download the latest **stable** release from [Releases](https://github.com/jaredcat/arlo-plus/releases) (`main`). Beta builds are marked **Pre-release** (`dev`).
 2. Extract the zip to a folder of your choice
 3. Run `ARLO.exe`
 
@@ -78,8 +78,8 @@ The release includes all dependencies, including Tesseract OCR. The item databas
 1. Clone the repository:
 
 ```
-git clone https://github.com/Soygen/ARLO.git
-cd ARLO
+git clone https://github.com/jaredcat/arlo-plus.git
+cd arlo-plus
 ```
 
 2. Install dependencies:
@@ -203,7 +203,7 @@ The included workflow at `.github/workflows/update-db.yml` can also sync the dat
 
 No secrets or extra configuration needed.
 
-For more details on how the updater works, CSV format, and manual database management, see [docs/ITEMS.md](https://github.com/Soygen/ARLO/blob/master/docs/ITEMS.md).
+For more details on how the updater works, CSV format, and manual database management, see [docs/ITEMS.md](docs/ITEMS.md).
 
 ---
 
@@ -214,7 +214,7 @@ Import your MetaForge Raider Profile so ARLO hides keep recommendations you have
 GitHub README pages cannot host `javascript:` bookmarklets, so the drag target lives on a small install page:
 
 1. **Start ARLO** (it listens on `http://127.0.0.1:17832/` for imports).
-2. Open the [install page](https://cdn.jsdelivr.net/gh/Soygen/ARLO@master/docs/import-progress.html) (or `http://127.0.0.1:17832/` while ARLO is running).
+2. Open the [install page](https://cdn.jsdelivr.net/gh/jaredcat/arlo-plus@main/docs/import-progress.html) (or `http://127.0.0.1:17832/` while ARLO is running).
 3. Drag **Export to ARLO** onto your bookmarks bar (Chrome or Firefox).
 4. On [MetaForge](https://metaforge.app/arc-raiders/raider-profile), Sync your profile, then click the bookmark.
 
@@ -233,9 +233,9 @@ uv sync --all-extras
 uv run python build.py
 ```
 
-Output lands in `dist/ArcRaidersHelper/` containing the exe, calibration tool, bundled Tesseract, config files, item database, and the updater script. Zip that folder to share with anyone - no Python install needed on their end.
+Output lands in `dist/ARLO/` containing the exe, calibration tool, bundled Tesseract, config files, item database, and the updater script. Zip that folder to share with anyone - no Python install needed on their end.
 
-See [docs/BUILD.md](https://github.com/Soygen/ARLO/blob/master/docs/BUILD.md) for full build details.
+See [docs/BUILD.md](docs/BUILD.md) for full build details.
 
 ---
 
@@ -252,7 +252,7 @@ On first launch the app detects your screen resolution and loads a matching prof
 | 2560x1080  | 21:9 Ultrawide FHD   | ✅ Configured |
 | 1920x1080  | 16:9 Full HD         | ✅ Configured |
 
-If your resolution isn't listed, run the [Calibration tool](https://github.com/Soygen/ARLO/blob/master/docs/CALIBRATION.md):
+If your resolution isn't listed, run the [Calibration tool](docs/CALIBRATION.md):
 
 ```
 uv run arc-calibrate
@@ -262,7 +262,7 @@ uv run arc-calibrate
 
 ## Configuration
 
-All settings live in the `.env` file. See [docs/CONFIGURATION.md](https://github.com/Soygen/ARLO/blob/master/docs/CONFIGURATION.md) for details on scan regions, overlay position, display time, and debug mode.
+All settings live in the `.env` file. See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for details on scan regions, overlay position, display time, and debug mode.
 
 **Debugging:** In `.env` set `DEBUG_MODE=true` for verbose logs and `SHOW_CAPTURE_AREA=true` to show the trigger and tooltip regions on screen. Restart ARLO after changing `.env`.
 
@@ -323,7 +323,8 @@ Please include your screen resolution, debug images from the `debug/` folder (en
 
 ## Credits
 
-- **[PabsArcTooltip](https://github.com/Pabosik/PabsArcTooltip)** - Original project by [Pabosik](https://github.com/Pabosik)
+- **[Pabosik](https://github.com/Pabosik)** / [PabsArcTooltip](https://github.com/Pabosik/PabsArcTooltip) — original OCR inventory overlay concept
+- **[Soygen](https://github.com/Soygen)** / [ARLO](https://github.com/Soygen/ARLO) — ARLO naming and early packaging/catalog automation
 - **[MetaForge](https://metaforge.app/arc-raiders)** - Item catalog, prices, quests, primary recycles
 - **[Arc Raiders Wiki](https://arcraiders.wiki)** - Workshop/projects/traders, recycle gaps, item fallback
 - **[Tesseract OCR](https://github.com/tesseract-ocr/tesseract)** - Text recognition engine

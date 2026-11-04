@@ -1,0 +1,130 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      prerelease: ${{ steps.meta.outputs.prerelease }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version and tag
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(python3 -c "import tomllib,pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
+          BRANCH="${GITHUB_REF_NAME}"
+          if [ "$BRANCH" = "main" ]; then
+            TAG="v${VERSION}"
+            PRERELEASE=false
+          else
+            TAG="v${VERSION}-beta.${GITHUB_RUN_NUMBER}"
+            PRERELEASE=true
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "prerelease=${PRERELEASE}" >> "$GITHUB_OUTPUT"
+          echo "Resolved tag=${TAG} prerelease=${PRERELEASE}"
+
+      - name: Extract changelog notes
+        id: notes
+        shell: bash
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          python3 <<'PY' > release_notes.md
+          from pathlib import Path
+          import os
+          version = os.environ["VERSION"]
+          text = Path("docs/CHANGELOG.md").read_text(encoding="utf-8")
+          lines = text.splitlines()
+          start = None
+          for i, line in enumerate(lines):
+              if line.startswith(f"### [{version}]"):
+                  start = i + 1
+                  break
+          if start is None:
+              print(f"## ARLO {version}\n\nSee docs/CHANGELOG.md for details.")
+          else:
+              chunk = []
+              for line in lines[start:]:
+                  if line.startswith("### ["):
+                      break
+                  chunk.append(line)
+              body = "\n".join(chunk).strip()
+              print(f"## ARLO {version}\n")
+              print(body or "See docs/CHANGELOG.md for details.")
+          PY
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: ARLO ${{ steps.meta.outputs.tag }}
+          body_path: release_notes.md
+          prerelease: ${{ steps.meta.outputs.prerelease == 'true' }}
+          generate_release_notes: true
+          make_latest: ${{ steps.meta.outputs.prerelease == 'false' }}
+
+  windows-build:
+    needs: release
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+
+      - name: Install Tesseract
+        shell: pwsh
+        run: choco install tesseract --yes --no-progress
+
+      - name: Install project
+        run: uv sync --all-extras
+
+      - name: Build
+        id: build
+        run: uv run python build.py
+        continue-on-error: true
+
+      - name: Zip dist
+        id: zip
+        shell: pwsh
+        run: |
+          if (Test-Path dist/ARLO) {
+            Compress-Archive -Path dist/ARLO -DestinationPath ARLO-windows.zip -Force
+            echo "built=true" >> $env:GITHUB_OUTPUT
+          } else {
+            echo "built=false" >> $env:GITHUB_OUTPUT
+            echo "Windows build output missing; skip artifact upload."
+          }
+
+      - name: Upload Windows zip to release
+        if: steps.zip.outputs.built == 'true'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ needs.release.outputs.tag }}
+          files: ARLO-windows.zip
+          prerelease: ${{ needs.release.outputs.prerelease == 'true' }}
+          fail_on_unmatched_files: false
