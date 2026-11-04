@@ -45,12 +45,8 @@ except ImportError:
 # =============================================================================
 
 METAFORGE_API_BASE = "https://metaforge.app/api/arc-raiders"
-METAFORGE_SUPABASE_URL = "https://unhbvkszwhczbjxgetgk.supabase.co/rest/v1"
-METAFORGE_SUPABASE_KEY = (
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
-    "eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVuaGJ2a3N6d2hjemJqeGdldGdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ5NjgwMjUsImV4cCI6MjA2MDU0NDAyNX0."
-    "gckCmxnlpwwJOGmc5ebLYDnaWaxr5PW31eCrSPR5aRQ"
-)
+METAFORGE_SUPABASE_URL = "https://sb.metaforge.app/rest/v1"
+METAFORGE_SUPABASE_KEY = "sb_publishable_C7SqVOoZBPFy4W0DxKcOGQ_emEIw-rj"
 
 WIKI_URL = "https://arcraiders.wiki/wiki/Loot"
 SCRIPT_DIR = Path(__file__).parent.resolve()
@@ -719,6 +715,7 @@ Examples:
         db_count = rebuild_database(ITEMS_CSV, ITEMS_DB)
         print(f"  Rebuilt {ITEMS_DB} with {db_count} items")
 
+    _mark_updated()
     print("\nDone!")
 
 
