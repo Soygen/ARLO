@@ -58,3 +58,16 @@ def test_wayland_hide_from_scanner(wayland_overlay):
     wayland_overlay.show("Wires", item)
     wayland_overlay.hide()
     assert not wayland_overlay.is_visible()
+
+
+def test_sell_price_only_when_in_raid(wayland_overlay):
+    item = Item(name="Wires", action="SELL", sell_price=640, stack_size=20)
+    wayland_overlay.show("Wires", item, in_raid=False)
+    assert "Sell:" not in wayland_overlay.info_label.cget("text")
+    assert "Stack: 20" in wayland_overlay.info_label.cget("text")
+
+    wayland_overlay.hide()
+    wayland_overlay.show("Metal Parts", item, in_raid=True)
+    text = wayland_overlay.info_label.cget("text")
+    assert "Sell: 640" in text
+    assert "Stack: 20" in text

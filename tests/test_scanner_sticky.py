@@ -90,10 +90,23 @@ def test_x11_idle_does_not_force_hide():
 def test_wayland_trigger_needs_consecutive_misses():
     scanner = _make_scanner(wayland=True)
     ocr = MagicMock()
-    ocr.check_trigger_any.return_value = False
+    ocr.check_trigger_which.return_value = None
 
     assert scanner._inventory_closed(ocr, _settings()) is False  # noqa: SLF001
     assert scanner._inventory_closed(ocr, _settings()) is True  # noqa: SLF001
+
+
+def test_inventory_open_sets_in_raid_from_region_index():
+    scanner = _make_scanner(wayland=False)
+    ocr = MagicMock()
+    ocr.check_trigger_which.return_value = 1
+
+    assert scanner._inventory_closed(ocr, _settings()) is False  # noqa: SLF001
+    assert scanner._in_raid is True  # noqa: SLF001
+
+    ocr.check_trigger_which.return_value = 0
+    assert scanner._inventory_closed(ocr, _settings()) is False  # noqa: SLF001
+    assert scanner._in_raid is False  # noqa: SLF001
 
 
 def test_wayland_empty_ocr_keeps_popup_inside_display_time():
@@ -140,6 +153,7 @@ def test_x11_empty_ocr_does_not_hide():
 def test_x11_trigger_closes_on_first_miss():
     scanner = _make_scanner(wayland=False)
     ocr = MagicMock()
-    ocr.check_trigger_any.return_value = False
+    ocr.check_trigger_which.return_value = None
 
     assert scanner._inventory_closed(ocr, _settings()) is True  # noqa: SLF001
+    assert scanner._in_raid is False  # noqa: SLF001

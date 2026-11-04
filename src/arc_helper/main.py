@@ -163,6 +163,9 @@ class Scanner:
     # Hotkey override (Ctrl+Shift to force tooltip scanning)
     _hotkey_override: bool = False
 
+    # True when inventory was detected via trigger_region2 (in-raid)
+    _in_raid: bool = False
+
     # Thread control
     _running: bool = False
     _scan_thread: Thread | None = None
@@ -228,22 +231,30 @@ class Scanner:
                     if hotkey_now:
                         # Hotkey pressed - enter active mode via override
                         self._hotkey_override = True
+                        self._in_raid = False
                         self.state = ScannerState.ACTIVE
                         self._trigger_miss_streak = 0
                         self._update_status("hotkey")
                         logger.info("Hotkey override - activating tooltip scanner")
-                    elif ocr.check_trigger_any(
-                        [settings.trigger_region, settings.trigger_region2]
-                    ):
-                        # Trigger detected! Switch to active mode
-                        self._hotkey_override = False
-                        self.state = ScannerState.ACTIVE
-                        self._trigger_miss_streak = 0
-                        self._update_status("active")
-                        logger.info("INVENTORY detected - activating tooltip scanner")
                     else:
-                        # Wait before next trigger scan
-                        time.sleep(settings.scan.trigger_scan_interval)
+                        trigger_idx = ocr.check_trigger_which(
+                            [settings.trigger_region, settings.trigger_region2]
+                        )
+                        if trigger_idx is not None:
+                            # Trigger detected! Switch to active mode
+                            self._hotkey_override = False
+                            self._in_raid = trigger_idx == 1  # region2 = in-raid
+                            self.state = ScannerState.ACTIVE
+                            self._trigger_miss_streak = 0
+                            self._update_status("active")
+                            context = "in-raid" if self._in_raid else "menu"
+                            logger.info(
+                                "INVENTORY detected (%s) - activating tooltip scanner",
+                                context,
+                            )
+                        else:
+                            # Wait before next trigger scan
+                            time.sleep(settings.scan.trigger_scan_interval)
 
                     self.stats.trigger_scans += 1
 
@@ -293,6 +304,7 @@ class Scanner:
     def _enter_idle(self, reason: str) -> None:
         """Return to idle. On Wayland, dismiss the sticky overlay explicitly."""
         self.state = ScannerState.IDLE
+        self._in_raid = False
         self._trigger_miss_streak = 0
         self._last_shown_item = ""
         if self._wayland_stable:
@@ -306,16 +318,25 @@ class Scanner:
         On Wayland, a single failed OCR of the trigger word was bouncing
         ACTIVE↔IDLE and flickering the popup. Require consecutive misses.
         X11/Windows keep the original one-miss behavior.
+
+        Also refreshes ``_in_raid`` from which trigger region still matches.
         """
         regions = [settings.trigger_region, settings.trigger_region2]
-        if not self._wayland_stable:
-            return not ocr.check_trigger_any(regions)
-
-        if ocr.check_trigger_any(regions):
+        trigger_idx = ocr.check_trigger_which(regions)
+        if trigger_idx is not None:
             self._trigger_miss_streak = 0
+            self._in_raid = trigger_idx == 1
             return False
+
+        if not self._wayland_stable:
+            self._in_raid = False
+            return True
+
         self._trigger_miss_streak += 1
-        return self._trigger_miss_streak >= self._TRIGGER_MISS_LIMIT
+        if self._trigger_miss_streak >= self._TRIGGER_MISS_LIMIT:
+            self._in_raid = False
+            return True
+        return False
 
     def _handle_empty_tooltip(self) -> None:
         """No item under the cursor.
@@ -379,15 +400,17 @@ class Scanner:
             self.db.log_missing_item(item_name)
 
         # Show overlay (must be done on main thread)
-        self._show_overlay(item_name, recommendation)
+        self._show_overlay(item_name, recommendation, in_raid=self._in_raid)
 
         # Track OCR text (not DB name) so the next keep/compare matches
         self._last_shown_item = item_name
         self._last_shown_time = current_time
 
-    def _show_overlay(self, item_name: str, recommendation: Item | None) -> None:
+    def _show_overlay(
+        self, item_name: str, recommendation: Item | None, *, in_raid: bool = False
+    ) -> None:
         """Queue an overlay update for the main (GUI) thread to apply."""
-        self.ui_queue.put(("overlay", item_name, recommendation))
+        self.ui_queue.put(("overlay", item_name, recommendation, in_raid))
 
     def _update_status(self, status: str) -> None:
         """Queue a status update for the main (GUI) thread to apply."""
@@ -521,7 +544,7 @@ class Application:
                 if msg[0] == "status":
                     self._apply_status(msg[1])
                 elif msg[0] == "overlay":
-                    self.overlay.show(msg[1], msg[2])
+                    self.overlay.show(msg[1], msg[2], in_raid=msg[3])
                 elif msg[0] == "overlay_keep":
                     self.overlay.keep_alive()
                 elif msg[0] == "overlay_hide":

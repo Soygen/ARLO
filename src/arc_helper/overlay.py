@@ -265,8 +265,14 @@ class OverlayWindow:
         # Fallback / unknown-item notes (also used as alias for tests)
         self.notes_label = self.keep_label
 
-    def show(self, item_name: str, recommendation: Item | None) -> None:
-        """Show the overlay with item info."""
+    def show(
+        self, item_name: str, recommendation: Item | None, *, in_raid: bool = False
+    ) -> None:
+        """Show the overlay with item info.
+
+        Sell price is shown only when ``in_raid`` is True (in-raid inventory
+        trigger). Menu inventory and hotkey override hide it.
+        """
         wayland = self._is_wayland()
 
         # Skip redraw if same item already showing
@@ -303,7 +309,7 @@ class OverlayWindow:
 
             # Info line (sell / stack / remaining need / buy from trader)
             info_parts: list[str] = []
-            if recommendation.sell_price is not None:
+            if in_raid and recommendation.sell_price is not None:
                 info_parts.append(f"Sell: {recommendation.sell_price:,}\u20a1")
             if recommendation.stack_size is not None:
                 info_parts.append(f"Stack: {recommendation.stack_size}")
