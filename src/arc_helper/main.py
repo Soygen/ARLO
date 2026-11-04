@@ -15,6 +15,7 @@ from enum import Enum
 from enum import auto
 from pathlib import Path
 from threading import Thread
+from typing import ClassVar
 
 from dotenv import load_dotenv
 
@@ -26,6 +27,7 @@ from arc_helper.config import logger
 from arc_helper.database import Database
 from arc_helper.database import Item
 from arc_helper.database import get_database
+from arc_helper.database import names_match
 from arc_helper.hotkey import HotkeyMonitor
 from arc_helper.hotkey import get_hotkey_monitor
 from arc_helper.ocr import OCREngineManager
@@ -130,6 +132,11 @@ class Scanner:
     _last_shown_time: float = 0
     _trigger_check_counter: int = 0
 
+    # Wayland-only: tolerate flaky INVENTORY / tooltip OCR without remounting
+    _wayland_stable: bool = False
+    _trigger_miss_streak: int = 0
+    _TRIGGER_MISS_LIMIT: ClassVar[int] = 2
+
     # Hotkey override (Ctrl+Shift to force tooltip scanning)
     _hotkey_override: bool = False
 
@@ -144,6 +151,14 @@ class Scanner:
 
         self._running = True
         self.state = ScannerState.IDLE
+        from arc_helper.screen import get_backend
+
+        self._wayland_stable = get_backend().name == "wayland"
+        if self._wayland_stable:
+            logger.info(
+                "Wayland overlay stability: hide after display time with no item, "
+                "trigger miss hysteresis"
+            )
         self.hotkey.start()
         self._scan_thread = Thread(target=self._scan_loop, daemon=True)
         self._scan_thread.start()
@@ -191,6 +206,7 @@ class Scanner:
                         # Hotkey pressed - enter active mode via override
                         self._hotkey_override = True
                         self.state = ScannerState.ACTIVE
+                        self._trigger_miss_streak = 0
                         self._update_status("hotkey")
                         logger.info("Hotkey override - activating tooltip scanner")
                     elif ocr.check_trigger_any(
@@ -199,6 +215,7 @@ class Scanner:
                         # Trigger detected! Switch to active mode
                         self._hotkey_override = False
                         self.state = ScannerState.ACTIVE
+                        self._trigger_miss_streak = 0
                         self._update_status("active")
                         logger.info("INVENTORY detected - activating tooltip scanner")
                     else:
@@ -213,22 +230,17 @@ class Scanner:
                         # Hotkey mode: stay active as long as hotkey is held
                         if not hotkey_now:
                             self._hotkey_override = False
-                            self.state = ScannerState.IDLE
-                            self._update_status("scanning")
-                            logger.info("Hotkey released - returning to idle")
+                            self._enter_idle("Hotkey released - returning to idle")
                             continue
                     else:
                         # Inventory mode: check trigger every 3rd scan
                         self._trigger_check_counter += 1
                         should_check_trigger = self._trigger_check_counter % 3 == 0
 
-                        if should_check_trigger and not ocr.check_trigger_any(
-                            [settings.trigger_region, settings.trigger_region2]
+                        if should_check_trigger and self._inventory_closed(
+                            ocr, settings
                         ):
-                            # Inventory closed, go back to idle
-                            self.state = ScannerState.IDLE
-                            self._update_status("scanning")
-                            logger.info("INVENTORY closed - returning to idle")
+                            self._enter_idle("INVENTORY closed - returning to idle")
                             continue
 
                     # Scan tooltip at cursor position
@@ -237,6 +249,10 @@ class Scanner:
 
                     if item_name:
                         self._handle_detected_item(item_name)
+                    else:
+                        # Wayland: one empty frame is normal. A gap as long as
+                        # OVERLAY_DISPLAY_TIME means the tooltip is gone.
+                        self._handle_empty_tooltip()
 
                     # Wait before next tooltip scan
                     time.sleep(settings.scan.tooltip_scan_interval)
@@ -251,10 +267,64 @@ class Scanner:
                 self._update_status("error")
                 time.sleep(1.0)  # Back off on error
 
+    def _enter_idle(self, reason: str) -> None:
+        """Return to idle. On Wayland, dismiss the sticky overlay explicitly."""
+        self.state = ScannerState.IDLE
+        self._trigger_miss_streak = 0
+        self._last_shown_item = ""
+        if self._wayland_stable:
+            self.ui_queue.put(("overlay_hide",))
+        self._update_status("scanning")
+        logger.info(reason)
+
+    def _inventory_closed(self, ocr, settings) -> bool:
+        """True if the INVENTORY trigger is gone.
+
+        On Wayland, a single failed OCR of the trigger word was bouncing
+        ACTIVE↔IDLE and flickering the popup. Require consecutive misses.
+        X11/Windows keep the original one-miss behavior.
+        """
+        regions = [settings.trigger_region, settings.trigger_region2]
+        if not self._wayland_stable:
+            return not ocr.check_trigger_any(regions)
+
+        if ocr.check_trigger_any(regions):
+            self._trigger_miss_streak = 0
+            return False
+        self._trigger_miss_streak += 1
+        return self._trigger_miss_streak >= self._TRIGGER_MISS_LIMIT
+
+
+    def _handle_empty_tooltip(self) -> None:
+        """No item under the cursor.
+
+        On Wayland a single empty read is not an item change, so the popup
+        stays through brief OCR misses. Once the gap reaches
+        ``OVERLAY_DISPLAY_TIME``, hide it — including after leaving the game,
+        when the inventory trigger can still false-match.
+        """
+        if not (self._wayland_stable and self._last_shown_item):
+            return
+        settings = get_settings()
+        if time.time() - self._last_shown_time >= settings.overlay.display_time:
+            self._last_shown_item = ""
+            self.ui_queue.put(("overlay_hide",))
+            return
+        self.ui_queue.put(("overlay_keep",))
+
     def _handle_detected_item(self, item_name: str) -> None:
         """Handle a detected item name."""
         settings = get_settings()
         current_time = time.time()
+
+        # Wayland: same item (OCR-tolerant) → heartbeat only, no remount.
+        # Also bypasses cooldown so a short DISPLAY_TIME cannot dismiss us.
+        if self._wayland_stable and self._last_shown_item and names_match(
+            item_name, self._last_shown_item
+        ):
+            self.ui_queue.put(("overlay_keep",))
+            self._last_shown_time = current_time
+            return
 
         # Check cooldown - don't spam the same item
         if (
@@ -281,7 +351,7 @@ class Scanner:
         # Show overlay (must be done on main thread)
         self._show_overlay(item_name, recommendation)
 
-        # Update cooldown tracking
+        # Track OCR text (not DB name) so the next keep/compare matches
         self._last_shown_item = item_name
         self._last_shown_time = current_time
 
@@ -352,6 +422,10 @@ class Application:
                     self._apply_status(msg[1])
                 elif msg[0] == "overlay":
                     self.overlay.show(msg[1], msg[2])
+                elif msg[0] == "overlay_keep":
+                    self.overlay.keep_alive()
+                elif msg[0] == "overlay_hide":
+                    self.overlay.hide()
         except queue.Empty:
             pass
         self.root.after(50, self._pump_ui_queue)
