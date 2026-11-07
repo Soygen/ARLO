@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import sqlite3
 from dataclasses import dataclass
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from .config import APP_DIR
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def _default_db_path() -> Path:
@@ -25,7 +28,7 @@ class QuestRequirement:
 class QuestCatalog:
     """Read-only access to the cached quest catalog."""
 
-    def __init__(self, db_path: Path | None = None):
+    def __init__(self, db_path: Path | None = None) -> None:
         self.db_path = db_path if db_path is not None else _default_db_path()
         self._quest_ids: set[str] | None = None
         self._name_to_id: dict[str, str] | None = None
@@ -37,8 +40,7 @@ class QuestCatalog:
         try:
             with self._connect() as conn:
                 row = conn.execute(
-                    "SELECT 1 FROM sqlite_master "
-                    "WHERE type='table' AND name='quests'"
+                    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='quests'"
                 ).fetchone()
                 return row is not None
         except sqlite3.Error:
@@ -72,7 +74,8 @@ class QuestCatalog:
         key = (quest_id_or_name or "").strip()
         if not key:
             return False
-        assert self._quest_ids is not None and self._name_to_id is not None
+        assert self._quest_ids is not None
+        assert self._name_to_id is not None
         if key in self._quest_ids:
             return True
         return key.lower() in self._name_to_id
@@ -82,7 +85,8 @@ class QuestCatalog:
         key = (quest_id_or_name or "").strip()
         if not key:
             return None
-        assert self._quest_ids is not None and self._name_to_id is not None
+        assert self._quest_ids is not None
+        assert self._name_to_id is not None
         if key in self._quest_ids:
             return key
         return self._name_to_id.get(key.lower())

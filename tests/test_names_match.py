@@ -6,7 +6,9 @@ from arc_helper.database import names_match
 def test_exact_and_case():
     assert names_match("Wires", "Wires")
     assert names_match("Wires", "wires")
-    assert names_match("ADVANCED ELECTRICAL COMPONENTS", "advanced electrical components")
+    assert names_match(
+        "ADVANCED ELECTRICAL COMPONENTS", "advanced electrical components"
+    )
 
 
 def test_space_and_punctuation_noise():

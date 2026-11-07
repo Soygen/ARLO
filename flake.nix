@@ -44,6 +44,27 @@
         glib
         cairo
         stdenv.cc.cc.lib
+        # PySide6 wheel (bundled Qt) runtime deps: xcb + wayland platform plugins
+        zlib
+        zstd
+        libxcb-util
+        libGL
+        libxkbcommon
+        fontconfig
+        freetype
+        dbus
+        wayland
+        libdrm
+        libxext
+        libxrender
+        libxi
+        libsm
+        libice
+        xcb-util-cursor
+        libxcb-wm
+        libxcb-image
+        libxcb-keysyms
+        libxcb-render-util
       ]);
       giTypelibPath = pkgs.lib.makeSearchPath "lib/girepository-1.0" (with pkgs; [
         glib.out

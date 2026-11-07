@@ -6,6 +6,7 @@ Contains pre-calibrated settings for common screen resolutions.
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from typing import ClassVar
 
 from .config import APP_DIR
 from .config import SettingsManager
@@ -32,9 +33,14 @@ class ResolutionProfileManager:
     PROFILES_FILE = "resolutions.json"
 
     # These values indicate uncalibrated/first-run state
-    UNCALIBRATED_MARKER = {"x": 0, "y": 0, "width": 1, "height": 1}
+    UNCALIBRATED_MARKER: ClassVar[dict[str, int]] = {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1,
+    }
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.profiles: dict[str, ResolutionProfile] = {}
         self._load_profiles()
 
@@ -72,7 +78,8 @@ class ResolutionProfileManager:
         except (json.JSONDecodeError, KeyError) as e:
             logger.warning(f"Warning: Failed to load resolution profiles: {e}")
 
-    def get_resolution_key(self) -> str:
+    @staticmethod
+    def get_resolution_key() -> str:
         """Get the current screen resolution as a string key."""
         width, height = get_screen_resolution()
         return f"{width}x{height}"

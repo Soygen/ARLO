@@ -34,6 +34,10 @@ MAX_BODY_BYTES = 20 * 1024 * 1024
 CORS_ORIGIN = "https://metaforge.app"
 ACCOUNT_SYNC_URL = "https://metaforge.app/api/arc-raiders/account-sync"
 
+_JUST_NOW_SEC = 10
+_TIME_UNIT = 60
+_MAX_HOURS_AS_HOURS = 48
+
 OnImport = Callable[[ProgressProfile], None]
 
 
@@ -56,57 +60,60 @@ def bookmarklet_js() -> str:
     # Access so https://metaforge.app may POST to http://127.0.0.1 (mixed content
     # exemption + permission prompt).
     return (
-        "(async()=>{"
-        "const dl=data=>{"
-        "const blob=new Blob([JSON.stringify(data,null,2)],"
-        "{type:'application/json'});"
-        "const a=document.createElement('a');"
-        "a.href=URL.createObjectURL(blob);"
-        "a.download='account-sync.json';"
-        "document.body.appendChild(a);a.click();a.remove();"
-        "URL.revokeObjectURL(a.href);"
-        "};"
-        "try{"
-        "if(navigator.permissions&&navigator.permissions.query){"
-        "try{await navigator.permissions.query({name:'loopback-network'});}"
-        "catch(_p){}"
-        "}"
-        "const r=await fetch('__SYNC__',{credentials:'include'});"
-        "if(!r.ok){"
-        "alert('MetaForge account-sync failed ('+r.status+'). "
-        "Log in and Sync your Raider Profile first.');"
-        "return;"
-        "}"
-        "const data=await r.json();"
-        "try{"
-        "const ir=await fetch('http://127.0.0.1:__PORT____PATH__',{"
-        "method:'POST',"
-        "headers:{'Content-Type':'application/json'},"
-        "body:JSON.stringify(data),"
-        "targetAddressSpace:'loopback'"
-        "});"
-        "if(!ir.ok){alert('ARLO import failed ('+ir.status+')');return;}"
-        "const s=await ir.json();"
-        "alert('ARLO updated\\nQuests: '+s.quests"
-        "+'\\nWorkshop: '+s.workshop"
-        "+'\\nProjects: '+s.projects"
-        "+'\\nBlueprints: '+s.blueprints);"
-        "}catch(e){"
-        "dl(data);"
-        "alert('Could not reach ARLO on 127.0.0.1:__PORT__.\\n'"
-        "+'1) Start ARLO\\n'"
-        "+'2) If the browser asks to allow local/loopback network "
-        "access for metaforge.app, choose Allow\\n'"
-        "+'Downloaded account-sync.json as a fallback.');"
-        "}"
-        "}catch(e){"
-        "alert('Could not reach MetaForge. "
-        "Open your Raider Profile while logged in.');"
-        "}"
-        "})();"
-    ).replace("__SYNC__", ACCOUNT_SYNC_URL).replace(
-        "__PORT__", str(IMPORT_PORT)
-    ).replace("__PATH__", IMPORT_PATH)
+        (
+            "(async()=>{"
+            "const dl=data=>{"
+            "const blob=new Blob([JSON.stringify(data,null,2)],"
+            "{type:'application/json'});"
+            "const a=document.createElement('a');"
+            "a.href=URL.createObjectURL(blob);"
+            "a.download='account-sync.json';"
+            "document.body.appendChild(a);a.click();a.remove();"
+            "URL.revokeObjectURL(a.href);"
+            "};"
+            "try{"
+            "if(navigator.permissions&&navigator.permissions.query){"
+            "try{await navigator.permissions.query({name:'loopback-network'});}"
+            "catch(_p){}"
+            "}"
+            "const r=await fetch('__SYNC__',{credentials:'include'});"
+            "if(!r.ok){"
+            "alert('MetaForge account-sync failed ('+r.status+'). "
+            "Log in and Sync your Raider Profile first.');"
+            "return;"
+            "}"
+            "const data=await r.json();"
+            "try{"
+            "const ir=await fetch('http://127.0.0.1:__PORT____PATH__',{"
+            "method:'POST',"
+            "headers:{'Content-Type':'application/json'},"
+            "body:JSON.stringify(data),"
+            "targetAddressSpace:'loopback'"
+            "});"
+            "if(!ir.ok){alert('ARLO import failed ('+ir.status+')');return;}"
+            "const s=await ir.json();"
+            "alert('ARLO updated\\nQuests: '+s.quests"
+            "+'\\nWorkshop: '+s.workshop"
+            "+'\\nProjects: '+s.projects"
+            "+'\\nBlueprints: '+s.blueprints);"
+            "}catch(e){"
+            "dl(data);"
+            "alert('Could not reach ARLO on 127.0.0.1:__PORT__.\\n'"
+            "+'1) Start ARLO\\n'"
+            "+'2) If the browser asks to allow local/loopback network "
+            "access for metaforge.app, choose Allow\\n'"
+            "+'Downloaded account-sync.json as a fallback.');"
+            "}"
+            "}catch(e){"
+            "alert('Could not reach MetaForge. "
+            "Open your Raider Profile while logged in.');"
+            "}"
+            "})();"
+        )
+        .replace("__SYNC__", ACCOUNT_SYNC_URL)
+        .replace("__PORT__", str(IMPORT_PORT))
+        .replace("__PATH__", IMPORT_PATH)
+    )
 
 
 def bookmarklet_href() -> str:
@@ -213,18 +220,31 @@ def format_import_age(mtime: float | None, *, now: float | None = None) -> str:
 
     ref = time.time() if now is None else now
     seconds = max(0, int(ref - mtime))
-    if seconds < 10:
+    if seconds < _JUST_NOW_SEC:
         return "just now"
-    if seconds < 60:
+    if seconds < _TIME_UNIT:
         return f"{seconds}s ago"
-    minutes = seconds // 60
-    if minutes < 60:
+    minutes = seconds // _TIME_UNIT
+    if minutes < _TIME_UNIT:
         return f"{minutes}m ago"
-    hours = minutes // 60
-    if hours < 48:
+    hours = minutes // _TIME_UNIT
+    if hours < _MAX_HOURS_AS_HOURS:
         return f"{hours}h ago"
     days = hours // 24
     return f"{days}d ago"
+
+
+def parse_synced_at(value: object) -> float | None:
+    """Parse MetaForge ``lastSyncedAt`` (ISO-8601) to a Unix timestamp."""
+    if not isinstance(value, str) or not value.strip():
+        return None
+    try:
+        dt = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=UTC)
+    return dt.timestamp()
 
 
 def account_sync_mtime(path: Path | None = None) -> float | None:
@@ -236,6 +256,38 @@ def account_sync_mtime(path: Path | None = None) -> float | None:
         return target.stat().st_mtime
     except OSError:
         return None
+
+
+def account_sync_last_synced_at(path: Path | None = None) -> float | None:
+    """Unix time of MetaForge ``lastSyncedAt`` in ``account-sync.json``."""
+    from arc_helper.progress import _default_path
+
+    target = path if path is not None else _default_path()
+    try:
+        data = json.loads(target.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    return parse_synced_at(data.get("lastSyncedAt"))
+
+
+def format_progress_status(
+    *,
+    imported_mtime: float | None,
+    metaforge_synced_at: float | None = None,
+    now: float | None = None,
+) -> str:
+    """Status-pill flash for import age + MetaForge sync age."""
+    imported = format_import_age(imported_mtime, now=now)
+    if imported == "not imported":
+        return "Progress: not imported"
+    msg = f"Progress: imported {imported}"
+    if metaforge_synced_at is not None:
+        synced = format_import_age(metaforge_synced_at, now=now)
+        if synced != "not imported":
+            msg += f" · MetaForge synced {synced}"
+    return msg
 
 
 def _cors_headers(handler: BaseHTTPRequestHandler) -> None:
@@ -251,8 +303,12 @@ class _ImportHandler(BaseHTTPRequestHandler):
 
     server_version = "ARLOProgressImport/1.0"
 
-    def log_message(self, fmt: str, *args: Any) -> None:  # ruff: ignore[no-self-use]
-        logger.debug("progress-import: " + fmt, *args)
+    def log_message(self, format: str, *args: Any) -> None:
+        logger.debug(
+            "progress-import [%s]: " + format,
+            self.address_string(),
+            *args,
+        )
 
     def _send_bytes(
         self,

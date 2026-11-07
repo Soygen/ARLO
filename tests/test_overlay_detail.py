@@ -14,7 +14,10 @@ def test_normalize_projects_quests_colon():
     assert normalize_keep_labels("Workshop Research Station 3 (6x)") == (
         "Workshop: Research Station 3 (6x)"
     )
-    assert normalize_keep_labels("Projects: Already Ok (1x)") == "Projects: Already Ok (1x)"
+    assert (
+        normalize_keep_labels("Projects: Already Ok (1x)")
+        == "Projects: Already Ok (1x)"
+    )
     assert normalize_keep_labels("Quests [[Bait Fetch Blast]] (1x)") == (
         "Quests: Bait Fetch Blast (1x)"
     )
@@ -35,8 +38,7 @@ def test_keep_and_recycle_joined_text():
         keep_for="Quests The League (1x)",
     )
     assert text == (
-        f"Quests: The League (1x)\n"
-        f"{RECYCLE_SYMBOL} 4x Canister, 10x Metal Parts"
+        f"Quests: The League (1x)\n{RECYCLE_SYMBOL} 4x Canister, 10x Metal Parts"
     )
 
 
@@ -46,7 +48,7 @@ def test_keep_only():
         keep_for="Quests: Unexpected Initiative (1x)",
     )
     assert keep == "Quests: Unexpected Initiative (1x)"
-    assert recycle == ""
+    assert not recycle
 
 
 def test_recycle_only():
@@ -54,13 +56,13 @@ def test_recycle_only():
         recycle_for="2x Metal Parts",
         keep_for="",
     )
-    assert keep == ""
+    assert not keep
     assert recycle == f"{RECYCLE_SYMBOL} 2x Metal Parts"
 
 
 def test_empty_both():
     assert format_detail_parts(recycle_for=None, keep_for=None) == ("", "")
-    assert format_detail_text(recycle_for=None, keep_for=None) == ""
+    assert not format_detail_text(recycle_for=None, keep_for=None)
 
 
 def test_whitespace_ignored():

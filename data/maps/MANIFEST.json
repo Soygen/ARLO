@@ -1,0 +1,158 @@
+{
+  "generated_at": "2026-11-03T21:18:00Z",
+  "maps": {
+    "blue-gate": {
+      "crs_south_up": false,
+      "layer_path": "blue-gate/20260112-q85",
+      "ref_height": 1264,
+      "ref_width": 1896,
+      "tile_bounds": null,
+      "tile_extent": [
+        233.0236479649544,
+        204.33176267600015,
+        107.43762885951965,
+        300.40951140668346
+      ],
+      "tile_size": 512,
+      "world_extent": [
+        7416.0,
+        6553.450942288329,
+        3439.2663383876925,
+        9597.991683705897
+      ],
+      "zoom": 2
+    },
+    "buried-city": {
+      "crs_south_up": false,
+      "layer_path": "buried-city/20260112-q85",
+      "ref_height": 1264,
+      "ref_width": 1896,
+      "tile_bounds": null,
+      "tile_extent": [
+        0.0,
+        0.0,
+        512.0,
+        512.0
+      ],
+      "tile_size": 512,
+      "world_extent": [
+        0.0,
+        0.0,
+        16384.0,
+        16384.0
+      ],
+      "zoom": 2
+    },
+    "dam": {
+      "crs_south_up": false,
+      "layer_path": "dam/20260112-q85",
+      "ref_height": 2520,
+      "ref_width": 3784,
+      "tile_bounds": null,
+      "tile_extent": [
+        47.17178678359251,
+        152.00390625,
+        95.2611648323476,
+        82.04135491430883
+      ],
+      "tile_size": 256,
+      "world_extent": [
+        1634.8691424096007,
+        5260.799310066582,
+        3292.914501442535,
+        2848.1510404315172
+      ],
+      "zoom": 3
+    },
+    "pendola-pass": {
+      "crs_south_up": false,
+      "layer_path": "pendola-pass/20261005b-satellite",
+      "ref_height": 2512,
+      "ref_width": 3776,
+      "tile_bounds": [
+        3162.0,
+        626.0,
+        13220.0,
+        15758.0
+      ],
+      "tile_extent": [
+        0.0,
+        0.0,
+        512.0,
+        512.0
+      ],
+      "tile_size": 512,
+      "world_extent": [
+        0.0,
+        0.0,
+        16384.0,
+        16384.0
+      ],
+      "zoom": 3
+    },
+    "riven-tides": {
+      "crs_south_up": false,
+      "layer_path": "riven-tides/20260428-q85",
+      "ref_height": 1264,
+      "ref_width": 1896,
+      "tile_bounds": null,
+      "tile_extent": [
+        0.0,
+        0.0,
+        512.0,
+        512.0
+      ],
+      "tile_size": 512,
+      "world_extent": [
+        0.0,
+        0.0,
+        16384.0,
+        16384.0
+      ],
+      "zoom": 2
+    },
+    "spaceport": {
+      "crs_south_up": false,
+      "layer_path": "spaceport/20260114-q85",
+      "ref_height": 1264,
+      "ref_width": 1896,
+      "tile_bounds": null,
+      "tile_extent": [
+        106.76514723178478,
+        139.9453125,
+        201.17851771018792,
+        294.1640625
+      ],
+      "tile_size": 512,
+      "world_extent": [
+        1781.4843302764823,
+        2424.75,
+        3421.448788892414,
+        5104.75
+      ],
+      "zoom": 2
+    },
+    "stella-montis": {
+      "crs_south_up": false,
+      "layer_path": "stella-montis/v3/default",
+      "ref_height": 872,
+      "ref_width": 1260,
+      "tile_bounds": null,
+      "tile_extent": [
+        112.46875,
+        64.71875,
+        40.25,
+        158.78125
+      ],
+      "tile_size": 256,
+      "world_extent": [
+        3412.0,
+        2206.0,
+        1362.0,
+        4874.0
+      ],
+      "zoom": 3
+    }
+  },
+  "source": "metaforge"
+}

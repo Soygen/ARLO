@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import sqlite3
 from dataclasses import dataclass
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from .config import APP_DIR
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def _default_db_path() -> Path:
@@ -25,7 +28,7 @@ class TraderOffer:
 class TraderCatalog:
     """Read-only access to cached trader shop / barter inventories."""
 
-    def __init__(self, db_path: Path | None = None):
+    def __init__(self, db_path: Path | None = None) -> None:
         self.db_path = db_path if db_path is not None else _default_db_path()
 
     @property
@@ -35,8 +38,7 @@ class TraderCatalog:
         try:
             with self._connect() as conn:
                 row = conn.execute(
-                    "SELECT 1 FROM sqlite_master "
-                    "WHERE type='table' AND name='traders'"
+                    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='traders'"
                 ).fetchone()
                 return row is not None
         except sqlite3.Error:

@@ -1,5 +1,6 @@
 """Tests for item-name line detection used by the two-pass OCR reader."""
 
+import math
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
@@ -33,30 +34,32 @@ def test_preprocess_tooltip_narrow_cream_region():
 
 
 def test_upper_ratio():
-    assert OCREngine._upper_ratio("RASCAL") == 1.0  # ruff: ignore[private-member-access]
-    assert OCREngine._upper_ratio("Fires explosive") < 0.3  # ruff: ignore[private-member-access]
-    assert OCREngine._upper_ratio("") == 0.0  # ruff: ignore[private-member-access]
+    assert math.isclose(OCREngine._upper_ratio("RASCAL"), 1.0)
+    assert OCREngine._upper_ratio("Fires explosive") < 0.3
+    assert math.isclose(OCREngine._upper_ratio(""), 0.0)
 
 
 def test_single_line_name():
     text = "RASCALII\nFires explosive projectiles that only"
-    assert OCREngine._count_name_lines(text) == 1  # ruff: ignore[private-member-access]
+    assert OCREngine._count_name_lines(text) == 1
 
 
 def test_tolerates_miscased_numeral():
     # "II" misread as "Il" is still mostly uppercase -> counts as the name line
     text = "BETTINA Il\nHas slow fire rate and high damage"
-    assert OCREngine._count_name_lines(text) == 1  # ruff: ignore[private-member-access]
+    assert OCREngine._count_name_lines(text) == 1
 
 
 def test_multiword_multiline_name():
     text = "ADVANCED ELECTRICAL\nCOMPONENTS\nA crafting material"
-    assert OCREngine._count_name_lines(text) == 2  # ruff: ignore[private-member-access]
+    assert OCREngine._count_name_lines(text) == 2
 
 
 def test_zero_when_description_leads():
     text = "the quick brown fox\nmore lowercase text"
-    assert OCREngine._count_name_lines(text) == 0  # ruff: ignore[private-member-access]
+    assert OCREngine._count_name_lines(text) == 0
+
+
 def test_fuzzy_match_accepts_inventory_with_ocr_errors():
     assert OCREngine._fuzzy_match("INVENTORY", "INVENTORY")
     assert OCREngine._fuzzy_match("INVNTORY", "INVENTORY")
@@ -76,4 +79,4 @@ def test_fuzzy_match_rejects_shared_letters():
 def test_skips_short_leading_noise():
     # A stray 1-char artifact above the name is ignored
     text = "RASCALII\nFires explosive projectiles"
-    assert OCREngine._count_name_lines("x\n" + text) == 1  # ruff: ignore[private-member-access]
+    assert OCREngine._count_name_lines("x\n" + text) == 1

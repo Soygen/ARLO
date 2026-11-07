@@ -14,6 +14,8 @@ Neither MetaForge nor the wiki is complete alone. Default hybrid mode picks per 
 | Workshop upgrade keep (`Workshop: Station N (Qx)`) | **Wiki** `Workshop` / `Scrappy` / `Outpost` | Not the Loot Uses column — it often copies a sibling material’s quantity |
 | Outpost room expansions (`Workshop: Outpost Room N (Qx)`) | **Curated** (MetaForge rooms page) | Wiki Workshop Upgrade tables are empty for Chalet / expansions; progress uses `workshop.outpost.rooms` count |
 | Blueprint research costs (`Research: Foo Blueprint (Qx)`) | **Wiki** `Research Points` crafting table | Filtered by learned recipes in `account-sync` `resources.blueprints` |
+| Weapon amplify apply costs (`Amplify: Anvil X-Rounds (Qx)`) | **Wiki** `Amplified Weapons` materials + `Amplification` weapon list | Shown after Research; not filtered yet (no amp-node progress in sync) |
+| Key workbench recipes (`Crafting: Emperor Gateway Conduit / Dolabra (Qx)`) | **Wiki** curated craft-result pages + a few static amp-module notes | Only gate keys / unique high-end crafts — not every gun recipe; fail-open |
 | Research Items (convert to RP) | **MetaForge** `item_type` + wiki RP yields | Action prefers convert-to-RP over Sell; station upgrade keeps still apply |
 | Project requirements + schedule | **Wiki** Projects directory | `Type` / `Start` / `End`; expired temporary projects stay in the catalog but are excluded from keep / `Need:` |
 | Trader shop inventories (`Buy:`) | **Wiki** Traders directory | |

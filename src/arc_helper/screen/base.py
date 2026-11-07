@@ -56,7 +56,7 @@ class ScreenBackend(Protocol):
 
     @property
     def tk_scale(self) -> float:
-        """Divide physical pixels by this to get tkinter window coordinates.
+        """Divide physical pixels by this to get window (logical) coordinates.
 
         A property (not a plain attribute like ``name``) because backends
         compute it at runtime from the compositor's scale factor.

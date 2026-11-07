@@ -4,18 +4,27 @@ __pycache__/
 *.py[oc]
 debug
 .env*
+.scannerwork/
 
 .claude
 .vscode
+.vs/
 build
 dist
 *.log
 .DS_Store
 
+# Linter / typechecker / test caches
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
 !.env.example
 .last_wiki_update
-.vs/
 .screencast_restore_token
 account-sync.json
 diag_frame.png
 data/missing_items.csv
+# Intermediate Metaforge tile caches — stitched reference.png is committed
+data/maps/**/tiles_z*/
+data/map_sync_samples/

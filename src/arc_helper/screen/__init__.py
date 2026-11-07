@@ -14,7 +14,14 @@ from .base import ScreenBackend
 from .base import ScreenCaptureUnavailable
 from .base import choose_backend_name
 
-__all__ = ["Point", "ScreenBackend", "ScreenCaptureUnavailable", "get_backend", "phys_to_tk", "reset_backend"]
+__all__ = [
+    "Point",
+    "ScreenBackend",
+    "ScreenCaptureUnavailable",
+    "get_backend",
+    "phys_to_tk",
+    "reset_backend",
+]
 
 _backend: ScreenBackend | None = None  # ruff: ignore[non-empty-init-module]
 _lock = threading.Lock()  # ruff: ignore[non-empty-init-module]
@@ -58,5 +65,5 @@ def reset_backend() -> None:  # ruff: ignore[non-empty-init-module]
 
 
 def phys_to_tk(value: float) -> int:  # ruff: ignore[non-empty-init-module]
-    """Convert physical pixels to tkinter window coordinates."""
+    """Convert physical pixels to window (logical) coordinates."""
     return round(value / get_backend().tk_scale)

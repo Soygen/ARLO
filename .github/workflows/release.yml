@@ -10,7 +10,14 @@ permissions:
   contents: write
 
 jobs:
+  # Fail closed: no GitHub release / Windows zip if lint, types, or tests fail.
+  # main: reach here only via merged PR (branch protection + required CI).
+  # dev: direct pushes OK; this job still blocks a bad beta release.
+  check:
+    uses: ./.github/workflows/ci.yml
+
   release:
+    needs: check
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.meta.outputs.tag }}

@@ -6,7 +6,7 @@ from arc_helper.database import Database
 def _db(tmp_path):
     db = Database(db_path=tmp_path / "items.db")
     db.clear()  # pytest may reuse tmp_path across runs; guarantee an empty table
-    with db._get_connection() as conn:  # ruff: ignore[private-member-access] - test seam
+    with db._get_connection() as conn:
         conn.executemany(
             "INSERT INTO items (name, action) VALUES (?, ?)",
             [
@@ -85,10 +85,7 @@ def test_ocr_collapsed_looting_mk_defaults_to_shortest_tier(tmp_path):
 
 def test_ocr_looting_mk_with_tier(tmp_path):
     assert _db(tmp_path).lookup("LOOTINGMK2").name == "Looting Mk. 2"
-    assert (
-        _db(tmp_path).lookup("LOOTINGMK3CAUTIOUS").name
-        == "Looting Mk. 3 (Cautious)"
-    )
+    assert _db(tmp_path).lookup("LOOTINGMK3CAUTIOUS").name == "Looting Mk. 3 (Cautious)"
 
 
 def test_ocr_collapsed_tactical_and_combat_mk(tmp_path):
@@ -128,8 +125,7 @@ def test_ocr_industrial_magnet_leading_damage(tmp_path):
 
 def test_ocr_spaceport_trench_key_middle_gap(tmp_path):
     assert (
-        _db(tmp_path).lookup("SPACEPORTTRENCH KEY").name
-        == "Spaceport Trench Tower Key"
+        _db(tmp_path).lookup("SPACEPORTTRENCH KEY").name == "Spaceport Trench Tower Key"
     )
 
 
@@ -160,11 +156,8 @@ def test_ocr_recycle_dialog_deprecated_anvil_with_output_tooltip(tmp_path):
     # Recycle panel title remnant + hovered Amplified Fragments tooltip
     db = _db(tmp_path)
     assert (
-        db.lookup("EDEPRECATEDANVILS AMPLIFIEDFRAGMENTS").name
-        == "Amplified Fragments"
+        db.lookup("EDEPRECATEDANVILS AMPLIFIEDFRAGMENTS").name == "Amplified Fragments"
     )
     # Title-only OCR (truncated DEPRECATED ANVIL SPLITTER)
-    assert (
-        db.lookup("EDEPRECATEDANVILS").name == "Deprecated Anvil Splitter"
-    )
+    assert db.lookup("EDEPRECATEDANVILS").name == "Deprecated Anvil Splitter"
     assert db.lookup("AMPLIFIEDFRAGMENTS").name == "Amplified Fragments"

@@ -11,10 +11,20 @@ repos:
       - id: mixed-line-ending
         args: ["--fix=lf"]
 
-  # Ruff: fast linter + formatter (replaces flake8/isort/black in many setups)
+  # Ruff: fast linter + formatter (replaces flake8/isort/black/prettier)
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.17.3
     hooks:
       - id: ruff
         args: ["--fix"]
       - id: ruff-format
+
+  # basedpyright uses the project venv (uv) so stubs match installed deps
+  - repo: local
+    hooks:
+      - id: basedpyright
+        name: basedpyright
+        entry: uv run --extra dev basedpyright
+        language: system
+        types: [python]
+        pass_filenames: false

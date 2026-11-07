@@ -48,12 +48,33 @@ TRIGGER_SCAN_INTERVAL=0.5        # Seconds between trigger scans
 TOOLTIP_SCAN_INTERVAL=0.3        # Seconds between tooltip scans
 
 # =============================================================================
+# COMPANION MAP
+# =============================================================================
+
+MAP_HOTKEY=F8                    # Toggle companion map window
+MAP_FIND_HOTKEY=F9               # Find last hovered item on the map
+
+# Optional MAP-tab OCR region (leave width/height at 1 to use heuristic)
+MAP_TRIGGER_REGION_X=0
+MAP_TRIGGER_REGION_Y=0
+MAP_TRIGGER_REGION_WIDTH=1
+MAP_TRIGGER_REGION_HEIGHT=1
+
+# Optional center map terrain capture (exclude sidebars)
+MAP_VIEWPORT_X=0
+MAP_VIEWPORT_Y=0
+MAP_VIEWPORT_WIDTH=1
+MAP_VIEWPORT_HEIGHT=1
+
+# =============================================================================
 # DEBUG SETTINGS
 # =============================================================================
 
 DEBUG_MODE=false                 # Enable to save debug images and logs
 SHOW_CAPTURE_AREA=false          # Show red rectangle around capture area
 ```
+
+See [MAP.md](MAP.md) for companion map usage and Metaforge attribution.
 
 ### Debug Mode
 

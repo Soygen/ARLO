@@ -1,0 +1,51 @@
+name: SonarQube
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  sonarqube:
+    # Fork PRs do not receive secrets; skip so community PRs stay green.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check SonarQube config
+        env:
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || vars.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SONAR_TOKEN}" ]; then
+            echo "::error::SONAR_TOKEN is empty. Add it as a repository Secret."
+            exit 1
+          fi
+          if [ -z "${SONAR_HOST_URL}" ]; then
+            echo "::error::SONAR_HOST_URL is empty. Add it as a repository Variable or Secret, including the scheme (e.g. https://sonar.example.com)."
+            exit 1
+          fi
+          case "${SONAR_HOST_URL}" in
+            http://*|https://*) ;;
+            *)
+              echo "::error::SONAR_HOST_URL must start with http:// or https://"
+              exit 1
+              ;;
+          esac
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || vars.SONAR_HOST_URL }}

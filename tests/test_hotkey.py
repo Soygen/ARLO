@@ -32,19 +32,19 @@ def test_invalid_key_name_raises():
 
 def test_is_held_true():
     monitor = EvdevKeyMonitor("KEY_RIGHTCTRL")
-    monitor._devices = [FakeDevice(active=[97])]  # ruff: ignore[private-member-access]
+    monitor._devices = [FakeDevice(active=[97])]
     assert monitor.is_held() is True
 
 
 def test_is_held_false():
     monitor = EvdevKeyMonitor("KEY_RIGHTCTRL")
-    monitor._devices = [FakeDevice(active=[29])]  # ruff: ignore[private-member-access]
+    monitor._devices = [FakeDevice(active=[29])]
     assert monitor.is_held() is False
 
 
 def test_no_devices_is_false():
     monitor = EvdevKeyMonitor("KEY_RIGHTCTRL")
-    monitor._devices = []  # ruff: ignore[private-member-access]
+    monitor._devices = []
     assert monitor.is_held() is False
 
 
@@ -52,26 +52,26 @@ def test_dead_device_dropped():
     monitor = EvdevKeyMonitor("KEY_RIGHTCTRL")
     dead = FakeDevice(error=OSError("unplugged"))
     alive = FakeDevice(active=[97])
-    monitor._devices = [dead, alive]  # ruff: ignore[private-member-access]
+    monitor._devices = [dead, alive]
     assert monitor.is_held() is True
-    assert dead not in monitor._devices  # ruff: ignore[private-member-access]
+    assert dead not in monitor._devices
 
 
 def test_stop_closes_devices():
     monitor = EvdevKeyMonitor("KEY_RIGHTCTRL")
     device = FakeDevice()
-    monitor._devices = [device]  # ruff: ignore[private-member-access]
+    monitor._devices = [device]
     monitor.stop()
     assert device.closed
-    assert monitor._devices == []  # ruff: ignore[private-member-access]
+    assert monitor._devices == []
 
 
 def test_empty_devices_triggers_throttled_rescan(monkeypatch):
     monitor = EvdevKeyMonitor("KEY_RIGHTCTRL")
-    monitor._devices = []  # ruff: ignore[private-member-access]
+    monitor._devices = []
     calls = []
     monkeypatch.setattr(monitor, "start", lambda: calls.append(1))
-    monitor._last_scan = 0.0  # ruff: ignore[private-member-access] - far in the past: rescan due
+    monitor._last_scan = 0.0
     assert monitor.is_held() is False
     assert calls == [1]
 
@@ -80,9 +80,9 @@ def test_rescan_is_throttled(monkeypatch):
     import time
 
     monitor = EvdevKeyMonitor("KEY_RIGHTCTRL")
-    monitor._devices = []  # ruff: ignore[private-member-access]
+    monitor._devices = []
     calls = []
     monkeypatch.setattr(monitor, "start", lambda: calls.append(1))
-    monitor._last_scan = time.monotonic()  # ruff: ignore[private-member-access] - just scanned
+    monitor._last_scan = time.monotonic()
     assert monitor.is_held() is False
     assert calls == []

@@ -1,8 +1,7 @@
 """Tests for MetaForge account-sync import and keep_for progress filtering."""
 
-from pathlib import Path
-
 import json
+from pathlib import Path
 
 from arc_helper.database import Item
 from arc_helper.progress import ProgressProfile
@@ -25,6 +24,7 @@ def test_import_account_sync_quests_workshop_projects():
     profile = import_account_sync(FIXTURE)
 
     assert profile.account_id == "4280071038815716698"
+    assert profile.metaforge_synced_at == "2026-10-29T08:46:50.19+00:00"
     assert "clearer-skies" in profile.completed_quests
     assert "the-trifecta" in profile.completed_quests
     assert "collision-course" in profile.completed_quests
@@ -89,6 +89,20 @@ def test_filter_all_quests_rewrites_action():
     assert not (out.keep_for or "").strip()
     # Neutral — don't push Recycle once quest needs are done
     assert out.action == "Crafting item"
+
+
+def test_crafting_keep_survives_completed_quest():
+    item = Item(
+        name="ARC Conductive Coupler",
+        action="Keep",
+        keep_for=(
+            "Quests: Sizing Things Up (1x); Crafting: Emperor Gateway Conduit (1x)"
+        ),
+        sell_price=100,
+    )
+    out = apply_progress(item, ProgressProfile(completed_quests={"sizing-things-up"}))
+    assert out.action == "Keep"
+    assert out.keep_for == "Crafting: Emperor Gateway Conduit (1x)"
 
 
 def test_hand_drill_outpost_done_becomes_crafting_item():
@@ -163,6 +177,49 @@ def test_filter_outpost_room_expansion_independent_of_outpost_level():
     assert "Outpost Room 1" not in (out.keep_for or "")
     assert "Outpost Room 2 (3x)" in (out.keep_for or "")
     assert out.action == item.action
+
+
+def test_wiki_outpost_project_cleared_by_outpost_workshop_level():
+    """Wiki Projects: Outpost (mats) is Sheltered Retreat; done at outpost lvl ≥2."""
+    profile = ProgressProfile(workshop_levels={"outpost": 3, "outpost room": 2})
+    item = Item(
+        name="ARC Alloy",
+        action="Keep",
+        keep_for=(
+            "Projects: Expedition 1 (80x), Outpost (10x); "
+            "Research: Rascal Blueprint (15x)"
+        ),
+    )
+    out = apply_progress(item, profile)
+    assert "Outpost (10x)" not in (out.keep_for or "")
+    assert "Expedition 1 (80x)" in (out.keep_for or "")
+    assert "Rascal Blueprint" in (out.keep_for or "")
+
+
+def test_wiki_outpost_project_cleared_via_sheltered_retreat_progress():
+    profile = ProgressProfile(
+        project_items={
+            "sheltered retreat": {"arc-alloy": "COMPLETED"},
+        }
+    )
+    item = Item(
+        name="ARC Alloy",
+        action="Keep",
+        keep_for="Projects: Outpost (10x)",
+    )
+    out = apply_progress(item, profile)
+    assert not (out.keep_for or "").strip()
+
+
+def test_wiki_outpost_still_needed_below_stage_level():
+    profile = ProgressProfile(workshop_levels={"outpost": 1})
+    item = Item(
+        name="ARC Alloy",
+        action="Keep",
+        keep_for="Projects: Outpost (10x)",
+    )
+    out = apply_progress(item, profile)
+    assert "Outpost (10x)" in (out.keep_for or "")
 
 
 def test_filter_project_item_completed():
@@ -255,8 +312,8 @@ def test_future_project_stage_item_not_cleared_when_earlier_stages_done(
     tmp_path: Path,
 ):
     """Mask Fragment (part 3) must stay while only parts 1–2 are mapped done."""
-    from update_db import write_projects_catalog
     from arc_helper.projects import ProjectCatalog
+    from update_db import write_projects_catalog
 
     write_projects_catalog(
         [
@@ -416,9 +473,18 @@ def test_import_includes_stencils():
             "resources": {
                 "blueprints": {
                     "data": {
-                        "blueprints": [{"name": "Anvil", "blueprintId": "anvil-recipe"}],
-                        "designs": [{"name": "Chandelier_01_A", "itemId": "chandelier-design"}],
-                        "stencils": [{"name": "Unlock ItemSkin CommonRed", "itemId": "garnet-stencil"}],
+                        "blueprints": [
+                            {"name": "Anvil", "blueprintId": "anvil-recipe"}
+                        ],
+                        "designs": [
+                            {"name": "Chandelier_01_A", "itemId": "chandelier-design"}
+                        ],
+                        "stencils": [
+                            {
+                                "name": "Unlock ItemSkin CommonRed",
+                                "itemId": "garnet-stencil",
+                            }
+                        ],
                     }
                 }
             },
@@ -438,14 +504,22 @@ def test_overlay_marks_known_blueprint_design_stencil():
         }
     )
     known_bp = apply_progress(
-        Item(name="Anvil Blueprint", action="Keep", keep_for="Learn, sell, or trade to other players"),
+        Item(
+            name="Anvil Blueprint",
+            action="Keep",
+            keep_for="Learn, sell, or trade to other players",
+        ),
         profile,
     )
     assert known_bp.action == "Sell"
     assert "Already know this blueprint" in (known_bp.keep_for or "")
 
     unknown_bp = apply_progress(
-        Item(name="Tempest Blueprint", action="Keep", keep_for="Learn, sell, or trade to other players"),
+        Item(
+            name="Tempest Blueprint",
+            action="Keep",
+            keep_for="Learn, sell, or trade to other players",
+        ),
         profile,
     )
     assert unknown_bp.action == "Keep"

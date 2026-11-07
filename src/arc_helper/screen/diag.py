@@ -11,6 +11,8 @@ import time
 from arc_helper.config import APP_DIR
 from arc_helper.screen import get_backend
 
+_CURSOR_SAMPLE_GAPS = 2
+
 
 def main() -> int:
     backend = get_backend()
@@ -22,7 +24,7 @@ def main() -> int:
     for i in range(3):
         cursor = backend.cursor_position()
         print(f"cursor     : ({cursor.x}, {cursor.y})")
-        if i < 2:
+        if i < _CURSOR_SAMPLE_GAPS:
             time.sleep(1)
 
     bbox = (width // 2 - 200, height // 2 - 100, width // 2 + 200, height // 2 + 100)

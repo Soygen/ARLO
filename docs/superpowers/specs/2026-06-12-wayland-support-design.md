@@ -21,7 +21,7 @@ Additionally, phase-0 testing found a calibration-tool bug independent of Waylan
 - **Capture stack:** PyGObject + GStreamer (`pipewiresrc → videoconvert → appsink`) consuming an xdg-desktop-portal ScreenCast stream. (Chosen over a pure-Python jeepney + gst-launch subprocess approach, and over raw libpipewire-via-ctypes.)
 - **Cursor:** keep pynput/Xlib, corrected by an automatic scale factor (stream width ÷ X display width). Valid while the pointer is over XWayland windows — which includes the Proton game. Behind an interface so a libpipewire cursor-metadata provider can replace it later.
 - **Hotkey:** hold a single key, **Right Ctrl** by default, read via evdev. Configurable through `HOTKEY_KEY` (any evdev key name, e.g. `KEY_RIGHTCTRL`). User chose Right Ctrl over Right Meta to avoid KDE's Meta-opens-launcher behavior. Requires the user in the `input` group (documented). Windows and X11 sessions keep the existing hold-Ctrl+Shift behavior.
-- **Overlay:** tkinter stays, running via XWayland, with physical→logical coordinate mapping applied when positioning windows. A Wayland-native layer-shell overlay is explicitly out of scope (future work).
+- **Overlay:** Qt (PySide6) via XWayland (`xcb` + override-redirect), with physical→logical coordinate mapping applied when positioning windows. A Wayland-native layer-shell overlay remains optional future work (see `docs/QT_SPIKE.md`).
 - **Calibrate fix in scope:** make the tracking preview overlay input-transparent so it cannot swallow clicks.
 
 ## Architecture
@@ -64,7 +64,7 @@ All platform-specific screen access moves behind one interface. **Everything at 
 - `ocr.py`: `grab_screen()` and `get_cursor_position()` delegate to `get_backend()`.
 - `config.py`: `get_screen_resolution()` delegates to the backend.
 - `main.py`: hotkey block (`_is_hotkey_held`, `_linux_key_listener_*`) replaced by `HotkeyMonitor`.
-- `overlay.py`: window placement divides physical-pixel positions by the backend's scale factor (1.0 everywhere except Wayland-with-scaling) before passing to tkinter.
+- `overlay.py` / `ui/overlay.py`: window placement divides physical-pixel positions by the backend's scale factor (1.0 everywhere except Wayland-with-scaling) before passing to Qt.
 - `calibrate.py`: uses the backend; tracking preview overlay made input-transparent — X11 Shape extension input region via python-xlib (already a pynput dependency; works under XWayland), `WS_EX_TRANSPARENT` via ctypes on Windows.
 
 ## Runtime behavior

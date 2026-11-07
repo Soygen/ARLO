@@ -6,6 +6,7 @@ damage, so pipewiresrc's keepalive re-pushes the last frame periodically.
 """
 
 import threading
+from typing import cast
 
 from PIL import Image
 
@@ -31,9 +32,9 @@ try:
 
     gi.require_version("Gst", "1.0")
     gi.require_version("GstVideo", "1.0")
-    from gi.repository import GLib
-    from gi.repository import Gst
-    from gi.repository import GstVideo
+    from gi.repository import GLib  # pyright: ignore[reportAttributeAccessIssue]  # GI stubs
+    from gi.repository import Gst  # pyright: ignore[reportAttributeAccessIssue]  # GI stubs
+    from gi.repository import GstVideo  # pyright: ignore[reportAttributeAccessIssue]  # GI stubs
 except (ImportError, ValueError) as _e:
     raise ImportError(_INSTALL_HINT) from _e
 
@@ -50,7 +51,7 @@ class WaylandBackend:
 
     name = "wayland"
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._session: ScreenCastSession | None = None
         self._pipeline: Gst.Element | None = None
         self._lock = threading.Lock()
@@ -99,9 +100,13 @@ class WaylandBackend:
                     "Is gst-plugin-pipewire installed?\n" + _INSTALL_HINT
                 )
                 raise OSError(msg) from e
-            sink = self._pipeline.get_by_name("sink")
+            pipeline = self._pipeline
+            if pipeline is None:
+                msg = "GStreamer pipeline was not created"
+                raise OSError(msg)  # ruff: ignore[raise-within-try]
+            sink = pipeline.get_by_name("sink")
             sink.connect("new-sample", self._on_new_sample)
-            if self._pipeline.set_state(Gst.State.PLAYING) == Gst.StateChangeReturn.FAILURE:
+            if pipeline.set_state(Gst.State.PLAYING) == Gst.StateChangeReturn.FAILURE:
                 msg = f"GStreamer pipeline refused to start.{self._collect_bus_error()}"
                 raise OSError(msg)  # ruff: ignore[raise-within-try]
 
@@ -123,16 +128,15 @@ class WaylandBackend:
         if frame is None:
             msg = "First frame vanished unexpectedly"
             raise OSError(msg)
-        _, width, height, _ = frame
+        # Local copy after None-guard (pyright can lose the tuple narrow here).
+        _data, width, height, _stride = cast("tuple[bytes, int, int, int]", frame)
         # Single-monitor assumption: XWayland reports the total logical
         # screen width, the stream is one monitor. Fine for the primary-
         # monitor use case; multi-monitor scaling is a known limitation.
         # Plain attribute stores (atomic in CPython); readers may see one stale frame's worth during restart - harmless.
         self._size = (width, height)
         self._tk_scale = compute_scale(width, self._x11_logical_width())
-        logger.info(
-            f"Wayland capture: {width}x{height}, tk scale {self._tk_scale:.4g}"
-        )
+        logger.info(f"Wayland capture: {width}x{height}, tk scale {self._tk_scale:.4g}")
 
     def stop(self) -> None:
         # Order matters: NULL the pipeline first (joins streaming threads),
@@ -179,16 +183,19 @@ class WaylandBackend:
 
     # ------------------------------------------------------------------
 
-    def _on_new_sample(self, sink) -> Gst.FlowReturn:
-        sample = sink.emit("pull-sample")
+    def _on_new_sample(self, sink: object) -> Gst.FlowReturn:
+        emit = getattr(sink, "emit", None)
+        if emit is None:
+            return Gst.FlowReturn.OK
+        sample = emit("pull-sample")
         if sample is None:
             return Gst.FlowReturn.OK
         buf = sample.get_buffer()
         structure = sample.get_caps().get_structure(0)
-        width = structure.get_value("width")
-        height = structure.get_value("height")
+        width = int(structure.get_value("width"))
+        height = int(structure.get_value("height"))
         meta = GstVideo.buffer_get_video_meta(buf)
-        stride = meta.stride[0] if meta else width * 4
+        stride = int(meta.stride[0] if meta else width * 4)
         ok, mapinfo = buf.map(Gst.MapFlags.READ)
         if not ok:
             return Gst.FlowReturn.OK
@@ -216,7 +223,8 @@ class WaylandBackend:
             parts.append(f"{err.message} ({debug})")
         return f"\nGStreamer errors: {'; '.join(parts)}" if parts else ""
 
-    def _x11_logical_width(self) -> int:  # ruff: ignore[no-self-use]
+    @staticmethod
+    def _x11_logical_width() -> int:
         try:
             from Xlib import display as xlib_display
 

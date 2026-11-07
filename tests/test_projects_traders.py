@@ -296,16 +296,15 @@ def test_expired_projects_excluded_from_keep_map_and_need(tmp_path: Path):
     catalog = ProjectCatalog(tmp_path / "projects.db")
     assert not catalog.is_active("High-Gain Antenna", today=date(2026, 10, 29))
     assert catalog.is_active("Trophy Display", today=date(2026, 10, 29))
-    assert catalog.total_needed(
-        "ARC Alloy", project_items={}, today=date(2026, 10, 29)
-    ) == 10
+    assert (
+        catalog.total_needed("ARC Alloy", project_items={}, today=date(2026, 10, 29))
+        == 10
+    )
 
     item = Item(
         name="ARC Alloy",
         action="Keep",
-        keep_for=(
-            "Projects: High-Gain Antenna (50x), Trophy Display (10x)"
-        ),
+        keep_for=("Projects: High-Gain Antenna (50x), Trophy Display (10x)"),
     )
     out = apply_progress(item, None, project_catalog=catalog)
     assert "High-Gain" not in (out.keep_for or "")
@@ -314,14 +313,20 @@ def test_expired_projects_excluded_from_keep_map_and_need(tmp_path: Path):
 
 
 def test_format_keep_for_drops_inactive_wiki_projects():
-    assert format_keep_for(
-        "Projects: Expedition 1 (5x) High-Gain Antenna (15x)",
-        inactive_projects={"high-gain antenna"},
-    ) == "Projects: Expedition 1 (5x)"
+    assert (
+        format_keep_for(
+            "Projects: Expedition 1 (5x) High-Gain Antenna (15x)",
+            inactive_projects={"high-gain antenna"},
+        )
+        == "Projects: Expedition 1 (5x)"
+    )
 
 
 def test_format_keep_for_prefers_staged_project_labels():
-    assert format_keep_for(
-        "Projects: Trophy Display (15x)",
-        project_uses=["Trophy Display 2 (20x)"],
-    ) == "Projects: Trophy Display 2 (20x)"
+    assert (
+        format_keep_for(
+            "Projects: Trophy Display (15x)",
+            project_uses=["Trophy Display 2 (20x)"],
+        )
+        == "Projects: Trophy Display 2 (20x)"
+    )

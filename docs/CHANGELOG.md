@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## Versions:
 
+### [1.0.0]
+- Migrate UI from Tk to Qt (PySide6): tooltip, status pill, in-game map pins, F8 map, calibrate
+- Linux Wayland overlays via XWayland (`xcb` + override-redirect); in-game pins enabled again
+- Map overlay feature to help find things in-game
+
 ### [0.4.0]
 
 Stable cut of this fork ([jaredcat/arlo-plus](https://github.com/jaredcat/arlo-plus)), following Soygen’s `v0.3.0` line. Qt UI and in-game map pins remain on `feat/map-overlay` for a future 1.0.0.

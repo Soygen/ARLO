@@ -203,6 +203,38 @@ class OverlaySettings(BaseSettings):
     cooldown: float = Field(default=2.0, description="Minimum time between same item")
 
 
+class MapTriggerRegion(RegionMixin, BaseSettings):
+    """Region covering the selected MAP tab (or map chrome) for open detection."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="MAP_TRIGGER_REGION_",
+        env_file=APP_DIR / ".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    x: int = Field(default=0, description="Left edge of MAP trigger region")
+    y: int = Field(default=0, description="Top edge of MAP trigger region")
+    width: int = Field(default=1, description="Width of MAP trigger region")
+    height: int = Field(default=1, description="Height of MAP trigger region")
+
+
+class MapViewportRegion(RegionMixin, BaseSettings):
+    """Center map terrain capture (excludes quest/legend sidebars when set)."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="MAP_VIEWPORT_",
+        env_file=APP_DIR / ".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    x: int = Field(default=0, description="Left edge of map viewport")
+    y: int = Field(default=0, description="Top edge of map viewport")
+    width: int = Field(default=1, description="Width of map viewport")
+    height: int = Field(default=1, description="Height of map viewport")
+
+
 class ScanSettings(BaseSettings):
     """Settings for scanning intervals."""
 
@@ -239,6 +271,8 @@ class Settings(BaseSettings):
     )
     overlay: OverlaySettings = Field(default_factory=OverlaySettings)
     scan: ScanSettings = Field(default_factory=ScanSettings)
+    map_trigger_region: MapTriggerRegion = Field(default_factory=MapTriggerRegion)
+    map_viewport: MapViewportRegion = Field(default_factory=MapViewportRegion)
 
     # Tesseract - auto-detect if not specified
     tesseract_path: str | None = Field(default_factory=get_tesseract_path)
@@ -254,6 +288,16 @@ class Settings(BaseSettings):
     # Hold-to-scan hotkey, evdev key name (Wayland/Linux only)
     hotkey_key: str = Field(
         default="KEY_RIGHTCTRL", description="evdev key name for hold-to-scan"
+    )
+
+    # Companion map toggle (Tk keysym, e.g. F8)
+    map_hotkey: str = Field(
+        default="F8", description="Tk keysym to toggle the companion map window"
+    )
+    # Find last scanned item on the map (Tk keysym)
+    map_find_hotkey: str = Field(
+        default="F9",
+        description="Tk keysym to open map filtered to the last overlay item",
     )
 
     # Debug settings
@@ -307,6 +351,18 @@ class Settings(BaseSettings):
             "# Platform settings",
             f"SCREEN_BACKEND={self.screen_backend}",
             f"HOTKEY_KEY={self.hotkey_key}",
+            "",
+            "# Companion map",
+            f"MAP_HOTKEY={self.map_hotkey}",
+            f"MAP_FIND_HOTKEY={self.map_find_hotkey}",
+            f"MAP_TRIGGER_REGION_X={self.map_trigger_region.x}",
+            f"MAP_TRIGGER_REGION_Y={self.map_trigger_region.y}",
+            f"MAP_TRIGGER_REGION_WIDTH={self.map_trigger_region.width}",
+            f"MAP_TRIGGER_REGION_HEIGHT={self.map_trigger_region.height}",
+            f"MAP_VIEWPORT_X={self.map_viewport.x}",
+            f"MAP_VIEWPORT_Y={self.map_viewport.y}",
+            f"MAP_VIEWPORT_WIDTH={self.map_viewport.width}",
+            f"MAP_VIEWPORT_HEIGHT={self.map_viewport.height}",
         ]
 
         with Path(env_path).open("w", encoding="utf-8") as f:

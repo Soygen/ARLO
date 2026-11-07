@@ -5,10 +5,15 @@ from __future__ import annotations
 import re
 import sqlite3
 from dataclasses import dataclass
+from datetime import UTC
 from datetime import date
-from pathlib import Path
+from datetime import datetime
+from typing import TYPE_CHECKING
 
 from .config import APP_DIR
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 _NON_ALNUM = re.compile(r"[^a-z0-9]+")
 
@@ -48,7 +53,7 @@ class ProjectRequirement:
 class ProjectCatalog:
     """Read-only access to the cached project requirements catalog."""
 
-    def __init__(self, db_path: Path | None = None):
+    def __init__(self, db_path: Path | None = None) -> None:
         self.db_path = db_path if db_path is not None else _default_db_path()
         self._schedule_cache: dict[str, date | None] | None = None
         self._name_to_id: dict[str, str] | None = None
@@ -60,8 +65,7 @@ class ProjectCatalog:
         try:
             with self._connect() as conn:
                 row = conn.execute(
-                    "SELECT 1 FROM sqlite_master "
-                    "WHERE type='table' AND name='projects'"
+                    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='projects'"
                 ).fetchone()
                 return row is not None
         except sqlite3.Error:
@@ -72,10 +76,10 @@ class ProjectCatalog:
         conn.row_factory = sqlite3.Row
         return conn
 
-    def _has_schedule_columns(self, conn: sqlite3.Connection) -> bool:
+    @staticmethod
+    def _has_schedule_columns(conn: sqlite3.Connection) -> bool:
         cols = {
-            row[1]
-            for row in conn.execute("PRAGMA table_info(projects)").fetchall()
+            row[1] for row in conn.execute("PRAGMA table_info(projects)").fetchall()
         }
         return "ends_on" in cols
 
@@ -90,9 +94,7 @@ class ProjectCatalog:
             return
         with self._connect() as conn:
             if self._has_schedule_columns(conn):
-                rows = conn.execute(
-                    "SELECT id, name, ends_on FROM projects"
-                ).fetchall()
+                rows = conn.execute("SELECT id, name, ends_on FROM projects").fetchall()
                 for row in rows:
                     ends[row["id"]] = _parse_iso_date(row["ends_on"])
                     names[_norm_name(row["name"])] = row["id"]
@@ -114,7 +116,7 @@ class ProjectCatalog:
 
         Unknown labels (e.g. wiki-only ``Expedition 5``) fail open as active.
         """
-        today = today or date.today()
+        today = today or datetime.now(UTC).date()
         self._load_schedule()
         assert self._schedule_cache is not None
         assert self._name_to_id is not None
@@ -177,9 +179,7 @@ class ProjectCatalog:
         ]
         if include_expired:
             return reqs
-        return [
-            r for r in reqs if self.is_active(r.project_id, today=today)
-        ]
+        return [r for r in reqs if self.is_active(r.project_id, today=today)]
 
     def remaining_for_item(
         self,

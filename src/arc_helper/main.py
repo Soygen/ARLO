@@ -3,24 +3,32 @@ ARLO - Main Application.
 Coordinates OCR scanning and overlay display.
 """
 
+import os
 import queue
+import signal
 import sys
 import threading
 import time
-import tkinter as tk
 import traceback
+from contextlib import suppress
 from dataclasses import dataclass
 from dataclasses import field
 from enum import Enum
 from enum import auto
 from pathlib import Path
+from threading import ExceptHookArgs
 from threading import Thread
+from types import TracebackType
 from typing import ClassVar
 
+import numpy as np
 from dotenv import load_dotenv
+from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QWidget
 
-from arc_helper.clickthrough import make_click_through
 from arc_helper.config import APP_DIR
+from arc_helper.config import Settings
 from arc_helper.config import SettingsManager
 from arc_helper.config import get_settings
 from arc_helper.config import logger
@@ -29,18 +37,30 @@ from arc_helper.database import Item
 from arc_helper.database import get_database
 from arc_helper.database import names_match
 from arc_helper.hotkey import HotkeyMonitor
+from arc_helper.hotkey import TapHotkeyMonitor
 from arc_helper.hotkey import get_hotkey_monitor
+from arc_helper.hotkey import get_map_find_tap_monitor
+from arc_helper.hotkey import get_map_tap_monitor
+from arc_helper.map_data import get_map_catalog
+from arc_helper.map_filter import MapFilterState
+from arc_helper.map_filter import resolve_markers
+from arc_helper.map_sync import MapSyncEngine
+from arc_helper.map_sync import ViewportRegistration
+from arc_helper.map_sync import capture_map_thumb
+from arc_helper.map_sync import latlng_to_screen
+from arc_helper.map_sync import thumbs_differ
+from arc_helper.ocr import OCREngine
 from arc_helper.ocr import OCREngineManager
 from arc_helper.ocr import get_ocr_engine
-from arc_helper.overlay import OverlayWindow
-from arc_helper.overlay import StatusWindow
 from arc_helper.progress import ProgressProfile
 from arc_helper.progress import apply_progress
 from arc_helper.progress import load_progress
 from arc_helper.progress_import_server import IMPORT_HOST
 from arc_helper.progress_import_server import IMPORT_PORT
+from arc_helper.progress_import_server import account_sync_last_synced_at
 from arc_helper.progress_import_server import account_sync_mtime
-from arc_helper.progress_import_server import format_import_age
+from arc_helper.progress_import_server import format_progress_status
+from arc_helper.progress_import_server import parse_synced_at
 from arc_helper.progress_import_server import start_import_server
 from arc_helper.progress_import_server import stop_import_server
 from arc_helper.projects import ProjectCatalog
@@ -51,9 +71,17 @@ from arc_helper.resolution_profiles import get_profile_manager
 from arc_helper.screen import ScreenCaptureUnavailable
 from arc_helper.traders import TraderCatalog
 from arc_helper.traders import get_trader_catalog
+from arc_helper.ui import InGameMapPins
+from arc_helper.ui import MapWindow
+from arc_helper.ui import OverlayPin
+from arc_helper.ui import OverlayWindow
+from arc_helper.ui import StatusWindow
+from arc_helper.ui import prepare_qt_env
+from arc_helper.ui.platform import apply_overlay_flags
 
 # How long the startup / post-import progress flash stays on the status pill.
 _PROGRESS_FLASH_MS = 5000
+_MAP_MISS_STREAK_HINT = 8
 
 load_dotenv(Path(__file__).with_name(".env"), override=False)
 
@@ -67,46 +95,34 @@ class ScannerState(Enum):
     STOPPED = auto()  # Fully stopped
 
 
-class DebugOverlay:
+class DebugOverlay(QWidget):
     """Semi-transparent overlay showing the tooltip capture area."""
 
-    def __init__(self, root: tk.Tk, settings):
-        self.root = root
+    def __init__(self, settings: Settings) -> None:
+        super().__init__()
         self.settings = settings
+        apply_overlay_flags(self, click_through=True)
+        self.setWindowTitle("Capture Area")
+        self.setStyleSheet("background: rgba(255,0,0,80);")
+        self._timer = QTimer(self)
+        self._timer.timeout.connect(self._update_position)
+        self._timer.start(50)
+        self.show()
 
-        self.window = tk.Toplevel(root)
-        self.window.title("Capture Area")
-        self.window.attributes("-topmost", True)  # ruff: ignore[boolean-positional-value-in-call]
-        self.window.attributes("-alpha", 0.3)  # Semi-transparent
-        self.window.overrideredirect(boolean=True)
-        self.window.config(bg="red")
-        make_click_through(self.window)
-
-        # Update position periodically
-        self._update_position()
-
-    def _update_position(self):
-        """Update overlay position to follow cursor."""
-        try:
+    def _update_position(self) -> None:
+        with suppress(Exception):
             from arc_helper.ocr import get_cursor_position
-            from arc_helper.screen import phys_to_tk
 
             cursor = get_cursor_position()
+            x = cursor.x + self.settings.tooltip_capture.offset_x
+            y = cursor.y + self.settings.tooltip_capture.offset_y
+            w = self.settings.tooltip_capture.width
+            h = self.settings.tooltip_capture.height
+            self.setGeometry(int(x), int(y), int(w), int(h))
 
-            x = phys_to_tk(cursor.x + self.settings.tooltip_capture.offset_x)
-            y = phys_to_tk(cursor.y + self.settings.tooltip_capture.offset_y)
-            w = phys_to_tk(self.settings.tooltip_capture.width)
-            h = phys_to_tk(self.settings.tooltip_capture.height)
-
-            self.window.geometry(f"{w}x{h}+{x}+{y}")
-        except Exception:  # ruff: ignore[blind-except]
-            pass
-
-        # Schedule next update (every 50ms for smooth following)
-        self.root.after(50, self._update_position)
-
-    def destroy(self):
-        self.window.destroy()
+    def teardown(self) -> None:
+        """Close the debug overlay (avoid QWidget.destroy override)."""
+        self.close()
 
 
 @dataclass
@@ -131,9 +147,9 @@ class Scanner:
     2. When triggered, high-frequency scan for item names
     """
 
-    root: tk.Tk
     overlay: OverlayWindow
     status: StatusWindow
+    root: object | None = None
     db: Database = field(default_factory=get_database)
     state: ScannerState = ScannerState.IDLE
     stats: ScannerStats = field(default_factory=ScannerStats)
@@ -144,10 +160,8 @@ class Scanner:
     project_catalog: ProjectCatalog | None = None
     trader_catalog: TraderCatalog | None = None
 
-    # UI updates are posted here for the main (GUI) thread to apply. tkinter
-    # is not thread-safe, and on Linux/Tcl root.after() called from this
-    # background thread silently never fires - so we marshal via a queue that
-    # Application drains on a main-thread timer.
+    # UI updates are posted here for the main (GUI) thread to apply. Qt
+    # widgets are main-thread only — Application drains this queue on a QTimer.
     ui_queue: "queue.Queue[tuple]" = field(default_factory=queue.Queue)
 
     # Cooldown tracking
@@ -212,7 +226,7 @@ class Scanner:
         settings = get_settings()
         ocr = get_ocr_engine()
 
-        while self._running:
+        while self._running:  # ruff: ignore[too-many-nested-blocks]
             try:
                 if self.state == ScannerState.PAUSED:
                     time.sleep(0.1)
@@ -226,6 +240,16 @@ class Scanner:
 
                 # Phase 1: Check for trigger (INVENTORY) or hotkey
                 if self.state == ScannerState.IDLE:
+                    # MAP screen still shows the INVENTORY tab label in the top
+                    # nav — suppress inventory scan when map chrome is visible.
+                    if MapSyncEngine.detect_map_open():
+                        self._update_status("map")
+                        self.ui_queue.put(("map_mode", True))
+                        time.sleep(settings.scan.trigger_scan_interval)
+                        self.stats.trigger_scans += 1
+                        continue
+
+                    self.ui_queue.put(("map_mode", False))
                     self._update_status("scanning")
 
                     if hotkey_now:
@@ -267,15 +291,20 @@ class Scanner:
                             self._enter_idle("Hotkey released - returning to idle")
                             continue
                     else:
-                        # Inventory mode: check trigger every 3rd scan
+                        # Inventory mode: leave if MAP opens or INVENTORY closes
                         self._trigger_check_counter += 1
                         should_check_trigger = self._trigger_check_counter % 3 == 0
 
-                        if should_check_trigger and self._inventory_closed(
-                            ocr, settings
-                        ):
-                            self._enter_idle("INVENTORY closed - returning to idle")
-                            continue
+                        if should_check_trigger:
+                            if MapSyncEngine.detect_map_open():
+                                self._enter_idle(
+                                    "MAP screen open - leaving inventory scan"
+                                )
+                                self.ui_queue.put(("map_mode", True))
+                                continue
+                            if self._inventory_closed(ocr, settings):
+                                self._enter_idle("INVENTORY closed - returning to idle")
+                                continue
 
                     # Scan tooltip at cursor position
                     item_name = ocr.extract_item_name_at_cursor()
@@ -312,7 +341,7 @@ class Scanner:
         self._update_status("scanning")
         logger.info(reason)
 
-    def _inventory_closed(self, ocr, settings) -> bool:
+    def _inventory_closed(self, ocr: OCREngine, settings: Settings) -> bool:
         """True if the INVENTORY trigger is gone.
 
         On Wayland, a single failed OCR of the trigger word was bouncing
@@ -362,8 +391,10 @@ class Scanner:
 
         # Wayland: same item (OCR-tolerant) → heartbeat only, no remount.
         # Also bypasses cooldown so a short DISPLAY_TIME cannot dismiss us.
-        if self._wayland_stable and self._last_shown_item and names_match(
-            item_name, self._last_shown_item
+        if (
+            self._wayland_stable
+            and self._last_shown_item
+            and names_match(item_name, self._last_shown_item)
         ):
             self.ui_queue.put(("overlay_keep",))
             self._last_shown_time = current_time
@@ -420,7 +451,7 @@ class Scanner:
 class Application:
     """Main application controller."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the application."""
         # Load settings
         self.settings = get_settings()
@@ -456,24 +487,58 @@ class Application:
         if self.trader_catalog is not None:
             logger.info("Trader catalog loaded")
 
-        # Create main Tk root (hidden)
-        self.root = tk.Tk()
-        self.root.withdraw()  # Hide main window
+        prepare_qt_env()
+        existing = QApplication.instance()
+        self.app = (
+            existing if isinstance(existing, QApplication) else QApplication(sys.argv)
+        )
+        self.app.setQuitOnLastWindowClosed(False)
+        self.root = None
 
-        # Create overlay and status windows
-        self.overlay = OverlayWindow(self.root)
-        self.status = StatusWindow(self.root, on_quit=self.quit)
+        # Tooltip overlay + in-game map pins. F8 opens filter config
+        # (evdev/GetAsyncKeyState works with the game focused on Wayland).
+        self.overlay = OverlayWindow()
+        self.map_catalog = get_map_catalog()
+        self.map_sync = MapSyncEngine(self.map_catalog)
+        self.map_filter = MapFilterState()
+        self.map_pins = InGameMapPins()
+        # Flags must exist before MapWindow init (reload fires on_filter_change).
+        self._last_overlay_item: str | None = None
+        self._map_mode_latched = False
+        self._map_pins_active = False
+        self._map_refresh_busy = False
+        self._map_motion_busy = False
+        self._map_motion_timer: QTimer | None = None
+        self._map_settle_timer: QTimer | None = None
+        self._map_thumb: np.ndarray | None = None
+        self._map_pins_drawn_for_thumb: np.ndarray | None = None
+        self._map_miss_streak = 0
+        self._map_motion_streak = 0
+        # Fast motion poll; ORB only after the viewport stops changing.
+        self._map_motion_poll_ms = 150
+        self._map_settle_ms = 400
+        self.map_window = MapWindow(
+            catalog=self.map_catalog,
+            filter_state=self.map_filter,
+            on_sync_request=self._request_map_sync,
+            on_filter_change=self._on_map_filter_change,
+        )
+        self.map_tap: TapHotkeyMonitor = get_map_tap_monitor()
+        self.map_find_tap: TapHotkeyMonitor = get_map_find_tap_monitor()
+        self.status = StatusWindow(
+            on_quit=self.quit,
+            on_left_click=self._toggle_map_window,
+        )
 
         # Debug overlay for visualizing capture area (separate from debug_mode)
         self.debug_overlay = None
         if self.settings.show_capture_area:
-            self.debug_overlay = DebugOverlay(self.root, self.settings)
+            self.debug_overlay = DebugOverlay(self.settings)
 
         # Create scanner. The scanner thread posts UI updates to this queue;
-        # the main thread drains it in _pump_ui_queue (tkinter is single-thread).
+        # the main thread drains it on a QTimer (Qt is main-thread only).
         self.ui_queue: queue.Queue[tuple] = queue.Queue()
         self.scanner = Scanner(
-            root=self.root,
             overlay=self.overlay,
             status=self.status,
             db=self.db,
@@ -483,9 +548,12 @@ class Application:
             trader_catalog=self.trader_catalog,
             ui_queue=self.ui_queue,
         )
-
-        # Bind close handler
-        self.root.protocol("WM_DELETE_WINDOW", self.quit)
+        self._ui_pump_timer = QTimer()
+        self._ui_pump_timer.timeout.connect(self._pump_ui_queue)
+        # Set from the SIGINT handler; the pump performs the actual shutdown.
+        # Python only runs the handler between bytecodes, and Qt's loop is C++,
+        # so raising KeyboardInterrupt inside a slot hits the crash hook.
+        self._sigint_requested = False
 
         # MetaForge bookmarklet → localhost import bridge
         self._progress_flash_token = 0
@@ -505,7 +573,13 @@ class Application:
             len(profile.completed_quests),
             len(profile.workshop_levels),
         )
-        self._flash_progress_status("Progress: imported just now")
+        synced = parse_synced_at(profile.metaforge_synced_at)
+        self._flash_progress_status(
+            format_progress_status(
+                imported_mtime=time.time(),
+                metaforge_synced_at=synced,
+            )
+        )
 
     def _flash_progress_status(self, message: str) -> None:
         """Show an info line on the status pill, then return to Scanning."""
@@ -521,7 +595,7 @@ class Application:
             # Scanner status pump will re-assert ACTIVE/HOTKEY on the next tick.
             self.status.set_scanning()
 
-        self.root.after(_PROGRESS_FLASH_MS, _clear)
+        QTimer.singleShot(_PROGRESS_FLASH_MS, _clear)
 
     def _apply_status(self, status: str) -> None:
         """Apply a status update to the StatusWindow (main thread only)."""
@@ -531,29 +605,348 @@ class Application:
             self.status.set_scanning()
         elif status == "active":
             self.status.set_active()
+        elif status == "map":
+            self.status.set_map()
         elif status == "hotkey":
             self.status.set_hotkey()
         elif status == "error":
             self.status.set_error("Error")
 
+    def _on_map_mode(self, *, active: bool) -> None:
+        """Enter/leave raid-map mode: in-game pins loop; F8 for filters."""
+        if active:
+            if not self._map_mode_latched:
+                self._map_mode_latched = True
+                self._map_pins_active = True
+                self._map_thumb = None
+                self._map_pins_drawn_for_thumb = None
+                self._map_motion_streak = 0
+                self.map_window.set_sync_status("watching")
+                self._schedule_map_motion_poll(immediate=True)
+            self.status.set_map()
+        else:
+            self._map_mode_latched = False
+            self._map_pins_active = False
+            self._map_miss_streak = 0
+            self._map_motion_streak = 0
+            self._map_thumb = None
+            self._map_pins_drawn_for_thumb = None
+            self._cancel_map_timers()
+            self.map_pins.hide()
+            self.map_window.set_sync_status("idle")
+
+    def _cancel_map_timers(self) -> None:
+        for attr in ("_map_motion_timer", "_map_settle_timer"):
+            timer = getattr(self, attr)
+            if timer is not None:
+                timer.stop()
+                setattr(self, attr, None)
+
+    def _on_map_filter_change(self) -> None:
+        """Filters changed in F8 window — redraw pins if the map is settled."""
+        if not self._map_pins_active:
+            return
+        self._map_pins_drawn_for_thumb = None
+        self._schedule_map_settle()
+
+    def _schedule_map_motion_poll(self, *, immediate: bool = False) -> None:
+        if self._map_motion_timer is not None:
+            self._map_motion_timer.stop()
+            self._map_motion_timer = None
+        if not self._map_pins_active:
+            return
+        delay = 0 if immediate else self._map_motion_poll_ms
+        self._map_motion_timer = QTimer()
+        self._map_motion_timer.setSingleShot(True)
+        self._map_motion_timer.timeout.connect(self._poll_map_motion)
+        self._map_motion_timer.start(delay)
+
+    def _poll_map_motion(self) -> None:
+        """Fast viewport thumb check; hide on move, ORB only after settle."""
+        self._map_motion_timer = None
+        if not self._map_pins_active:
+            return
+        if self._map_motion_busy or self._map_refresh_busy:
+            self._schedule_map_motion_poll()
+            return
+        self._map_motion_busy = True
+
+        def _worker() -> None:
+            try:
+                thumb = capture_map_thumb()
+                self.ui_queue.put(("map_thumb", thumb))
+            except Exception as e:  # ruff: ignore[blind-except]
+                logger.debug("Map motion poll failed: %s", e)
+                self.ui_queue.put(("map_thumb", None))
+            finally:
+                self._map_motion_busy = False
+
+        Thread(target=_worker, daemon=True, name="map-motion").start()
+
+    def _on_map_thumb(self, thumb: np.ndarray | None) -> None:
+        if not self._map_pins_active:
+            return
+        from arc_helper.map_sync import MOTION_STREAK_REQUIRED
+
+        # First sample after map open — seed baseline, don't treat as a pan.
+        if self._map_thumb is None:
+            if thumb is not None:
+                self._map_thumb = thumb
+            self._map_motion_streak = 0
+            if (
+                self._map_pins_drawn_for_thumb is None
+                and self._map_settle_timer is None
+                and not self._map_refresh_busy
+            ):
+                self._schedule_map_settle()
+            self._schedule_map_motion_poll()
+            return
+
+        moved = thumbs_differ(self._map_thumb, thumb)
+        if thumb is not None:
+            self._map_thumb = thumb
+
+        if moved:
+            self._map_motion_streak += 1
+        else:
+            self._map_motion_streak = 0
+
+        if self._map_motion_streak >= MOTION_STREAK_REQUIRED:
+            # Clear stale pins only after sustained pan/zoom, not hover flicker.
+            self.map_pins.hide()
+            self._map_pins_drawn_for_thumb = None
+            self.map_window.set_sync_status("moving…")
+            self._schedule_map_settle()
+            self._map_motion_streak = 0
+        elif (
+            self._map_pins_drawn_for_thumb is None
+            and self._map_settle_timer is None
+            and not self._map_refresh_busy
+        ):
+            # Stable but nothing drawn yet (first open / failed ORB).
+            self._schedule_map_settle()
+
+        self._schedule_map_motion_poll()
+
+    def _schedule_map_settle(self) -> None:
+        """Debounce: wait until motion stops, then register + draw once."""
+        if self._map_settle_timer is not None:
+            self._map_settle_timer.stop()
+            self._map_settle_timer = None
+        if not self._map_pins_active:
+            return
+        self._map_settle_timer = QTimer()
+        self._map_settle_timer.setSingleShot(True)
+        self._map_settle_timer.timeout.connect(self._kick_map_pin_refresh)
+        self._map_settle_timer.start(self._map_settle_ms)
+
+    def _kick_map_pin_refresh(self) -> None:
+        """ORB registration + pin project once the viewport has settled."""
+        self._map_settle_timer = None
+        if not self._map_pins_active:
+            return
+        if self._map_refresh_busy:
+            self._schedule_map_settle()
+            return
+        if (
+            self._map_pins_drawn_for_thumb is not None
+            and self._map_thumb is not None
+            and not thumbs_differ(self._map_pins_drawn_for_thumb, self._map_thumb)
+        ):
+            return
+
+        self._map_refresh_busy = True
+        self.map_window.set_sync_status("registering…")
+        # Filter widgets must be read on the UI thread — not inside the worker.
+        self.map_window.push_filter_state()
+        hint = self.map_filter.map_id
+        filter_snap = self.map_filter.snapshot()
+
+        def _worker() -> None:
+            try:
+                reg = self.map_sync.register_once(map_id_hint=hint, detect_player=False)
+                frame = self._build_pin_frame(reg, filter_snap)
+                self.ui_queue.put(("map_pins_frame", frame))
+            except Exception as e:  # ruff: ignore[blind-except]
+                logger.warning("Map pin refresh failed: %s", e)
+                self.ui_queue.put(("map_pins_frame", None))
+            finally:
+                self._map_refresh_busy = False
+
+        Thread(target=_worker, daemon=True, name="map-pins").start()
+
+    def _build_pin_frame(
+        self,
+        reg: ViewportRegistration | None,
+        state: MapFilterState | None = None,
+    ) -> dict | None:
+        """Project filtered markers into overlay coords for the UI thread."""
+        from arc_helper.map_filter import INGAME_PIN_CAP
+        from arc_helper.map_sync import viewport_center_latlng
+
+        if reg is None or not self.map_catalog:
+            return None
+        meta = self.map_catalog.get_meta(reg.map_id)
+        if meta is None:
+            return None
+
+        state = self.map_filter.snapshot() if state is None else state.snapshot()
+        state.map_id = reg.map_id
+        # Keep shared filter map_id in sync with OCR/registration
+        if reg.map_id and reg.map_id != self.map_filter.map_id:
+            self.map_filter.map_id = reg.map_id
+
+        # Warm Metaforge loose-spawn cache (network) before projecting pins.
+        needle = (state.item_filter or state.search or "").strip()
+        if needle:
+            try:
+                self.map_catalog.ensure_loose_spots(reg.map_id, needle)
+            except Exception as e:  # ruff: ignore[blind-except]
+                logger.debug("Loose-spot ensure failed: %s", e)
+
+        # Prefer pins near the visible viewport — a global sample of 16 often
+        # lands entirely off-screen when the raid map is zoomed in.
+        origin = viewport_center_latlng(meta=meta, reg=reg)
+        # Over-fetch then keep only those that project into the crop.
+        candidates = resolve_markers(
+            self.map_catalog,
+            state,
+            origin=origin,
+            limit=max(INGAME_PIN_CAP * 32, 256),
+            meta=meta,
+        )
+
+        left, top, _r, _b = reg.viewport_bbox
+        pins: list[OverlayPin] = []
+        for m in candidates:
+            screen = latlng_to_screen(m.lat, m.lng, meta=meta, reg=reg)
+            if screen is None:
+                continue
+            sx, sy = screen
+            pins.append(
+                OverlayPin(
+                    x=sx - left,
+                    y=sy - top,
+                    category=m.category,
+                )
+            )
+            if len(pins) >= INGAME_PIN_CAP:
+                break
+
+        logger.info(
+            "Map pins: %s on-screen / %s candidates (origin=%s)",
+            len(pins),
+            len(candidates),
+            "viewport" if origin else "none",
+        )
+        return {
+            "reg": reg,
+            "pins": pins,
+            "marker_count": len(pins),
+        }
+
     def _pump_ui_queue(self) -> None:
-        """Drain scanner UI messages on the main thread, then reschedule."""
+        """Drain scanner UI messages on the main thread (QTimer)."""
+        if self._sigint_requested:
+            self.quit()
+            return
+
+        # Global map hotkeys (work while the game has focus on Wayland/Windows)
+        try:
+            if self.map_tap.consume_press():
+                self._toggle_map_window()
+        except Exception as e:  # ruff: ignore[blind-except]
+            logger.warning("Map hotkey poll failed: %s", e)
+        try:
+            if self.map_find_tap.consume_press():
+                self._find_last_item_on_map()
+        except Exception as e:  # ruff: ignore[blind-except]
+            logger.warning("Map-find hotkey poll failed: %s", e)
+
         try:
             while True:
                 msg = self.ui_queue.get_nowait()
                 if msg[0] == "status":
                     self._apply_status(msg[1])
                 elif msg[0] == "overlay":
-                    self.overlay.show(msg[1], msg[2], in_raid=msg[3])
+                    self._last_overlay_item = msg[1]
+                    self.overlay.show_item(msg[1], msg[2], in_raid=msg[3])
                 elif msg[0] == "overlay_keep":
                     self.overlay.keep_alive()
                 elif msg[0] == "overlay_hide":
                     self.overlay.hide()
                 elif msg[0] == "progress_imported":
                     self._apply_progress_profile(msg[1])
+                elif msg[0] == "map_pins_frame":
+                    self._apply_map_pins_frame(msg[1])
+                elif msg[0] == "map_thumb":
+                    self._on_map_thumb(msg[1])
+                elif msg[0] == "map_mode":
+                    self._on_map_mode(active=bool(msg[1]))
         except queue.Empty:
             pass
-        self.root.after(50, self._pump_ui_queue)
+
+    def _request_map_sync(self) -> None:
+        """Manual Sync now from filter window — force a settled redraw."""
+        self._map_pins_drawn_for_thumb = None
+        self._schedule_map_settle()
+
+    def _apply_map_pins_frame(self, frame: dict | None) -> None:
+        if not self._map_pins_active:
+            self.map_pins.hide()
+            return
+        if frame is None:
+            self._map_miss_streak += 1
+            self.map_pins.hide()
+            # Remember this thumb so we don't re-ORB until the map moves again.
+            if self._map_thumb is not None:
+                self._map_pins_drawn_for_thumb = self._map_thumb.copy()
+            self.map_window.set_sync_status(
+                f"no match ({self._map_miss_streak})"
+                if self._map_miss_streak < _MAP_MISS_STREAK_HINT
+                else "no match — pan slightly"
+            )
+            return
+
+        self._map_miss_streak = 0
+        reg: ViewportRegistration = frame["reg"]
+        pins: list[OverlayPin] = frame["pins"]
+        conf = reg.confidence
+        n = frame["marker_count"]
+        self.map_window.set_sync_status(f"live ({conf:.0%}, {n} pins)")
+
+        self.map_window.set_suspend_filter_notify(suspended=True)
+        try:
+            if reg.map_id and reg.map_id != self.map_window.current_map_id:
+                self.map_window.select_map(reg.map_id)
+        finally:
+            self.map_window.set_suspend_filter_notify(suspended=False)
+
+        self.map_pins.update_pins(viewport_bbox=reg.viewport_bbox, pins=pins)
+        # Remember the thumb we drew for — skip re-ORB until it moves again.
+        if self._map_thumb is not None:
+            self._map_pins_drawn_for_thumb = self._map_thumb.copy()
+
+    def _toggle_map_window(self, _event: object = None) -> None:
+        was_visible = self.map_window.is_visible()
+        self.map_window.toggle()
+        if not was_visible:
+            logger.info("Map filters opened (%s)", self.map_window.current_map_id)
+        else:
+            logger.info("Map filters hidden")
+
+    def _find_last_item_on_map(self, _event: object = None) -> None:
+        name = self._last_overlay_item or self.scanner.stats.last_item
+        if not name:
+            self.status.set_info("Map: no item yet — hover one first")
+            QTimer.singleShot(2500, self.status.set_scanning)
+            return
+        self.map_window.find_item(name)
+        self.status.set_info(f"Map filter: {name}")
+        QTimer.singleShot(2500, self.status.set_scanning)
+        if self._map_pins_active:
+            self._map_pins_drawn_for_thumb = None
+            self._schedule_map_settle()
 
     def run(self) -> None:
         """Start the application."""
@@ -595,38 +988,82 @@ class Application:
             "Hold the hotkey to force tooltip scanning (Ctrl+Shift; "
             f"{get_settings().hotkey_key} on Wayland)"
         )
+        map_hk = get_settings().map_hotkey
+        find_hk = get_settings().map_find_hotkey
+        logger.info(
+            "Map: open raid MAP for in-game pins; %s = filters; "
+            "%s = filter to last hovered item",
+            map_hk,
+            find_hk,
+        )
+        if self.map_catalog:
+            logger.info(
+                "Map catalog: %s markers",
+                self.map_catalog.marker_count(),
+            )
+        else:
+            logger.info(
+                "Map catalog empty — run: uv run python update_db.py --maps-only"
+            )
         logger.info("Press Ctrl+C in terminal to quit")
         logger.info("=" * 50)
+
+        # Defer shutdown to the UI pump. A handler that raises KeyboardInterrupt
+        # fires inside this timer slot, and PySide reports that as a crash.
+        signal.signal(signal.SIGINT, lambda _signum, _frame: self._request_sigint())
+
+        # Map filters hotkeys: global tap (evdev/GetAsyncKeyState).
+        self.map_tap.start()
+        self.map_find_tap.start()
+        _ = (map_hk, find_hk)  # logged above; taps handled in _pump_ui_queue
 
         # Start scanner
         self.scanner.start()
 
-        # Start the main-thread UI pump (must be scheduled from the main thread)
-        self._pump_ui_queue()
+        # Start the main-thread UI pump
+        self._ui_pump_timer.start(50)
 
-        # Brief progress-import flash on startup (mtime of account-sync.json).
-        age = format_import_age(account_sync_mtime())
-        if age == "not imported":
-            self._flash_progress_status("Progress: not imported")
-        else:
-            self._flash_progress_status(f"Progress: imported {age}")
+        # Brief progress-import flash on startup (file mtime + MetaForge sync).
+        self._flash_progress_status(
+            format_progress_status(
+                imported_mtime=account_sync_mtime(),
+                metaforge_synced_at=account_sync_last_synced_at(),
+            )
+        )
 
-        # Run Tk mainloop
         try:
-            self.root.mainloop()
+            self.app.exec()
         except KeyboardInterrupt:
             self.quit()
 
+    def _request_sigint(self) -> None:
+        """Ask the main-thread pump to shut down. Safe to call from SIGINT."""
+        if self._sigint_requested:
+            # Second Ctrl+C while shutdown is in progress: abort immediately.
+            signal.signal(signal.SIGINT, signal.SIG_DFL)
+            os.kill(os.getpid(), signal.SIGINT)
+            return
+        self._sigint_requested = True
+
     def quit(self) -> None:
         """Clean shutdown."""
-        logger.info("\nShutting down...")
+        logger.info("Shutting down...")
+        self._map_pins_active = False
+        self._cancel_map_timers()
+        with suppress(Exception):
+            self._ui_pump_timer.stop()
+        with suppress(Exception):
+            self.map_pins.hide()
         stop_import_server()
         self.scanner.stop()
+        with suppress(Exception):
+            self.map_tap.stop()
+        with suppress(Exception):
+            self.map_find_tap.stop()
         from arc_helper.screen import reset_backend
 
         reset_backend()  # release the portal session / PipeWire stream
-        self.root.quit()
-        self.root.destroy()
+        self.app.quit()
 
 
 def check_first_run() -> bool:
@@ -673,7 +1110,16 @@ def main() -> None:
     """Entry point for ARLO."""
 
     # Log any unhandled exception before exit
-    def exception_hook(exc_type, exc_value, exc_tb):
+    def exception_hook(
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        if exc_type is None or exc_value is None:
+            return
+        if issubclass(exc_type, (KeyboardInterrupt, SystemExit)):
+            sys.__excepthook__(exc_type, exc_value, exc_tb)
+            return
         logger.error("=" * 50)
         logger.error("UNHANDLED EXCEPTION - APP CRASHING")
         logger.error("=" * 50)
@@ -689,9 +1135,10 @@ def main() -> None:
 
     sys.excepthook = exception_hook
 
-    def thread_exception_hook(args):
+    def thread_exception_hook(args: ExceptHookArgs) -> None:
+        thread_name = args.thread.name if args.thread is not None else "unknown"
         logger.error("=" * 50)
-        logger.error(f"THREAD EXCEPTION in {args.thread.name}")
+        logger.error(f"THREAD EXCEPTION in {thread_name}")
         logger.error("=" * 50)
         logger.error(
             "".join(
@@ -702,7 +1149,7 @@ def main() -> None:
         )
         crash_log = APP_DIR / "crash.log"
         with Path(crash_log).open("a", encoding="utf-8") as f:
-            f.write(f"\n\nTHREAD {args.thread.name}:\n")
+            f.write(f"\n\nTHREAD {thread_name}:\n")
             f.write(
                 "".join(
                     traceback.format_exception(
@@ -723,6 +1170,7 @@ def main() -> None:
         try:
             sys.path.insert(0, str(APP_DIR))
             from update_db import auto_update
+
             auto_update()
         except Exception as e:  # ruff: ignore[blind-except]
             logger.debug(f"Wiki auto-update unavailable: {e}")

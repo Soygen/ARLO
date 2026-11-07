@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  # Gate PRs into main (and any other branch). Direct pushes to main are
+  # blocked by branch protection; release.yml re-runs this via workflow_call.
+  pull_request:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config \
+            libcairo2-dev \
+            libgirepository-2.0-dev \
+            gobject-introspection \
+            gir1.2-glib-2.0 \
+            libglib2.0-dev \
+            gir1.2-gstreamer-1.0 \
+            gir1.2-gst-plugins-base-1.0 \
+            libgstreamer1.0-dev \
+            libgstreamer-plugins-base1.0-dev
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+
+      - name: Install dependencies
+        run: uv sync --frozen --extra dev
+
+      - name: Ruff lint
+        run: uv run --frozen --no-sync ruff check .
+
+      - name: Ruff format
+        run: uv run --frozen --no-sync ruff format --check .
+
+      - name: basedpyright
+        run: uv run --frozen --no-sync basedpyright
+
+      - name: Pytest
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: uv run --frozen --no-sync pytest

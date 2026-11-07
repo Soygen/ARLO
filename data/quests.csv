@@ -22,18 +22,18 @@ battening-down,Battening Down,Apollo,0,off-the-raider,
 bees,Bees!,Celeste,0,flickering-threat,
 belly-of-the-beast,Belly of the Beast,Shani,0,tracks-of-the-beast;sizing-things-up,
 boarding-the-frigate,Boarding the Frigate,Shani,10000,off-the-raider,
-bombing-run,Bombing Run,Shani,0,combat-recon,
+bombing-run,Bombing Run,Shani,0,combat-recon,bombardier-cell:1:Bombardier Cell
 broken-monument,Broken Monument,TianWen,0,what-we-left-behind,first-wave-compass:1:First Wave Compass|first-wave-rations:1:First Wave Rations|first-wave-tape:1:First Wave Tape
-building-a-library,Building a Library,Apollo,0,digging-up-dirt,
+building-a-library,Building a Library,Apollo,0,digging-up-dirt,library-book:3:Library Book
 celestes-childhood-drawings,Celeste’s Childhood Drawings,Lance,5000,shoring-up-defenses,
 celestes-journals,Celeste’s Journals,Celeste,0,a-symbol-of-unification,celestes-journal:2:Celeste's Journal
 celestes-teenage-rebellion,Celeste's Teenage Rebellion,Celeste,0,celestes-childhood-drawings,
 clamoring-for-attention,Clamoring for Attention,Shani,0,dormant-barons,battery:1:Battery|wires-recipe:3:Wires
-clean-hands,Clean Hands,Cassio,5000,off-the-raider,
+clean-hands,Clean Hands,Cassio,5000,off-the-raider,equatorial-sundial:1:Equatorial Sundial
 clearer-skies,Clearer Skies,Shani,0,picking-up-the-pieces,arc-alloy:3:ARC Alloy
 cold-storage,Cold Storage,Shani,0,in-my-image,old-world-books:1:Old World Books
 collision-course,Collision Course,TianWen,0,safe-passage,comet-igniter:1:Comet Igniter
-combat-recon,Combat Recon,Shani,0,into-the-fray;out-of-the-shadows,
+combat-recon,Combat Recon,Shani,0,into-the-fray;out-of-the-shadows,spotter-relay:1:Spotter Relay
 communication-hideout,Communication Hideout,Shani,0,lost-in-transmission,
 deciphering-the-data,Deciphering The Data,Shani,0,paving-the-way,
 digging-up-dirt,Digging Up Dirt,Celeste,0,tribute-to-toledo,

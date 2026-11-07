@@ -32,24 +32,36 @@ jobs:
         run: uv sync --frozen --only-group update-db --no-install-project
 
       - name: Run wiki scraper (merge mode)
+        # Refreshes items/quests + map markers. Basemap PNGs under data/maps/
+        # are only re-stitched when data/maps/MANIFEST.json layer signatures
+        # no longer match MAP_TILE_CONFIGS (or a reference is missing).
         run: uv run --frozen --no-sync python update_db.py --merge
 
       - name: Check for changes
         id: check_changes
         run: |
-          git diff --quiet data/ arlo.db \
-            || echo "changed=true" >> "$GITHUB_OUTPUT"
+          git add -A data/ arlo.db
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            MAP_DATE=$(python -c "import json,pathlib; p=pathlib.Path('data/maps/MANIFEST.json'); print(json.loads(p.read_text()).get('generated_at','')[:10] if p.is_file() else '')" 2>/dev/null || true)
+            echo "map_date=$MAP_DATE" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Commit and push changes
         if: steps.check_changes.outputs.changed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/ arlo.db
           # Drop legacy root-level catalog files if still present
           git rm -f --ignore-unmatch \
             items.csv items.db quests.csv quests.db \
             projects.csv projects.db traders.csv traders.db \
             missing_items.csv
-          git commit -m "Auto-update catalog [$(date -u +%Y-%m-%d)]"
+          MAP_NOTE=""
+          if [ -n "${{ steps.check_changes.outputs.map_date }}" ]; then
+            MAP_NOTE=" maps ${{ steps.check_changes.outputs.map_date }}"
+          fi
+          git commit -m "Auto-update catalog [$(date -u +%Y-%m-%d)]${MAP_NOTE}"
           git push

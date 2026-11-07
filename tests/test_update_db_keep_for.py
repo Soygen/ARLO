@@ -23,10 +23,13 @@ def test_format_keep_for_adds_projects_colon():
 
 
 def test_format_keep_for_unescapes_html_entities_and_dedupes_projects():
-    assert format_keep_for(
-        "Projects: Soul&#39;s Offering (15x)",
-        project_uses=["Soul's Offering (15x)"],
-    ) == "Projects: Soul's Offering (15x)"
+    assert (
+        format_keep_for(
+            "Projects: Soul&#39;s Offering (15x)",
+            project_uses=["Soul's Offering (15x)"],
+        )
+        == "Projects: Soul's Offering (15x)"
+    )
 
 
 def test_format_keep_for_quests_only():
@@ -39,16 +42,17 @@ def test_format_keep_for_combines_wiki_and_quests():
     assert format_keep_for(
         "Workshop Research Station 3 (6x)",
         ["Bait Fetch Blast (1x)"],
-    ) == (
-        "Workshop: Research Station 3 (6x); Quests: Bait Fetch Blast (1x)"
-    )
+    ) == ("Workshop: Research Station 3 (6x); Quests: Bait Fetch Blast (1x)")
 
 
 def test_format_keep_for_skips_quest_already_in_wiki():
-    assert format_keep_for(
-        "Quests The League (1x)",
-        ["The League (1x)"],
-    ) == "Quests: The League (1x)"
+    assert (
+        format_keep_for(
+            "Quests The League (1x)",
+            ["The League (1x)"],
+        )
+        == "Quests: The League (1x)"
+    )
 
 
 def test_format_keep_for_merges_projects_into_one_section():
@@ -87,9 +91,9 @@ def test_workshop_list_and_itemgrid_merge_grid_overrides_list():
 |price1=×3
 """
     rows = _workshop_rows_from_wikitext(wikitext)
-    by_key = {(s, l, n): q for s, l, n, q in rows}
-    assert by_key[("Scrappy", 5, "Very Comfortable Pillow")] == 3
-    assert by_key[("Gunsmith", 2, "Wasp Driver")] == 8
+    by_key = {(station, level, name): qty for station, level, name, qty in rows}
+    assert by_key["Scrappy", 5, "Very Comfortable Pillow"] == 3
+    assert by_key["Gunsmith", 2, "Wasp Driver"] == 8
 
 
 def test_outpost_room_expansion_keep_map_covers_chalet_mats():
@@ -116,35 +120,47 @@ def test_apply_workshop_keep_map_replaces_loot_workshop_line():
 
 
 def test_merge_action_upgrades_bare_recycle_when_keep_for_has_project():
-    assert merge_action(
-        "Recycle",
-        "Keep until uses complete; recycle after",
-        "Projects: Trophy Display (10x)",
-    ) == "Keep until uses complete; recycle after"
+    assert (
+        merge_action(
+            "Recycle",
+            "Keep until uses complete; recycle after",
+            "Projects: Trophy Display (10x)",
+        )
+        == "Keep until uses complete; recycle after"
+    )
 
 
 def test_merge_action_preserves_hand_tuned_keep_action():
-    assert merge_action(
-        "KEEP FOR EXPEDITION MATS; Recycle after",
-        "Keep until uses complete; recycle after",
-        "Projects: Expedition 3 (3x)",
-    ) == "KEEP FOR EXPEDITION MATS; Recycle after"
+    assert (
+        merge_action(
+            "KEEP FOR EXPEDITION MATS; Recycle after",
+            "Keep until uses complete; recycle after",
+            "Projects: Expedition 3 (3x)",
+        )
+        == "KEEP FOR EXPEDITION MATS; Recycle after"
+    )
 
 
 def test_merge_action_leaves_sell_when_keep_is_not_progress():
-    assert merge_action(
-        "Sell",
-        "Use",
-        "Quick Use consumable",
-    ) == "Sell"
+    assert (
+        merge_action(
+            "Sell",
+            "Use",
+            "Quick Use consumable",
+        )
+        == "Sell"
+    )
 
 
 def test_merge_action_upgrades_sell_to_keep_for_weapons():
-    assert merge_action(
-        "Sell",
-        "Keep",
-        "Equippable Weapon",
-    ) == "Keep"
+    assert (
+        merge_action(
+            "Sell",
+            "Keep",
+            "Equippable Weapon",
+        )
+        == "Keep"
+    )
 
 
 def test_generate_action_weapon_and_blueprint():
@@ -239,7 +255,8 @@ def test_build_csv_rows_merge_overwrites_stale_keep_for():
 
 
 def test_generate_action_recyclable_without_uses_is_crafting_item():
-    from update_db import generate_action, GameItem
+    from update_db import GameItem
+    from update_db import generate_action
 
     item = GameItem(
         name="Hand Drill",
@@ -255,7 +272,8 @@ def test_generate_action_recyclable_without_uses_is_crafting_item():
 
 
 def test_generate_action_research_item_converts_to_rp():
-    from update_db import generate_action, GameItem
+    from update_db import GameItem
+    from update_db import generate_action
 
     item = GameItem(
         name="Frigate Diagnostic Node",
@@ -269,7 +287,8 @@ def test_generate_action_research_item_converts_to_rp():
 
 
 def test_generate_action_research_item_with_station_upgrade():
-    from update_db import generate_action, GameItem
+    from update_db import GameItem
+    from update_db import generate_action
 
     item = GameItem(
         name="ARC Data Module",
@@ -289,7 +308,8 @@ def test_generate_action_research_item_with_station_upgrade():
 
 def test_research_item_converts_after_station_upgrade_done():
     from arc_helper.database import Item
-    from arc_helper.progress import ProgressProfile, apply_progress
+    from arc_helper.progress import ProgressProfile
+    from arc_helper.progress import apply_progress
 
     profile = ProgressProfile(workshop_levels={"research station": 2})
     item = Item(
@@ -305,7 +325,8 @@ def test_research_item_converts_after_station_upgrade_done():
 
 def test_research_item_rp_note_stays_after_workshop_when_still_needed():
     from arc_helper.database import Item
-    from arc_helper.progress import ProgressProfile, apply_progress
+    from arc_helper.progress import ProgressProfile
+    from arc_helper.progress import apply_progress
 
     profile = ProgressProfile(workshop_levels={"research station": 2})
     item = Item(
@@ -340,3 +361,112 @@ def test_scrape_research_includes_unusable_weapon(monkeypatch):
     joined = " ".join(keep["unusable weapon"])
     assert "Medium Gun Parts Blueprint" in joined
     assert "Tether Launcher Blueprint" in joined
+
+
+def test_scrape_crafting_keep_map_emperor_couplers(monkeypatch):
+    from update_db import apply_crafting_keep_map
+    from update_db import scrape_crafting_keep_map
+
+    pages = {
+        "Emperor_Gateway_Conduit": """
+        <table>
+          <tr><th>Ingredients</th><th></th><th>Requirements</th><th></th><th>Result</th></tr>
+          <tr>
+            <td>1× ARC Insulated Coupler 1× ARC Conductive Coupler 1× ARC Plated Coupler</td>
+            <td>→</td><td>Workbench 1</td><td>→</td>
+            <td>1× Emperor Gateway Conduit</td>
+          </tr>
+        </table>
+        """,
+        "Dolabra": """
+        <table>
+          <tr><th>Ingredients</th><th></th><th>Requirements</th><th></th><th>Result</th></tr>
+          <tr>
+            <td>3× Shredder Gyro 3× Magnetic Accelerator 2× Vaporizer Regulator</td>
+            <td>→</td><td>Gunsmith 3</td><td>→</td>
+            <td>1× Dolabra</td>
+          </tr>
+        </table>
+        """,
+    }
+    monkeypatch.setattr(
+        "update_db.fetch_wiki_page",
+        lambda title: pages[title],
+    )
+    keep = scrape_crafting_keep_map()
+    assert keep["arc conductive coupler"] == ["Emperor Gateway Conduit (1x)"]
+    assert keep["vaporizer regulator"] == ["Dolabra (2x)"]
+    assert keep["amplification module mk. iii"] == ["Amplify rare Tier IV weapon (1x)"]
+
+    merged = apply_crafting_keep_map(
+        {"arc conductive coupler": "Quests: Sizing Things Up (1x)"},
+        keep,
+    )
+    text = merged["arc conductive coupler"]
+    assert "Quests: Sizing Things Up (1x)" in text
+    assert "Crafting: Emperor Gateway Conduit (1x)" in text
+    assert text.index("Quests:") < text.index("Crafting:")
+
+
+def test_scrape_amplify_keep_map_fossilized_lightning_anvil(monkeypatch):
+
+    from update_db import apply_amplify_keep_map
+    from update_db import scrape_amplify_keep_map
+
+    amp_html = """
+    <div id="mw-content-text">
+      <table>
+        <tr><th>Icon</th><th>Name</th><th>Research</th>
+            <th>Description</th><th>Stats</th></tr>
+        <tr><td></td><td>X Rounds</td><td>Embedded Blast Engineering</td><td></td>
+            <td>Kettle Anvil +5 Base Damage Bettina +3 Base Damage</td></tr>
+        <tr><td></td><td>Incendiary Grenade</td><td>Compact Combustion Charges</td><td></td>
+            <td>Rascal Hullcracker +11.25/s Burn Damage</td></tr>
+      </table>
+    </div>
+    """
+    weapons_html = """
+    <div id="mw-content-text">
+      <h2>Hand Cannons</h2>
+      <table>
+        <tr><th>X-Rounds</th></tr>
+        <tr><td>Research:</td></tr>
+        <tr><td>Embedded Blast Engineering</td></tr>
+        <tr><td>Materials:</td></tr>
+        <tr><td>3</td></tr>
+        <tr><td>Fossilized Lightning</td></tr>
+        <tr><td>Conflicts:</td></tr>
+        <tr><td>Anvil Splitter</td></tr>
+      </table>
+      <table>
+        <tr><th>Incendiary Grenades</th></tr>
+        <tr><td>Materials:</td></tr>
+        <tr><td>3</td></tr>
+        <tr><td>Fossilized Lightning</td></tr>
+      </table>
+    </div>
+    """
+
+    def _fetch(title: str) -> str:
+        if title == "Amplification":
+            return amp_html
+        if title == "Amplified_Weapons":
+            return weapons_html
+        raise AssertionError(title)
+
+    monkeypatch.setattr("update_db.fetch_wiki_page", _fetch)
+    keep = scrape_amplify_keep_map()
+    assert "fossilized lightning" in keep
+    joined = " ".join(keep["fossilized lightning"])
+    assert "Anvil X-Rounds (3x)" in joined
+    assert "Kettle X-Rounds (3x)" in joined
+    assert "Hullcracker Incendiary Grenades (3x)" in joined
+
+    merged = apply_amplify_keep_map(
+        {"fossilized lightning": "Research: Deadline Blueprint (1x)"},
+        keep,
+    )
+    text = merged["fossilized lightning"]
+    assert text.startswith("Research:")
+    assert "Amplify:" in text
+    assert text.index("Research:") < text.index("Amplify:")

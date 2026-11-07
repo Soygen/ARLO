@@ -12,10 +12,13 @@ import pytest
 
 from arc_helper.progress_import_server import IMPORT_PATH
 from arc_helper.progress_import_server import IMPORT_PORT
+from arc_helper.progress_import_server import account_sync_last_synced_at
 from arc_helper.progress_import_server import account_sync_mtime
 from arc_helper.progress_import_server import bookmarklet_js
 from arc_helper.progress_import_server import format_import_age
+from arc_helper.progress_import_server import format_progress_status
 from arc_helper.progress_import_server import install_html
+from arc_helper.progress_import_server import parse_synced_at
 from arc_helper.progress_import_server import start_import_server
 from arc_helper.progress_import_server import stop_import_server
 
@@ -159,8 +162,49 @@ def test_format_import_age():
     assert format_import_age(now - 7200, now=now) == "2h ago"
 
 
+def test_parse_synced_at():
+    assert parse_synced_at(None) is None
+    assert parse_synced_at("") is None
+    assert parse_synced_at("not-a-date") is None
+    ts = parse_synced_at("2026-10-29T08:46:50.19+00:00")
+    assert ts is not None
+    assert abs(ts - 1793263610.19) < 1.0
+
+
+def test_format_progress_status():
+    now = time.time()
+    assert format_progress_status(imported_mtime=None, now=now) == (
+        "Progress: not imported"
+    )
+    assert format_progress_status(imported_mtime=now, now=now) == (
+        "Progress: imported just now"
+    )
+    assert (
+        format_progress_status(
+            imported_mtime=now - 180,
+            metaforge_synced_at=now - 7200,
+            now=now,
+        )
+        == "Progress: imported 3m ago · MetaForge synced 2h ago"
+    )
+
+
 def test_account_sync_mtime(tmp_path: Path):
     path = tmp_path / "account-sync.json"
     assert account_sync_mtime(path) is None
     path.write_text("{}", encoding="utf-8")
     assert account_sync_mtime(path) is not None
+
+
+def test_account_sync_last_synced_at(tmp_path: Path):
+    path = tmp_path / "account-sync.json"
+    assert account_sync_last_synced_at(path) is None
+    path.write_text("{}", encoding="utf-8")
+    assert account_sync_last_synced_at(path) is None
+    path.write_text(
+        json.dumps({"lastSyncedAt": "2026-10-29T08:46:50.19+00:00"}),
+        encoding="utf-8",
+    )
+    ts = account_sync_last_synced_at(path)
+    assert ts is not None
+    assert abs(ts - 1793263610.19) < 1.0

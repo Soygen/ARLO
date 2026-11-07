@@ -13,11 +13,17 @@ def test_windows_ignores_override():
 
 
 def test_linux_wayland_display_var():
-    assert choose_backend_name("linux", {"WAYLAND_DISPLAY": "wayland-0"}, "auto") == "wayland"
+    assert (
+        choose_backend_name("linux", {"WAYLAND_DISPLAY": "wayland-0"}, "auto")
+        == "wayland"
+    )
 
 
 def test_linux_xdg_session_type():
-    assert choose_backend_name("linux", {"XDG_SESSION_TYPE": "wayland"}, "auto") == "wayland"
+    assert (
+        choose_backend_name("linux", {"XDG_SESSION_TYPE": "wayland"}, "auto")
+        == "wayland"
+    )
 
 
 def test_linux_defaults_to_x11():
@@ -38,4 +44,6 @@ def test_invalid_override_falls_back_to_auto():
 
 
 def test_override_is_case_insensitive():
-    assert choose_backend_name("linux", {"WAYLAND_DISPLAY": "wayland-0"}, "X11") == "x11"
+    assert (
+        choose_backend_name("linux", {"WAYLAND_DISPLAY": "wayland-0"}, "X11") == "x11"
+    )
