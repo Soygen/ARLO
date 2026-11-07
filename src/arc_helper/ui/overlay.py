@@ -22,6 +22,8 @@ from arc_helper.overlay_format import format_detail_parts
 from arc_helper.ui.platform import apply_overlay_flags
 from arc_helper.ui.platform import make_click_through
 
+_UI_FONT = "Segoe UI"
+
 
 def _using_wayland() -> bool:
     try:
@@ -94,16 +96,16 @@ class OverlayWindow(QWidget):
         self._panel_layout.addWidget(self.accent_bar)
 
         self.name_label = QLabel("Item Name")
-        self.name_label.setFont(QFont("Segoe UI", self._scale(18), QFont.Weight.Bold))
+        self.name_label.setFont(QFont(_UI_FONT, self._scale(18), QFont.Weight.Bold))
         self._panel_layout.addWidget(self.name_label)
 
         self.action_label = QLabel("ACTION")
-        self.action_label.setFont(QFont("Segoe UI", self._scale(26), QFont.Weight.Bold))
+        self.action_label.setFont(QFont(_UI_FONT, self._scale(26), QFont.Weight.Bold))
         self.action_label.setStyleSheet("color: #FFD700;")
         self._panel_layout.addWidget(self.action_label)
 
         self.info_label = QLabel("")
-        self.info_label.setFont(QFont("Segoe UI", self._scale(13)))
+        self.info_label.setFont(QFont(_UI_FONT, self._scale(13)))
         self.info_label.setStyleSheet(f"color: {TEXT_INFO};")
         self._panel_layout.addWidget(self.info_label)
 
@@ -114,7 +116,7 @@ class OverlayWindow(QWidget):
         self._panel_layout.addWidget(self.separator)
 
         self.keep_label = QLabel("")
-        self.keep_label.setFont(QFont("Segoe UI", self._scale(12)))
+        self.keep_label.setFont(QFont(_UI_FONT, self._scale(12)))
         self.keep_label.setStyleSheet(f"color: {TEXT_DIM};")
         self.keep_label.setWordWrap(True)
         self.keep_label.hide()
@@ -127,7 +129,7 @@ class OverlayWindow(QWidget):
         self._panel_layout.addWidget(self.detail_separator)
 
         self.recycle_label = QLabel("")
-        self.recycle_label.setFont(QFont("Segoe UI", self._scale(12)))
+        self.recycle_label.setFont(QFont(_UI_FONT, self._scale(12)))
         self.recycle_label.setStyleSheet(f"color: {TEXT_DIM};")
         self.recycle_label.setWordWrap(True)
         self.recycle_label.hide()
@@ -151,6 +153,49 @@ class OverlayWindow(QWidget):
             return
         self._bump_hide_timer()
 
+    @staticmethod
+    def _action_color(action_str: str) -> str:
+        action_upper = action_str.upper()
+        for keyword, c in ACTION_COLORS.items():
+            if keyword in action_upper:
+                return c
+        return "#FFFFFF"
+
+    @staticmethod
+    def _build_info_parts(rec: Item, *, in_raid: bool) -> list[str]:
+        parts: list[str] = []
+        if in_raid and rec.sell_price is not None:
+            parts.append(f"Sell: {rec.sell_price:,}\u20a1")
+        if rec.stack_size is not None:
+            parts.append(f"Stack: {rec.stack_size}")
+        need_total = (rec.quest_needed or 0) + (rec.project_needed or 0)
+        if need_total > 0:
+            parts.append(f"Need: {need_total}")
+        if rec.buy_from:
+            parts.append(f"Buy: {rec.buy_from}")
+        return parts
+
+    def _apply_recommendation(self, rec: Item, *, in_raid: bool) -> None:
+        color = self._action_color(rec.action)
+        self.action_label.setText(f"\u2192 {rec.action}")
+        self.action_label.setStyleSheet(f"color: {color};")
+        self.accent_bar.setStyleSheet(f"background: {color};")
+        self.info_label.setText(
+            "    \u00b7    ".join(self._build_info_parts(rec, in_raid=in_raid))
+        )
+        keep_text, recycle_text = format_detail_parts(
+            recycle_for=rec.recycle_for, keep_for=rec.keep_for
+        )
+        self._set_detail_section(keep_text, recycle_text)
+
+    def _apply_unknown(self) -> None:
+        unknown_color = ACTION_COLORS["UNKNOWN"]
+        self.action_label.setText("\u2192 UNKNOWN")
+        self.action_label.setStyleSheet(f"color: {unknown_color};")
+        self.accent_bar.setStyleSheet(f"background: {unknown_color};")
+        self.info_label.setText("")
+        self._set_detail_section("Item not in database", "")
+
     def show_item(
         self, item_name: str, recommendation: Item | None, *, in_raid: bool = False
     ) -> None:
@@ -171,42 +216,9 @@ class OverlayWindow(QWidget):
         self.name_label.setText(item_name)
 
         if recommendation:
-            action_str = recommendation.action
-            action_upper = action_str.upper()
-            color = "#FFFFFF"
-            for keyword, c in ACTION_COLORS.items():
-                if keyword in action_upper:
-                    color = c
-                    break
-            self.action_label.setText(f"\u2192 {action_str}")
-            self.action_label.setStyleSheet(f"color: {color};")
-            self.accent_bar.setStyleSheet(f"background: {color};")
-            info_parts: list[str] = []
-            if in_raid and recommendation.sell_price is not None:
-                info_parts.append(f"Sell: {recommendation.sell_price:,}\u20a1")
-            if recommendation.stack_size is not None:
-                info_parts.append(f"Stack: {recommendation.stack_size}")
-            need_total = 0
-            if recommendation.quest_needed:
-                need_total += recommendation.quest_needed
-            if recommendation.project_needed:
-                need_total += recommendation.project_needed
-            if need_total > 0:
-                info_parts.append(f"Need: {need_total}")
-            if recommendation.buy_from:
-                info_parts.append(f"Buy: {recommendation.buy_from}")
-            self.info_label.setText("    \u00b7    ".join(info_parts))
-            keep_text, recycle_text = format_detail_parts(
-                recycle_for=recommendation.recycle_for,
-                keep_for=recommendation.keep_for,
-            )
-            self._set_detail_section(keep_text, recycle_text)
+            self._apply_recommendation(recommendation, in_raid=in_raid)
         else:
-            self.action_label.setText("\u2192 UNKNOWN")
-            self.action_label.setStyleSheet(f"color: {ACTION_COLORS['UNKNOWN']};")
-            self.accent_bar.setStyleSheet(f"background: {ACTION_COLORS['UNKNOWN']};")
-            self.info_label.setText("")
-            self._set_detail_section("Item not in database", "")
+            self._apply_unknown()
 
         self.move(int(self.overlay_x), int(self.overlay_y))
         self.adjustSize()

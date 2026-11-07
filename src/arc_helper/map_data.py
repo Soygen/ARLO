@@ -143,6 +143,59 @@ def humanize_slug(slug: str) -> str:
     return s
 
 
+def _quest_pin_label(
+    inst: str,
+    sub: str,
+    quest_title: str | None,
+    loot_areas: str,
+    *,
+    with_loot: bool,
+) -> str:
+    """Build the label for a quest-category pin."""
+    title = (quest_title or "").strip() or humanize_slug(sub)
+    if inst:
+        inst_l, title_l = inst.lower(), title.lower()
+        base = (
+            inst
+            if (inst_l == title_l or inst_l == sub.lower() or title_l in inst_l)
+            else f"{title} — {inst}"
+        )
+    else:
+        base = title
+    if with_loot and (loot_areas or "").strip():
+        base = f"{base} ({loot_areas.strip()})"
+    return base
+
+
+def _base_pin_label(inst: str, sub: str, cat: str) -> str:
+    """Derive the base label (before location clarification) for non-quest pins."""
+    if inst:
+        return (
+            ARC_SUBCATEGORY_NAMES[sub]
+            if (inst.lower() == sub.lower() and sub in ARC_SUBCATEGORY_NAMES)
+            else inst
+        )
+    if sub in ARC_SUBCATEGORY_NAMES:
+        return ARC_SUBCATEGORY_NAMES[sub]
+    return humanize_slug(sub) if sub else (cat or "pin")
+
+
+def _clarify_location_label(base: str, inst: str, sub: str, cat: str) -> str:
+    """Append a subcategory/category clarifier for location-type pins."""
+    if cat not in {"locations", "events", "nature"} or cat in base.lower():
+        return base
+    pretty_sub = humanize_slug(sub) if ("-" in sub or "_" in sub) else sub
+    if (
+        pretty_sub
+        and pretty_sub.lower() not in base.lower()
+        and pretty_sub.lower() != cat
+    ):
+        return f"{base} · {pretty_sub}"
+    if not inst and pretty_sub.lower() == base.lower():
+        return f"{base} · {cat}"
+    return base
+
+
 def marker_label(
     marker: MapMarker | None = None,
     *,
@@ -165,47 +218,18 @@ def marker_label(
 
     # Quest pins share one title; objective text is a subtitle when present.
     if cat == "quests" and sub:
-        title = (quest_title or "").strip() or humanize_slug(sub)
-        if inst:
-            inst_l = inst.lower()
-            title_l = title.lower()
-            # Prefer the instance string when it already names the quest.
-            if inst_l == title_l or inst_l == sub.lower() or title_l in inst_l:
-                base = inst
-            else:
-                base = f"{title} — {inst}"
-        else:
-            base = title
-        if with_loot and (loot_areas or "").strip():
-            base = f"{base} ({loot_areas.strip()})"
-        return base
+        return _quest_pin_label(inst, sub, quest_title, loot_areas, with_loot=with_loot)
 
-    if inst:
-        # Prefer a real instance label; still rewrite bare internal ARC ids.
-        if inst.lower() == sub.lower() and sub in ARC_SUBCATEGORY_NAMES:
-            base = ARC_SUBCATEGORY_NAMES[sub]
-        else:
-            base = inst
-    elif sub in ARC_SUBCATEGORY_NAMES:
-        base = ARC_SUBCATEGORY_NAMES[sub]
-    else:
-        base = humanize_slug(sub) if sub else ""
-        if not base:
-            base = cat or "pin"
-    # Clarify rooms / open spots (not ARC aliases or plain containers)
-    if cat in {"locations", "events", "nature"} and cat not in base.lower():
-        pretty_sub = humanize_slug(sub) if ("-" in sub or "_" in sub) else sub
-        if (
-            pretty_sub
-            and pretty_sub.lower() not in base.lower()
-            and pretty_sub.lower() != cat
-        ):
-            base = f"{base} · {pretty_sub}"
-        elif not inst and pretty_sub.lower() == base.lower():
-            base = f"{base} · {cat}"
+    base = _clarify_location_label(_base_pin_label(inst, sub, cat), inst, sub, cat)
     if with_loot and (loot_areas or "").strip():
         base = f"{base} ({loot_areas.strip()})"
     return base
+
+
+def _add_needle(needles: list[str], seen: set[str], value: str) -> None:
+    if value and value.lower() not in seen:
+        seen.add(value.lower())
+        needles.append(value)
 
 
 def expand_search_needles(search: str) -> list[str]:
@@ -218,31 +242,21 @@ def expand_search_needles(search: str) -> list[str]:
     seen = {key}
     # Quest/item slugs: spaces ↔ hyphens ↔ underscores
     collapsed = re.sub(r"[-_\s]+", " ", key).strip()
-    if collapsed and collapsed not in seen:
-        needles.append(collapsed)
-        seen.add(collapsed)
+    _add_needle(needles, seen, collapsed)
     for sep in ("-", "_"):
-        variant = sep.join(collapsed.split()) if collapsed else ""
-        if variant and variant not in seen:
-            needles.append(variant)
-            seen.add(variant)
+        _add_needle(needles, seen, sep.join(collapsed.split()) if collapsed else "")
     # Exact subcategory id typed
-    if key in ARC_SUBCATEGORY_NAMES and ARC_SUBCATEGORY_NAMES[key].lower() not in seen:
-        needles.append(ARC_SUBCATEGORY_NAMES[key])
-        seen.add(ARC_SUBCATEGORY_NAMES[key].lower())
+    if key in ARC_SUBCATEGORY_NAMES:
+        _add_needle(needles, seen, ARC_SUBCATEGORY_NAMES[key])
     # Display name → internal id (Leaper → bison). Prefix match so "leap" works.
     for sub_id, display in ARC_SUBCATEGORY_NAMES.items():
         d = display.lower()
         if key in {d, sub_id} or d.startswith(key) or key.startswith(d):
-            if sub_id not in seen:
-                needles.append(sub_id)
-                seen.add(sub_id)
-            if d not in seen:
-                needles.append(display)
-                seen.add(d)
+            _add_needle(needles, seen, sub_id)
+            _add_needle(needles, seen, display)
     # Common shorthand not equal to the official display prefix
-    if "surveyor" in key and "rollbot" not in seen:
-        needles.append("rollbot")
+    if "surveyor" in key:
+        _add_needle(needles, seen, "rollbot")
     return needles
 
 
@@ -483,6 +497,33 @@ class MapCatalog:
                 row = conn.execute("SELECT COUNT(*) FROM map_markers").fetchone()
         return int(row[0]) if row else 0
 
+    @staticmethod
+    def _loot_area_sql(areas: set[str]) -> tuple[str, list[object]]:
+        """Build the ``AND (…)`` SQL clause + params for loot-area tag matching."""
+        clauses = []
+        params: list[object] = []
+        for area in sorted(areas):
+            clauses.append(
+                "(loot_areas LIKE ? OR loot_areas LIKE ? OR loot_areas LIKE ? OR loot_areas = ?)"
+            )
+            params.extend([f"{area},%", f"%, {area},%", f"%, {area}", area])
+        return "AND (" + " OR ".join(clauses) + ")", params
+
+    @staticmethod
+    def _search_needle_sql(search: str) -> tuple[str, list[object]]:
+        """Build the ``AND (…)`` SQL clause + params for free-text needle search."""
+        clauses = []
+        params: list[object] = []
+        for needle_raw in expand_search_needles(search):
+            needle = f"%{needle_raw}%"
+            clauses.append(
+                "(instance_name LIKE ? COLLATE NOCASE "
+                "OR subcategory LIKE ? COLLATE NOCASE "
+                "OR loot_areas LIKE ? COLLATE NOCASE)"
+            )
+            params.extend([needle, needle, needle])
+        return "AND (" + " OR ".join(clauses) + ")", params
+
     def query_markers(
         self,
         map_id: str,
@@ -496,52 +537,25 @@ class MapCatalog:
         limit: int | None = None,
     ) -> list[MapMarker]:
         """Filter markers; optionally sort by distance to ``origin`` (lat, lng)."""
-        sql = [
-            "SELECT * FROM map_markers WHERE map_id = ?",
-        ]
+        sql = ["SELECT * FROM map_markers WHERE map_id = ?"]
         params: list[object] = [map_id]
 
         if categories:
-            placeholders = ",".join("?" for _ in categories)
-            sql.append(f"AND category IN ({placeholders})")
+            sql.append(f"AND category IN ({','.join('?' for _ in categories)})")
             params.extend(sorted(categories))
-
         if subcategory:
             sql.append("AND subcategory = ?")
             params.append(subcategory)
-
         if behind_locked_only:
             sql.append("AND behind_locked_door = 1")
-
         if loot_areas:
-            # loot_areas stored as comma-separated; match any tag
-            area_clauses = []
-            for area in sorted(loot_areas):
-                area_clauses.append(
-                    "(loot_areas LIKE ? OR loot_areas LIKE ? OR loot_areas LIKE ? OR loot_areas = ?)"
-                )
-                params.extend(
-                    [
-                        f"{area},%",
-                        f"%, {area},%",
-                        f"%, {area}",
-                        area,
-                    ]
-                )
-            sql.append("AND (" + " OR ".join(area_clauses) + ")")
-
+            clause, extra = self._loot_area_sql(loot_areas)
+            sql.append(clause)
+            params.extend(extra)
         if search:
-            needles = expand_search_needles(search)
-            needle_clauses = []
-            for needle_raw in needles:
-                needle = f"%{needle_raw}%"
-                needle_clauses.append(
-                    "(instance_name LIKE ? COLLATE NOCASE "
-                    "OR subcategory LIKE ? COLLATE NOCASE "
-                    "OR loot_areas LIKE ? COLLATE NOCASE)"
-                )
-                params.extend([needle, needle, needle])
-            sql.append("AND (" + " OR ".join(needle_clauses) + ")")
+            clause, extra = self._search_needle_sql(search)
+            sql.append(clause)
+            params.extend(extra)
 
         with self._connect() as conn:
             rows = conn.execute(" ".join(sql), params).fetchall()
@@ -555,12 +569,7 @@ class MapCatalog:
             markers.sort(key=lambda m: (m.distance is None, m.distance or 0.0))
         else:
             markers.sort(
-                key=lambda m: (
-                    m.category,
-                    m.subcategory,
-                    m.instance_name,
-                    m.id,
-                )
+                key=lambda m: (m.category, m.subcategory, m.instance_name, m.id)
             )
 
         if limit is not None and limit >= 0:
@@ -585,6 +594,84 @@ class MapCatalog:
         ref = self.resolve_item_ref(item_name, network=False)
         return ref[0] if ref else None
 
+    @staticmethod
+    def _resolve_exact_name(q: str, conn: sqlite3.Connection) -> tuple[str, str] | None:
+        """Exact case-insensitive name lookup in item_loot_areas."""
+        row = conn.execute(
+            "SELECT name, item_id FROM item_loot_areas WHERE name = ? COLLATE NOCASE",
+            (q,),
+        ).fetchone()
+        if row:
+            iid = (row["item_id"] or "").strip()
+            if iid:
+                return iid, row["name"]
+        return None
+
+    @staticmethod
+    def _resolve_exact_id(q: str, conn: sqlite3.Connection) -> tuple[str, str] | None:
+        """Exact case-insensitive item_id lookup in item_loot_areas."""
+        row = conn.execute(
+            "SELECT name, item_id FROM item_loot_areas WHERE item_id = ? COLLATE NOCASE",
+            (q.lower(),),
+        ).fetchone()
+        if row and (row["item_id"] or "").strip():
+            return row["item_id"].strip(), row["name"]
+        return None
+
+    @staticmethod
+    def _resolve_prefix(q: str, conn: sqlite3.Connection) -> tuple[str, str] | None:
+        """Unique-prefix lookup: returns a hit only when exactly one row matches."""
+        rows = conn.execute(
+            "SELECT name, item_id FROM item_loot_areas "
+            "WHERE name LIKE ? COLLATE NOCASE "
+            "ORDER BY LENGTH(name) ASC, name COLLATE NOCASE LIMIT 3",
+            (f"{q}%",),
+        ).fetchall()
+        if len(rows) == 1 and (rows[0]["item_id"] or "").strip():
+            return rows[0]["item_id"].strip(), rows[0]["name"]
+        return None
+
+    @staticmethod
+    def _resolve_contains(q: str, conn: sqlite3.Connection) -> tuple[str, str] | None:
+        """Unique-substring lookup (requires query ≥ _MIN_CONTAINS_QUERY_LEN)."""
+        if len(q) < _MIN_CONTAINS_QUERY_LEN:
+            return None
+        rows = conn.execute(
+            "SELECT name, item_id FROM item_loot_areas "
+            "WHERE name LIKE ? COLLATE NOCASE "
+            "ORDER BY LENGTH(name) ASC, name COLLATE NOCASE LIMIT 3",
+            (f"%{q}%",),
+        ).fetchall()
+        if len(rows) == 1 and (rows[0]["item_id"] or "").strip():
+            return rows[0]["item_id"].strip(), rows[0]["name"]
+        return None
+
+    @staticmethod
+    def _resolve_cached(q: str, conn: sqlite3.Connection) -> tuple[str, str] | None:
+        """Fallback: match against previously seen item slugs / names in spots meta."""
+        from arc_helper.map_ingest import _slugify_item
+
+        row = conn.execute(
+            "SELECT item_id, item_name FROM map_item_spots_meta "
+            "WHERE item_id = ? OR item_name = ? COLLATE NOCASE "
+            "ORDER BY raw_count DESC LIMIT 1",
+            (_slugify_item(q), q),
+        ).fetchone()
+        if row and (row["item_id"] or "").strip():
+            return row["item_id"].strip(), row["item_name"]
+        return None
+
+    @staticmethod
+    def _resolve_local(q: str, conn: sqlite3.Connection) -> tuple[str, str] | None:
+        """Local-only resolution: exact name, exact id, unique prefix, unique substring."""
+        return (
+            MapCatalog._resolve_exact_name(q, conn)
+            or MapCatalog._resolve_exact_id(q, conn)
+            or MapCatalog._resolve_prefix(q, conn)
+            or MapCatalog._resolve_contains(q, conn)
+            or MapCatalog._resolve_cached(q, conn)
+        )
+
     def resolve_item_ref(
         self,
         query: str,
@@ -600,64 +687,10 @@ class MapCatalog:
         q = (query or "").strip()
         if len(q) < 1:
             return None
-        q_l = q.lower()
         with self._connect() as conn:
-            row = conn.execute(
-                "SELECT name, item_id FROM item_loot_areas WHERE name = ? COLLATE NOCASE",
-                (q,),
-            ).fetchone()
-            if row:
-                iid = (row["item_id"] or "").strip()
-                if iid:
-                    return iid, row["name"]
-
-            row = conn.execute(
-                "SELECT name, item_id FROM item_loot_areas WHERE item_id = ? COLLATE NOCASE",
-                (q_l,),
-            ).fetchone()
-            if row and (row["item_id"] or "").strip():
-                return row["item_id"].strip(), row["name"]
-
-            prefix = conn.execute(
-                """
-                SELECT name, item_id FROM item_loot_areas
-                WHERE name LIKE ? COLLATE NOCASE
-                ORDER BY LENGTH(name) ASC, name COLLATE NOCASE
-                LIMIT 3
-                """,
-                (f"{q}%",),
-            ).fetchall()
-            if len(prefix) == 1 and (prefix[0]["item_id"] or "").strip():
-                return prefix[0]["item_id"].strip(), prefix[0]["name"]
-
-            if len(q) >= _MIN_CONTAINS_QUERY_LEN:
-                contains = conn.execute(
-                    """
-                    SELECT name, item_id FROM item_loot_areas
-                    WHERE name LIKE ? COLLATE NOCASE
-                    ORDER BY LENGTH(name) ASC, name COLLATE NOCASE
-                    LIMIT 3
-                    """,
-                    (f"%{q}%",),
-                ).fetchall()
-                if len(contains) == 1 and (contains[0]["item_id"] or "").strip():
-                    return contains[0]["item_id"].strip(), contains[0]["name"]
-
-            # Already-cached loose spots under this typed name / slug
-            from arc_helper.map_ingest import _slugify_item
-
-            slug = _slugify_item(q)
-            cached = conn.execute(
-                """
-                SELECT item_id, item_name FROM map_item_spots_meta
-                WHERE item_id = ? OR item_name = ? COLLATE NOCASE
-                ORDER BY raw_count DESC
-                LIMIT 1
-                """,
-                (slug, q),
-            ).fetchone()
-            if cached and (cached["item_id"] or "").strip():
-                return cached["item_id"].strip(), cached["item_name"]
+            hit = self._resolve_local(q, conn)
+        if hit is not None:
+            return hit
 
         if network:
             from arc_helper.map_ingest import lookup_item_by_search
@@ -671,12 +704,10 @@ class MapCatalog:
                 # Upsert so later resolves are local.
                 with self._connect() as conn:
                     conn.execute(
-                        """
-                        INSERT INTO item_loot_areas (name, loot_areas, item_id)
-                        VALUES (?, '', ?)
-                        ON CONFLICT(name) DO UPDATE SET
-                            item_id=COALESCE(NULLIF(excluded.item_id, ''), item_id)
-                        """,
+                        "INSERT INTO item_loot_areas (name, loot_areas, item_id) "
+                        "VALUES (?, '', ?) "
+                        "ON CONFLICT(name) DO UPDATE SET "
+                        "item_id=COALESCE(NULLIF(excluded.item_id, ''), item_id)",
                         (name, item_id),
                     )
                     conn.commit()
@@ -839,49 +870,76 @@ class MapCatalog:
         out: list[MapMarker] = []
         seen: set[str] = set()
 
-        # Prefer precise loose clusters when we have them (by name or id).
-        for m in self.loose_clusters_for_item(
-            map_id, canonical, origin=origin, item_id=item_id
-        ):
+        self._add_unseen(
+            self.loose_clusters_for_item(
+                map_id, canonical, origin=origin, item_id=item_id
+            ),
+            out,
+            seen,
+        )
+        if areas:
+            self._add_unseen(
+                self.query_markers(map_id, loot_areas=areas, origin=origin),
+                out,
+                seen,
+            )
+        self._add_arc_markers(map_id, canonical, origin, out, seen)
+        self._add_name_matches(map_id, canonical, origin, out, seen)
+
+        out = self._sort_markers_for_item(out, origin)
+        if limit is not None and limit >= 0:
+            out = out[:limit]
+        return out
+
+    @staticmethod
+    def _add_unseen(
+        markers: list[MapMarker],
+        out: list[MapMarker],
+        seen: set[str],
+    ) -> None:
+        for m in markers:
             if m.id not in seen:
                 seen.add(m.id)
                 out.append(m)
 
-        if areas:
-            # Do not limit to containers — topside materials often sit in
-            # rooms / open spots tagged with the same loot areas.
-            for m in self.query_markers(
-                map_id,
-                loot_areas=areas,
-                origin=origin,
-            ):
-                if m.id not in seen:
-                    seen.add(m.id)
-                    out.append(m)
-
-        # Enemy-named ARC parts → that enemy's pins (not every ARC-tagged marker).
+    def _add_arc_markers(
+        self,
+        map_id: str,
+        canonical: str,
+        origin: tuple[float, float] | None,
+        out: list[MapMarker],
+        seen: set[str],
+    ) -> None:
+        """Add ARC enemy pins and their husk containers for enemy-part items."""
         for sub in arc_subcategories_for_item(canonical):
-            for m in self.query_markers(
-                map_id,
-                categories={"arc"},
-                subcategory=sub,
-                origin=origin,
-            ):
-                if m.id not in seen:
-                    seen.add(m.id)
-                    out.append(m)
+            self._add_unseen(
+                self.query_markers(
+                    map_id, categories={"arc"}, subcategory=sub, origin=origin
+                ),
+                out,
+                seen,
+            )
             for husk in ARC_RELATED_HUSKS.get(sub, ()):
-                for m in self.query_markers(
-                    map_id,
-                    categories={"containers"},
-                    subcategory=husk,
-                    origin=origin,
-                ):
-                    if m.id not in seen:
-                        seen.add(m.id)
-                        out.append(m)
+                self._add_unseen(
+                    self.query_markers(
+                        map_id,
+                        categories={"containers"},
+                        subcategory=husk,
+                        origin=origin,
+                    ),
+                    out,
+                    seen,
+                )
 
-        # Exact-ish name match (moss, candleberries, quest props, …)
+    def _add_name_matches(
+        self,
+        map_id: str,
+        canonical: str,
+        origin: tuple[float, float] | None,
+        out: list[MapMarker],
+        seen: set[str],
+    ) -> None:
+        """Add nature/quest/event/location markers whose name matches the item."""
         needle = canonical.lower()
         compact = needle.replace(" ", "").replace("-", "").replace("_", "")
         for m in self.query_markers(
@@ -895,11 +953,15 @@ class MapCatalog:
                 .replace("_", " ")
                 .replace("-", " ")
             )
-            hay_c = hay.replace(" ", "")
-            if (needle in hay or compact in hay_c) and m.id not in seen:
+            if (needle in hay or compact in hay.replace(" ", "")) and m.id not in seen:
                 seen.add(m.id)
                 out.append(m)
 
+    @staticmethod
+    def _sort_markers_for_item(
+        out: list[MapMarker],
+        origin: tuple[float, float] | None,
+    ) -> list[MapMarker]:
         if origin is not None:
             olat, olng = origin
             for m in out:
@@ -907,25 +969,57 @@ class MapCatalog:
                     m.distance = math.hypot(m.lat - olat, m.lng - olng)
             out.sort(key=lambda m: (m.distance is None, m.distance or 0.0))
         else:
-            # Prefer loose clusters + labeled rooms over anonymous containers
+            cat_order = {
+                "loose": 0,
+                "locations": 1,
+                "nature": 2,
+                "events": 3,
+                "containers": 4,
+                "quests": 5,
+                "arc": 6,
+            }
+
             def _rank(m: MapMarker) -> tuple:
                 labeled = 0 if (m.instance_name or "").strip() else 1
-                cat_order = {
-                    "loose": 0,
-                    "locations": 1,
-                    "nature": 2,
-                    "events": 3,
-                    "containers": 4,
-                    "quests": 5,
-                    "arc": 6,
-                }.get(m.category, 9)
-                return (cat_order, labeled, m.subcategory, m.instance_name, m.id)
+                return (
+                    cat_order.get(m.category, 9),
+                    labeled,
+                    m.subcategory,
+                    m.instance_name,
+                    m.id,
+                )
 
             out.sort(key=_rank)
-
-        if limit is not None and limit >= 0:
-            out = out[:limit]
         return out
+
+    @staticmethod
+    def _collect_item_name_suggestions(
+        conn: sqlite3.Connection,
+        q: str,
+        needle: str,
+        limit: int,
+        names: list[str],
+        seen: set[str],
+    ) -> None:
+        """Append prefix + contains item-name matches (deduplicated)."""
+        for row in conn.execute(
+            "SELECT name FROM item_loot_areas WHERE name LIKE ? COLLATE NOCASE "
+            "ORDER BY LENGTH(name) ASC, name COLLATE NOCASE LIMIT ?",
+            (f"{q}%", limit),
+        ).fetchall():
+            n = row["name"]
+            if n.lower() not in seen:
+                seen.add(n.lower())
+                names.append(n)
+        for row in conn.execute(
+            "SELECT name FROM item_loot_areas WHERE name LIKE ? COLLATE NOCASE "
+            "AND name NOT LIKE ? COLLATE NOCASE ORDER BY name COLLATE NOCASE LIMIT ?",
+            (needle, f"{q}%", limit),
+        ).fetchall():
+            n = row["name"]
+            if n.lower() not in seen:
+                seen.add(n.lower())
+                names.append(n)
 
     def search_suggestions(self, query: str, *, limit: int = 25) -> list[str]:
         """Typeahead: all known Metaforge items + marker instance/subcategory."""
@@ -937,28 +1031,7 @@ class MapCatalog:
         seen: set[str] = set()
         with self._connect() as conn:
             # Prefer prefix matches, then contains — items without loot tags included.
-            for sql in (
-                (
-                    "SELECT name FROM item_loot_areas "
-                    "WHERE name LIKE ? COLLATE NOCASE "
-                    "ORDER BY LENGTH(name) ASC, name COLLATE NOCASE LIMIT ?"
-                ),
-                (
-                    "SELECT name FROM item_loot_areas "
-                    "WHERE name LIKE ? COLLATE NOCASE "
-                    "AND name NOT LIKE ? COLLATE NOCASE "
-                    "ORDER BY name COLLATE NOCASE LIMIT ?"
-                ),
-            ):
-                if "NOT LIKE" in sql:
-                    rows = conn.execute(sql, (needle, f"{q}%", limit)).fetchall()
-                else:
-                    rows = conn.execute(sql, (f"{q}%", limit)).fetchall()
-                for row in rows:
-                    n = row["name"]
-                    if n.lower() not in seen:
-                        seen.add(n.lower())
-                        names.append(n)
+            self._collect_item_name_suggestions(conn, q, needle, limit, names, seen)
             for row in conn.execute(
                 "SELECT DISTINCT instance_name AS n FROM map_markers "
                 "WHERE instance_name LIKE ? COLLATE NOCASE "

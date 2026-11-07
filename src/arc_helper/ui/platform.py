@@ -46,21 +46,20 @@ def prepare_qt_env() -> None:
       starts (F8 / tray). Leave ``QT_QPA_PLATFORM`` alone when already set.
     """
     os.environ.pop("QT_PLUGIN_PATH", None)
-    if sys.platform.startswith("linux"):
-        if "QT_QPA_PLATFORM" not in os.environ:
-            wayland = bool(os.environ.get("WAYLAND_DISPLAY")) or (
-                os.environ.get("XDG_SESSION_TYPE", "").lower() == "wayland"
-            )
-            if wayland:
-                if _x11_reachable():
-                    os.environ["QT_QPA_PLATFORM"] = "xcb"
-                    logger.info("Qt platform: xcb (XWayland overlay path)")
-                else:
-                    os.environ["QT_QPA_PLATFORM"] = "wayland"
-                    logger.warning(
-                        "Qt platform: wayland (XWayland not reachable — "
-                        "overlays may not stay above the game; F8 still works)"
-                    )
+    if sys.platform.startswith("linux") and "QT_QPA_PLATFORM" not in os.environ:
+        wayland = bool(os.environ.get("WAYLAND_DISPLAY")) or (
+            os.environ.get("XDG_SESSION_TYPE", "").lower() == "wayland"
+        )
+        if wayland:
+            if _x11_reachable():
+                os.environ["QT_QPA_PLATFORM"] = "xcb"
+                logger.info("Qt platform: xcb (XWayland overlay path)")
+            else:
+                os.environ["QT_QPA_PLATFORM"] = "wayland"
+                logger.warning(
+                    "Qt platform: wayland (XWayland not reachable — "
+                    "overlays may not stay above the game; F8 still works)"
+                )
 
 
 def apply_overlay_flags(window: QWidget, *, click_through: bool = True) -> None:

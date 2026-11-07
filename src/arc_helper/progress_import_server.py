@@ -37,6 +37,7 @@ ACCOUNT_SYNC_URL = "https://metaforge.app/api/arc-raiders/account-sync"
 _JUST_NOW_SEC = 10
 _TIME_UNIT = 60
 _MAX_HOURS_AS_HOURS = 48
+_NOT_IMPORTED = "not imported"
 
 OnImport = Callable[[ProgressProfile], None]
 
@@ -215,7 +216,7 @@ def install_html() -> str:
 def format_import_age(mtime: float | None, *, now: float | None = None) -> str:
     """Human age for status flash, e.g. ``just now`` / ``3m ago``."""
     if mtime is None:
-        return "not imported"
+        return _NOT_IMPORTED
     import time
 
     ref = time.time() if now is None else now
@@ -280,12 +281,12 @@ def format_progress_status(
 ) -> str:
     """Status-pill flash for import age + MetaForge sync age."""
     imported = format_import_age(imported_mtime, now=now)
-    if imported == "not imported":
-        return "Progress: not imported"
+    if imported == _NOT_IMPORTED:
+        return f"Progress: {_NOT_IMPORTED}"
     msg = f"Progress: imported {imported}"
     if metaforge_synced_at is not None:
         synced = format_import_age(metaforge_synced_at, now=now)
-        if synced != "not imported":
+        if synced != _NOT_IMPORTED:
             msg += f" · MetaForge synced {synced}"
     return msg
 

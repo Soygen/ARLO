@@ -36,6 +36,11 @@ def get_app_dir() -> Path:
 APP_DIR = get_app_dir()
 DATA_DIR = APP_DIR / "data"
 
+_DESC_TRIGGER_LEFT = "Left edge of trigger region"
+_DESC_TRIGGER_TOP = "Top edge of trigger region"
+_DESC_TRIGGER_WIDTH = "Width of trigger region"
+_DESC_TRIGGER_HEIGHT = "Height of trigger region"
+
 
 def get_screen_resolution() -> tuple[int, int]:
     """Get the primary monitor resolution in physical pixels."""
@@ -131,10 +136,10 @@ class TriggerRegion(RegionMixin, BaseSettings):
         extra="ignore",
     )
 
-    x: int = Field(default=0, description="Left edge of trigger region")
-    y: int = Field(default=0, description="Top edge of trigger region")
-    width: int = Field(default=1, description="Width of trigger region")
-    height: int = Field(default=1, description="Height of trigger region")
+    x: int = Field(default=0, description=_DESC_TRIGGER_LEFT)
+    y: int = Field(default=0, description=_DESC_TRIGGER_TOP)
+    width: int = Field(default=1, description=_DESC_TRIGGER_WIDTH)
+    height: int = Field(default=1, description=_DESC_TRIGGER_HEIGHT)
 
 
 class TriggerRegion2(RegionMixin, BaseSettings):
@@ -147,10 +152,10 @@ class TriggerRegion2(RegionMixin, BaseSettings):
         extra="ignore",
     )
 
-    x: int = Field(default=0, description="Left edge of trigger region")
-    y: int = Field(default=0, description="Top edge of trigger region")
-    width: int = Field(default=1, description="Width of trigger region")
-    height: int = Field(default=1, description="Height of trigger region")
+    x: int = Field(default=0, description=_DESC_TRIGGER_LEFT)
+    y: int = Field(default=0, description=_DESC_TRIGGER_TOP)
+    width: int = Field(default=1, description=_DESC_TRIGGER_WIDTH)
+    height: int = Field(default=1, description=_DESC_TRIGGER_HEIGHT)
 
 
 class TooltipRegion(RegionMixin, BaseSettings):
@@ -163,10 +168,10 @@ class TooltipRegion(RegionMixin, BaseSettings):
         extra="ignore",
     )
 
-    x: int = Field(default=0, description="Left edge of trigger region")
-    y: int = Field(default=0, description="Top edge of trigger region")
-    width: int = Field(default=1, description="Width of trigger region")
-    height: int = Field(default=1, description="Height of trigger region")
+    x: int = Field(default=0, description=_DESC_TRIGGER_LEFT)
+    y: int = Field(default=0, description=_DESC_TRIGGER_TOP)
+    width: int = Field(default=1, description=_DESC_TRIGGER_WIDTH)
+    height: int = Field(default=1, description=_DESC_TRIGGER_HEIGHT)
 
 
 class TooltipCaptureSettings(BaseSettings):

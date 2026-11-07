@@ -8,10 +8,15 @@ from dataclasses import dataclass
 from datetime import UTC
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 from typing import cast
 
 import requests
 from PIL import Image
+
+if TYPE_CHECKING:
+    import sqlite3
+    from collections.abc import Callable
 
 from arc_helper.map_data import KNOWN_MAP_IDS
 from arc_helper.map_data import LOOSE_CLUSTER_RADIUS
@@ -34,6 +39,7 @@ USER_AGENT = "ARLO/1.0 (Arc Raiders Loot Overlay - https://github.com/Soygen/ARL
 _HTTP_OK = 200
 _MIN_PAIR = 2
 _MIN_POOL_REF_LIST_LEN = 5
+_REFERENCE_PNG = "reference.png"
 
 # Overview thumbnails on static host use PascalCase + "Tile" (from the map picker).
 _STATIC_UI_TILES: dict[MapId, str] = {
@@ -384,7 +390,7 @@ def read_reference_bounds(
             float(data["lng_min"]),
             float(data["lng_max"]),
         )
-    except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError):
+    except (OSError, KeyError, TypeError, ValueError):
         return None
 
 
@@ -451,7 +457,7 @@ def write_maps_manifest(
         if cfg is None:
             continue
         entry = tile_config_signature(cfg)
-        ref = map_dir(map_id) / "reference.png"
+        ref = map_dir(map_id) / _REFERENCE_PNG
         if ref.is_file():
             try:
                 with Image.open(ref) as im:
@@ -480,7 +486,7 @@ def assets_outdated(map_id: str, *, manifest: dict | None = None) -> bool:
     cfg = MAP_TILE_CONFIGS.get(mid) if mid is not None else None
     if cfg is None:
         return False
-    ref = map_dir(map_id) / "reference.png"
+    ref = map_dir(map_id) / _REFERENCE_PNG
     if not ref.is_file():
         return True
     data = manifest if manifest is not None else read_maps_manifest()
@@ -515,30 +521,41 @@ def fetch_map_markers(
     return markers
 
 
+def _join_list_or_str(value: object, sep: str = ", ") -> str:
+    """Coerce a list or scalar field to a stripped string."""
+    if isinstance(value, list):
+        return sep.join(str(x).strip() for x in value if str(x).strip())
+    return str(value or "").strip()
+
+
+def _parse_marker_latlng(
+    raw: dict,
+) -> tuple[float, float] | None:
+    raw_lat, raw_lng = raw.get("lat"), raw.get("lng")
+    if raw_lat is None or raw_lng is None:
+        return None
+    try:
+        return float(raw_lat), float(raw_lng)
+    except (TypeError, ValueError):
+        return None
+
+
+def _parse_instance_name(raw: dict) -> str:
+    inst = raw.get("instanceName")
+    if isinstance(inst, list):
+        return ", ".join(str(x) for x in inst if x)
+    s = str(inst or "").strip()
+    return "" if s.lower() == "none" else s
+
+
 def _normalize_marker(raw: dict, map_id: str) -> dict | None:
     mid = str(raw.get("id") or "").strip()
     if not mid:
         return None
-    try:
-        raw_lat, raw_lng = raw.get("lat"), raw.get("lng")
-        if raw_lat is None or raw_lng is None:
-            return None
-        lat = float(raw_lat)
-        lng = float(raw_lng)
-    except (TypeError, ValueError):
+    coords = _parse_marker_latlng(raw)
+    if coords is None:
         return None
-    loot = raw.get("lootAreas")
-    if isinstance(loot, list):
-        loot_s = ", ".join(str(x).strip() for x in loot if str(x).strip())
-    else:
-        loot_s = str(loot or "").strip()
-    inst = raw.get("instanceName")
-    if isinstance(inst, list):
-        inst_s = ", ".join(str(x) for x in inst if x)
-    else:
-        inst_s = str(inst or "").strip()
-        if inst_s.lower() == "none":
-            inst_s = ""
+    lat, lng = coords
     return {
         "id": mid,
         "map_id": map_id,
@@ -546,8 +563,8 @@ def _normalize_marker(raw: dict, map_id: str) -> dict | None:
         "lng": lng,
         "category": str(raw.get("category") or "").strip().lower(),
         "subcategory": str(raw.get("subcategory") or "").strip(),
-        "instance_name": inst_s,
-        "loot_areas": loot_s,
+        "instance_name": _parse_instance_name(raw),
+        "loot_areas": _join_list_or_str(raw.get("lootAreas")),
         "behind_locked_door": 1 if raw.get("behindLockedDoor") else 0,
         "zlayers": int(raw.get("zlayers") or 0),
     }
@@ -649,6 +666,61 @@ def _discover_tile_grid(
     return min(xs), max(xs), min(ys), max(ys)
 
 
+def _probe_actual_tile_size(
+    sess: requests.Session,
+    cfg: MapTileConfig,
+    zoom: int,
+    name_fmt: str,
+    tile_dir: Path,
+    *,
+    min_x: int,
+    max_x: int,
+    min_y: int,
+    max_y: int,
+) -> int:
+    """Read pixel width of the first downloadable tile (config may differ)."""
+    for x0 in range(min_x, max_x + 1):
+        for y0 in range(min_y, max_y + 1):
+            probe = tile_dir / f"{x0}_{y0}.webp"
+            url = _tile_url(cfg, zoom, x0, y0, name_fmt)
+            if not probe.is_file() and not _download(sess, url, probe):
+                continue
+            try:
+                with Image.open(probe) as tip:
+                    return tip.size[0]
+            except OSError:
+                continue
+        continue
+        break
+    return cfg.tile_size
+
+
+def _stitch_tiles_onto_canvas(
+    sess: requests.Session,
+    cfg: MapTileConfig,
+    zoom: int,
+    name_fmt: str,
+    tile_dir: Path,
+    canvas: Image.Image,
+    tile_size: int,
+    xy_range: tuple[int, int, int, int],
+) -> None:
+    """Download tiles and paste them onto ``canvas`` in-place."""
+    min_x, max_x, min_y, max_y = xy_range
+    for x in range(min_x, max_x + 1):
+        for y in range(min_y, max_y + 1):
+            dest = tile_dir / f"{x}_{y}.webp"
+            url = _tile_url(cfg, zoom, x, y, name_fmt)
+            if not dest.is_file() and not _download(sess, url, dest):
+                continue
+            try:
+                with Image.open(dest) as tile:
+                    canvas.paste(tile.convert("RGBA"), (x * tile_size, y * tile_size))
+            except OSError:
+                continue
+            time.sleep(0.02)
+
+
 def _stitch_reference(
     sess: requests.Session,
     map_id: str,
@@ -685,46 +757,34 @@ def _stitch_reference(
 
     # Prefer the real pixel size of the first tile — config can drift
     # (Dam's Metaforge layer ships 512px retina tiles with logical tileSize 256).
-    tile_size = cfg.tile_size
-    for x0 in range(min_x, max_x + 1):
-        for y0 in range(min_y, max_y + 1):
-            probe = tile_dir / f"{x0}_{y0}.webp"
-            url = _tile_url(cfg, zoom, x0, y0, name_fmt)
-            if not probe.is_file() and not _download(sess, url, probe):
-                continue
-            try:
-                with Image.open(probe) as tip:
-                    tile_size = tip.size[0]
-                break
-            except OSError:
-                continue
-        else:
-            continue
-        break
+    tile_size = _probe_actual_tile_size(
+        sess,
+        cfg,
+        zoom,
+        name_fmt,
+        tile_dir,
+        min_x=min_x,
+        max_x=max_x,
+        min_y=min_y,
+        max_y=max_y,
+    )
     if tile_size != cfg.tile_size:
         print(
             f"  Note: {map_id} tiles are {tile_size}px "
             f"(config had {cfg.tile_size}px) — using actual size"
         )
 
-    width = n * tile_size
-    height = n * tile_size
-    canvas = Image.new("RGBA", (width, height), (0, 0, 0, 255))
-
-    for x in range(min_x, max_x + 1):
-        for y in range(min_y, max_y + 1):
-            dest = tile_dir / f"{x}_{y}.webp"
-            url = _tile_url(cfg, zoom, x, y, name_fmt)
-            if not dest.is_file() and not _download(sess, url, dest):
-                continue
-            try:
-                with Image.open(dest) as tile:
-                    px = x * tile_size
-                    py = y * tile_size
-                    canvas.paste(tile.convert("RGBA"), (px, py))
-            except OSError:
-                continue
-            time.sleep(0.02)
+    canvas = Image.new("RGBA", (n * tile_size, n * tile_size), (0, 0, 0, 255))
+    _stitch_tiles_onto_canvas(
+        sess,
+        cfg,
+        zoom,
+        name_fmt,
+        tile_dir,
+        canvas,
+        tile_size,
+        (min_x, max_x, min_y, max_y),
+    )
 
     # Full 2^z grid in zoom-0 CRS → world via tileExtent affine (not a linear
     # stretch of worldExtent onto the square). Crop empty margins and remap.
@@ -764,6 +824,65 @@ def _download_static_custom_png(
     return size
 
 
+def _download_overview(
+    sess: requests.Session,
+    map_id: str,
+    overview: Path,
+    mid: MapId | None,
+) -> None:
+    """Try multiple CDN locations for the overview thumbnail."""
+    slug = cdn_slug(map_id)
+    ok = _download(sess, f"{CDN_BASE}/ui/{slug}.webp", overview)
+    if not ok and slug != map_id:
+        ok = _download(sess, f"{CDN_BASE}/ui/{map_id}.webp", overview)
+    if not ok and mid is not None:
+        tile = _STATIC_UI_TILES.get(mid)
+        if tile:
+            _download(sess, f"{STATIC_BASE}/ui/{tile}", overview)
+
+
+def _download_reference(
+    sess: requests.Session,
+    map_id: str,
+    reference: Path,
+    cfg: MapTileConfig | None,
+    *,
+    force: bool,
+) -> tuple[tuple[int, int] | None, tuple[float, float, float, float] | None]:
+    """Download (or stitch) the basemap reference PNG; return (size, crs_bounds)."""
+    if force and reference.is_file():
+        reference.unlink()
+    print(f"  Downloading basemap tiles for {map_id}...")
+    stitched = _stitch_reference(sess, map_id, reference, cfg=cfg)
+    if stitched is not None:
+        return stitched
+    print(f"  CDN tiles missing — trying static custom PNG for {map_id}...")
+    size = _download_static_custom_png(sess, map_id, reference)
+    if size is None:
+        return None, None
+    crs_bounds: tuple[float, float, float, float] | None = None
+    if cfg is not None:
+        crs_bounds = world_extent_bounds(cfg.world_extent)
+        write_reference_bounds(map_id, crs_bounds)
+    return size, crs_bounds
+
+
+def _load_cached_reference(
+    map_id: str,
+    reference: Path,
+    cfg: MapTileConfig | None,
+) -> tuple[tuple[int, int] | None, tuple[float, float, float, float] | None]:
+    """Read cached reference PNG size and bounds from disk."""
+    with Image.open(reference) as im:
+        size: tuple[int, int] | None = im.size
+    crs_bounds = read_reference_bounds(map_id)
+    if crs_bounds is None and cfg is not None:
+        crs_bounds = infer_reference_bounds_from_tiles(map_id, cfg)
+        if crs_bounds is not None:
+            write_reference_bounds(map_id, crs_bounds)
+    return size, crs_bounds
+
+
 def download_map_assets(
     map_id: str,
     *,
@@ -779,39 +898,17 @@ def download_map_assets(
     overview = mdir / "overview.webp"
     if force or not overview.is_file():
         # Prefer dated-layer overview from CDN ui slug, then static picker tile.
-        slug = cdn_slug(map_id)
-        ok = _download(sess, f"{CDN_BASE}/ui/{slug}.webp", overview)
-        if not ok and slug != map_id:
-            ok = _download(sess, f"{CDN_BASE}/ui/{map_id}.webp", overview)
-        if not ok and mid is not None:
-            tile = _STATIC_UI_TILES.get(mid)
-            if tile:
-                _download(sess, f"{STATIC_BASE}/ui/{tile}", overview)
+        _download_overview(sess, map_id, overview, mid)
 
-    reference = mdir / "reference.png"
+    reference = mdir / _REFERENCE_PNG
     size: tuple[int, int] | None = None
     crs_bounds: tuple[float, float, float, float] | None = None
     if force or not reference.is_file():
-        print(f"  Downloading basemap tiles for {map_id}...")
-        if force and reference.is_file():
-            reference.unlink()
-        stitched = _stitch_reference(sess, map_id, reference, cfg=cfg)
-        if stitched is not None:
-            size, crs_bounds = stitched
-        else:
-            print(f"  CDN tiles missing — trying static custom PNG for {map_id}...")
-            size = _download_static_custom_png(sess, map_id, reference)
-            if size is not None and cfg is not None:
-                crs_bounds = world_extent_bounds(cfg.world_extent)
-                write_reference_bounds(map_id, crs_bounds)
+        size, crs_bounds = _download_reference(
+            sess, map_id, reference, cfg, force=force
+        )
     elif reference.is_file():
-        with Image.open(reference) as im:
-            size = im.size
-        crs_bounds = read_reference_bounds(map_id)
-        if crs_bounds is None and cfg is not None:
-            crs_bounds = infer_reference_bounds_from_tiles(map_id, cfg)
-            if crs_bounds is not None:
-                write_reference_bounds(map_id, crs_bounds)
+        size, crs_bounds = _load_cached_reference(map_id, reference, cfg)
 
     # Never promote the tiny picker overview as the CV/F8 reference.
     if size is None:
@@ -825,7 +922,7 @@ def download_map_assets(
         }
 
     rel_overview = f"maps/{map_id}/overview.webp" if overview.is_file() else ""
-    rel_ref = f"maps/{map_id}/reference.png" if reference.is_file() else ""
+    rel_ref = f"maps/{map_id}/{_REFERENCE_PNG}" if reference.is_file() else ""
 
     out: dict[str, str | int | float] = {
         "overview_rel": rel_overview,
@@ -861,6 +958,25 @@ def fetch_item_loot_index(
     return fetch_item_index(session=session)
 
 
+def _parse_item_loot_area(la: object) -> str:
+    """Coerce Metaforge ``loot_area`` (list or str) to a comma-separated string."""
+    if isinstance(la, list):
+        return ", ".join(str(x).strip() for x in la if str(x).strip())
+    return str(la).strip() if la else ""
+
+
+def _index_item(it: dict, out: dict[str, dict[str, str]]) -> None:
+    """Add one Metaforge item dict to the running index (mutates ``out``)."""
+    name = (it.get("name") or "").strip()
+    if not name:
+        return
+    item_id = str(it.get("id") or "").strip() or _slugify_item(name)
+    out[name] = {
+        "item_id": item_id,
+        "loot_areas": _parse_item_loot_area(it.get("loot_area")),
+    }
+
+
 def fetch_item_index(
     *,
     session: requests.Session | None = None,
@@ -881,26 +997,25 @@ def fetch_item_index(
         )
         resp.raise_for_status()
         payload = resp.json()
-        items = payload.get("data") or []
-        for it in items:
-            name = (it.get("name") or "").strip()
-            if not name:
-                continue
-            la = it.get("loot_area")
-            if isinstance(la, list):
-                text = ", ".join(str(x).strip() for x in la if str(x).strip())
-            elif la:
-                text = str(la).strip()
-            else:
-                text = ""
-            item_id = str(it.get("id") or "").strip() or _slugify_item(name)
-            out[name] = {"item_id": item_id, "loot_areas": text}
+        for it in payload.get("data") or []:
+            _index_item(it, out)
         pagination = payload.get("pagination") or {}
         if not pagination.get("hasNextPage", False):
             break
         page += 1
         time.sleep(0.05)
     return out
+
+
+def _resolve_search_pool(items: list[dict], q_l: str) -> list[dict] | None:
+    """Return the winning candidate pool, or None when ambiguous / empty."""
+    exact = [it for it in items if (it.get("name") or "").strip().lower() == q_l]
+    if exact:
+        return exact
+    prefix = [
+        it for it in items if (it.get("name") or "").strip().lower().startswith(q_l)
+    ]
+    return prefix if len(prefix) == 1 else None
 
 
 def lookup_item_by_search(
@@ -926,14 +1041,10 @@ def lookup_item_by_search(
     items = resp.json().get("data") or []
     if not items:
         return None
-    q_l = q.lower()
-    exact = [it for it in items if (it.get("name") or "").strip().lower() == q_l]
-    pool = exact or [
-        it for it in items if (it.get("name") or "").strip().lower().startswith(q_l)
-    ]
-    if len(pool) != 1 and not exact:
+    pool = _resolve_search_pool(items, q.lower())
+    if not pool:
         return None
-    it = (exact or pool)[0]
+    it = pool[0]
     name = (it.get("name") or "").strip()
     item_id = str(it.get("id") or "").strip() or _slugify_item(name)
     if not name or not item_id:
@@ -955,43 +1066,54 @@ def _slugify_item(name: str) -> str:
     return "".join(out).strip("-")
 
 
+def _pool_resolve_numeric_list(
+    v: list, pool: list, go: Callable[[object], object]
+) -> list:
+    """Decide whether a numeric-only list holds raw values or pool refs."""
+    if any(isinstance(x, float) for x in v):
+        return list(v)
+    if len(v) >= _MIN_POOL_REF_LIST_LEN and max(int(x) for x in v) >= len(pool):
+        return list(v)
+    if all(isinstance(x, int) and 0 <= x < len(pool) for x in v):
+        return [go(x) for x in v]
+    return list(v)
+
+
+def _pool_resolve_list(v: list, pool: list, go: Callable[[object], object]) -> list:
+    """Resolve a pool list entry, handling numeric-ref vs mixed lists."""
+    all_numeric = v and all(
+        isinstance(x, (int, float)) and not isinstance(x, bool) for x in v
+    )
+    if all_numeric:
+        return _pool_resolve_numeric_list(v, pool, go)
+    return [go(x) if isinstance(x, int) else x for x in v]
+
+
+def _pool_go(i: object, pool: list, memo: dict) -> object:
+    """Recursively resolve one pool index to its concrete value."""
+    if not isinstance(i, int):
+        return i
+    if i in memo:
+        return memo[i]
+    if i < 0 or i >= len(pool):
+        return i
+    v = pool[i]
+    memo[i] = None  # cycle guard
+    if v is None or isinstance(v, (str, bool, float, int)):
+        memo[i] = v
+    elif isinstance(v, dict):
+        memo[i] = {k: _pool_go(val, pool, memo) for k, val in v.items()}
+    elif isinstance(v, list):
+        memo[i] = _pool_resolve_list(v, pool, lambda x: _pool_go(x, pool, memo))
+    else:
+        memo[i] = v
+    return memo[i]
+
+
 def _decode_sveltekit_pool(pool: list) -> object:
     """Resolve SvelteKit ``__data.json`` devalue-style integer refs."""
     memo: dict[int, object] = {}
-
-    def go(i: object) -> object:
-        if not isinstance(i, int):
-            return i
-        if i in memo:
-            return memo[i]
-        if i < 0 or i >= len(pool):
-            return i
-        v = pool[i]
-        memo[i] = None  # cycle guard
-        if v is None or isinstance(v, (str, bool, float, int)):
-            memo[i] = v
-        elif isinstance(v, dict):
-            memo[i] = {k: go(val) for k, val in v.items()}
-        elif isinstance(v, list):
-            if v and all(
-                isinstance(x, (int, float)) and not isinstance(x, bool) for x in v
-            ):
-                if any(isinstance(x, float) for x in v) or (
-                    len(v) >= _MIN_POOL_REF_LIST_LEN
-                    and max(int(x) for x in v) >= len(pool)
-                ):
-                    memo[i] = list(v)
-                elif all(isinstance(x, int) and 0 <= x < len(pool) for x in v):
-                    memo[i] = [go(x) for x in v]
-                else:
-                    memo[i] = list(v)
-            else:
-                memo[i] = [go(x) if isinstance(x, int) else x for x in v]
-        else:
-            memo[i] = v
-        return memo[i]
-
-    return go(0)
+    return _pool_go(0, pool, memo)
 
 
 def cluster_loose_spots(
@@ -1022,6 +1144,30 @@ def cluster_loose_spots(
         clusters.append((clat, clng, len(members)))
     clusters.sort(key=lambda c: (-c[2], c[0], c[1]))
     return clusters
+
+
+def _extract_loose_spots_from_root(root: dict) -> list | None:
+    """Navigate the decoded pool root to the raw spots list (or None)."""
+    item_view = root.get("itemView")
+    if not isinstance(item_view, dict):
+        return None
+    loose = item_view.get("loose")
+    if not isinstance(loose, dict):
+        return None
+    raw = loose.get("spots") or []
+    return raw if isinstance(raw, list) else None
+
+
+def _parse_spot_rows(raw_spots: list) -> list[tuple[float, float]]:
+    out: list[tuple[float, float]] = []
+    for row in raw_spots:
+        if not isinstance(row, (list, tuple)) or len(row) < _MIN_PAIR:
+            continue
+        try:
+            out.append((float(row[0]), float(row[1])))
+        except (TypeError, ValueError):
+            continue
+    return out
 
 
 def fetch_item_loose_spots(
@@ -1056,26 +1202,267 @@ def fetch_item_loose_spots(
     root = _decode_sveltekit_pool(pool)
     if not isinstance(root, dict):
         return []
-    item_view = root.get("itemView")
-    if not isinstance(item_view, dict):
+    raw_spots = _extract_loose_spots_from_root(root)
+    if raw_spots is None:
         return []
-    loose = item_view.get("loose")
-    if not isinstance(loose, dict):
-        return []
-    raw_spots = loose.get("spots") or []
-    out: list[tuple[float, float]] = []
-    if not isinstance(raw_spots, list):
-        return out
-    for row in raw_spots:
-        if not isinstance(row, (list, tuple)) or len(row) < _MIN_PAIR:
-            continue
-        try:
-            lat = float(row[0])
-            lng = float(row[1])
-        except (TypeError, ValueError):
-            continue
-        out.append((lat, lng))
-    return out
+    return _parse_spot_rows(raw_spots)
+
+
+def _fallback_bounds_from_rows(
+    rows: list[dict],
+) -> tuple[float, float, float, float]:
+    """Derive padded lat/lng bounds from marker rows when no tile config exists."""
+    lats = [r["lat"] for r in rows]
+    lngs = [r["lng"] for r in rows]
+    lat_min, lat_max = min(lats), max(lats)
+    lng_min, lng_max = min(lngs), max(lngs)
+    pad_lat = (lat_max - lat_min) * 0.02 or 1.0
+    pad_lng = (lng_max - lng_min) * 0.02 or 1.0
+    return lat_min - pad_lat, lat_max + pad_lat, lng_min - pad_lng, lng_max + pad_lng
+
+
+def _initial_bounds_for_map(
+    _map_id: str,
+    cfg: MapTileConfig | None,
+    rows: list[dict],
+) -> tuple[float, float, float, float]:
+    """Best-effort initial CRS bounds before asset download."""
+    if cfg is not None:
+        return world_extent_bounds(cfg.world_extent)
+    if rows:
+        return _fallback_bounds_from_rows(rows)
+    return 0.0, 1.0, 0.0, 1.0
+
+
+def _fetch_and_store_markers(
+    conn: sqlite3.Connection,
+    map_id: str,
+    sess: requests.Session,
+) -> list[dict] | None:
+    """Fetch markers for one map; return normalised rows or None on error."""
+
+    print(f"Fetching map markers: {map_id}...")
+    try:
+        raw = fetch_map_markers(map_id, session=sess)
+    except Exception as e:  # ruff: ignore[blind-except]
+        print(f"  Failed {map_id}: {e}")
+        return None
+
+    rows = [norm for r in raw if (norm := _normalize_marker(r, map_id))]
+    conn.execute("DELETE FROM map_markers WHERE map_id = ?", (map_id,))
+    conn.executemany(
+        """
+        INSERT INTO map_markers (
+            id, map_id, lat, lng, category, subcategory,
+            instance_name, loot_areas, behind_locked_door, zlayers
+        ) VALUES (
+            :id, :map_id, :lat, :lng, :category, :subcategory,
+            :instance_name, :loot_areas, :behind_locked_door, :zlayers
+        )
+        """,
+        rows,
+    )
+    return rows
+
+
+def _update_asset_info(
+    map_id: str,
+    sess: requests.Session,
+    manifest: dict,
+    *,
+    force_assets: bool,
+) -> tuple[dict[str, str | int | float], bool]:
+    """Download (or validate cache of) basemap assets; return (info, changed)."""
+    refresh = force_assets or assets_outdated(map_id, manifest=manifest)
+    if refresh:
+        reason = "forced" if force_assets else "manifest outdated / missing"
+        print(f"  Basemap refresh for {map_id} ({reason})")
+    else:
+        print(f"  Using cached basemap for {map_id}")
+    before = map_dir(map_id) / _REFERENCE_PNG
+    before_mtime = before.stat().st_mtime if before.is_file() else None
+    try:
+        asset_info = download_map_assets(map_id, session=sess, force=refresh)
+    except Exception as e:  # ruff: ignore[blind-except]
+        print(f"  Asset download failed for {map_id}: {e}")
+        return {
+            "overview_rel": "",
+            "reference_rel": "",
+            "ref_width": 0,
+            "ref_height": 0,
+        }, False
+    after = map_dir(map_id) / _REFERENCE_PNG
+    after_mtime = after.stat().st_mtime if after.is_file() else None
+    changed = after_mtime is not None and after_mtime != before_mtime
+    return asset_info, changed
+
+
+def _refine_bounds_from_assets(
+    map_id: str,
+    cfg: MapTileConfig | None,
+    asset_info: dict,
+    lat_min: float,
+    lat_max: float,
+    lng_min: float,
+    lng_max: float,
+) -> tuple[float, float, float, float]:
+    """Prefer CRS from actual stitched reference when known."""
+    if all(k in asset_info for k in ("lat_min", "lat_max", "lng_min", "lng_max")):
+        return (
+            float(asset_info["lat_min"]),
+            float(asset_info["lat_max"]),
+            float(asset_info["lng_min"]),
+            float(asset_info["lng_max"]),
+        )
+    if cfg is not None:
+        inferred = infer_reference_bounds_from_tiles(map_id, cfg)
+        if inferred is not None:
+            write_reference_bounds(map_id, inferred)
+            return inferred
+    return lat_min, lat_max, lng_min, lng_max
+
+
+def _upsert_map_meta(
+    conn: sqlite3.Connection,
+    map_id: str,
+    lat_min: float,
+    lat_max: float,
+    lng_min: float,
+    lng_max: float,
+    row_count: int,
+    asset_info: dict,
+) -> None:
+    conn.execute(
+        """
+        INSERT INTO map_meta (
+            map_id, display_name, lat_min, lat_max, lng_min, lng_max,
+            marker_count, overview_rel, reference_rel, ref_width, ref_height
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(map_id) DO UPDATE SET
+            display_name=excluded.display_name,
+            lat_min=excluded.lat_min,
+            lat_max=excluded.lat_max,
+            lng_min=excluded.lng_min,
+            lng_max=excluded.lng_max,
+            marker_count=excluded.marker_count,
+            overview_rel=excluded.overview_rel,
+            reference_rel=excluded.reference_rel,
+            ref_width=excluded.ref_width,
+            ref_height=excluded.ref_height
+        """,
+        (
+            map_id,
+            map_display_name(map_id),
+            lat_min,
+            lat_max,
+            lng_min,
+            lng_max,
+            row_count,
+            asset_info.get("overview_rel") or "",
+            asset_info.get("reference_rel") or "",
+            int(asset_info.get("ref_width") or 0),
+            int(asset_info.get("ref_height") or 0),
+        ),
+    )
+
+
+def _fetch_and_store_loot_index(
+    conn: sqlite3.Connection,
+    sess: requests.Session,
+    stats: dict,
+) -> dict:
+    """Fetch Metaforge item index and store in DB; return index (empty on error)."""
+    print("Fetching Metaforge item index (all items, incl. no loot tags)...")
+    try:
+        loot_index = fetch_item_index(session=sess)
+        conn.execute("DELETE FROM item_loot_areas")
+        conn.executemany(
+            "INSERT INTO item_loot_areas (name, loot_areas, item_id) VALUES (?, ?, ?)",
+            [
+                (name, meta["loot_areas"], meta["item_id"])
+                for name, meta in loot_index.items()
+            ],
+        )
+        conn.commit()
+    except Exception as e:  # ruff: ignore[blind-except]
+        print(f"  Item index fetch failed: {e}")
+        stats["_loot_areas"] = 0
+        return {}
+    else:
+        tagged = sum(1 for m in loot_index.values() if m.get("loot_areas"))
+        print(f"  Stored {len(loot_index)} items ({tagged} with loot-area tags)")
+        stats["_loot_areas"] = len(loot_index)
+        return loot_index
+
+
+def _fetch_and_store_loose_spots(
+    conn: sqlite3.Connection,
+    sess: requests.Session,
+    loot_index: dict,
+    map_ids: list[str],
+    stats: dict,
+) -> None:
+    """Prefetch loose-spot clusters for all loot-tagged items."""
+    bulk = {n: m for n, m in loot_index.items() if (m.get("loot_areas") or "").strip()}
+    print(
+        "Fetching Metaforge loose item spots "
+        f"({len(bulk)} loot-tagged items × {len(map_ids)} maps)..."
+    )
+    try:
+        n_clusters = _store_loose_spot_clusters(
+            conn, loot_index=bulk, map_ids=list(map_ids), session=sess
+        )
+        stats["_loose_clusters"] = n_clusters
+        print(f"  Stored {n_clusters} loose-spot clusters")
+    except Exception as e:  # ruff: ignore[blind-except]
+        print(f"  Loose-spot fetch failed: {e}")
+        stats["_loose_clusters"] = 0
+
+
+def _ingest_one_map(
+    conn: sqlite3.Connection,
+    map_id: str,
+    sess: requests.Session,
+    manifest: dict,
+    stats: dict,
+    *,
+    download_assets: bool,
+    force_assets: bool,
+) -> bool:
+    """Ingest one map's markers + assets; return True if reference changed."""
+
+    rows = _fetch_and_store_markers(conn, map_id, sess)
+    if rows is None:
+        stats[map_id] = 0
+        return False
+
+    mid = coerce_map_id(map_id)
+    cfg = MAP_TILE_CONFIGS.get(mid) if mid is not None else None
+    lat_min, lat_max, lng_min, lng_max = _initial_bounds_for_map(map_id, cfg, rows)
+
+    asset_info: dict[str, str | int | float] = {
+        "overview_rel": "",
+        "reference_rel": "",
+        "ref_width": 0,
+        "ref_height": 0,
+    }
+    asset_changed = False
+    if download_assets and rows:
+        asset_info, asset_changed = _update_asset_info(
+            map_id, sess, manifest, force_assets=force_assets
+        )
+
+    lat_min, lat_max, lng_min, lng_max = _refine_bounds_from_assets(
+        map_id, cfg, asset_info, lat_min, lat_max, lng_min, lng_max
+    )
+    _upsert_map_meta(
+        conn, map_id, lat_min, lat_max, lng_min, lng_max, len(rows), asset_info
+    )
+    conn.commit()
+    stats[map_id] = len(rows)
+    print(f"  Stored {len(rows)} markers for {map_id}")
+    time.sleep(0.1)
+    return asset_changed
 
 
 def store_map_catalog(
@@ -1106,187 +1493,25 @@ def store_map_catalog(
     conn = sqlite3.connect(db_path)
     try:
         ensure_map_schema(conn)
-
         for map_id in map_ids:
-            print(f"Fetching map markers: {map_id}...")
-            try:
-                raw = fetch_map_markers(map_id, session=sess)
-            except Exception as e:  # ruff: ignore[blind-except]
-                print(f"  Failed {map_id}: {e}")
-                stats[map_id] = 0
-                continue
-
-            rows = []
-            for r in raw:
-                norm = _normalize_marker(r, map_id)
-                if norm:
-                    rows.append(norm)
-
-            conn.execute("DELETE FROM map_markers WHERE map_id = ?", (map_id,))
-            conn.executemany(
-                """
-                INSERT INTO map_markers (
-                    id, map_id, lat, lng, category, subcategory,
-                    instance_name, loot_areas, behind_locked_door, zlayers
-                ) VALUES (
-                    :id, :map_id, :lat, :lng, :category, :subcategory,
-                    :instance_name, :loot_areas, :behind_locked_door, :zlayers
-                )
-                """,
-                rows,
+            changed = _ingest_one_map(
+                conn,
+                map_id,
+                sess,
+                manifest,
+                stats,
+                download_assets=download_assets,
+                force_assets=force_assets,
             )
+            if changed:
+                assets_changed = True
 
-            mid = coerce_map_id(map_id)
-            cfg = MAP_TILE_CONFIGS.get(mid) if mid is not None else None
-            # Projection extent must match the stitched reference PNG CRS —
-            # never Metaforge tile_bounds alone (those are view padding).
-            if cfg is not None:
-                lat_min, lat_max, lng_min, lng_max = world_extent_bounds(
-                    cfg.world_extent
-                )
-            elif rows:
-                lats = [r["lat"] for r in rows]
-                lngs = [r["lng"] for r in rows]
-                lat_min, lat_max = min(lats), max(lats)
-                lng_min, lng_max = min(lngs), max(lngs)
-                pad_lat = (lat_max - lat_min) * 0.02 or 1.0
-                pad_lng = (lng_max - lng_min) * 0.02 or 1.0
-                lat_min -= pad_lat
-                lat_max += pad_lat
-                lng_min -= pad_lng
-                lng_max += pad_lng
-            else:
-                lat_min = lng_min = 0.0
-                lat_max = lng_max = 1.0
-
-            asset_info: dict[str, str | int | float] = {
-                "overview_rel": "",
-                "reference_rel": "",
-                "ref_width": 0,
-                "ref_height": 0,
-            }
-            if download_assets and rows:
-                refresh = force_assets or assets_outdated(map_id, manifest=manifest)
-                if refresh:
-                    print(
-                        f"  Basemap refresh for {map_id} "
-                        f"({'forced' if force_assets else 'manifest outdated / missing'})"
-                    )
-                else:
-                    print(f"  Using cached basemap for {map_id}")
-                try:
-                    before = map_dir(map_id) / "reference.png"
-                    before_mtime = before.stat().st_mtime if before.is_file() else None
-                    asset_info = download_map_assets(
-                        map_id, session=sess, force=refresh
-                    )
-                    after = map_dir(map_id) / "reference.png"
-                    after_mtime = after.stat().st_mtime if after.is_file() else None
-                    if after_mtime is not None and after_mtime != before_mtime:
-                        assets_changed = True
-                except Exception as e:  # ruff: ignore[blind-except]
-                    print(f"  Asset download failed for {map_id}: {e}")
-
-            # Prefer CRS of the actual stitched reference when known.
-            if all(
-                k in asset_info for k in ("lat_min", "lat_max", "lng_min", "lng_max")
-            ):
-                lat_min = float(asset_info["lat_min"])
-                lat_max = float(asset_info["lat_max"])
-                lng_min = float(asset_info["lng_min"])
-                lng_max = float(asset_info["lng_max"])
-            elif cfg is not None:
-                inferred = infer_reference_bounds_from_tiles(map_id, cfg)
-                if inferred is not None:
-                    lat_min, lat_max, lng_min, lng_max = inferred
-                    write_reference_bounds(map_id, inferred)
-
-            conn.execute(
-                """
-                INSERT INTO map_meta (
-                    map_id, display_name, lat_min, lat_max, lng_min, lng_max,
-                    marker_count, overview_rel, reference_rel, ref_width, ref_height
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(map_id) DO UPDATE SET
-                    display_name=excluded.display_name,
-                    lat_min=excluded.lat_min,
-                    lat_max=excluded.lat_max,
-                    lng_min=excluded.lng_min,
-                    lng_max=excluded.lng_max,
-                    marker_count=excluded.marker_count,
-                    overview_rel=excluded.overview_rel,
-                    reference_rel=excluded.reference_rel,
-                    ref_width=excluded.ref_width,
-                    ref_height=excluded.ref_height
-                """,
-                (
-                    map_id,
-                    map_display_name(map_id),
-                    lat_min,
-                    lat_max,
-                    lng_min,
-                    lng_max,
-                    len(rows),
-                    asset_info.get("overview_rel") or "",
-                    asset_info.get("reference_rel") or "",
-                    int(asset_info.get("ref_width") or 0),
-                    int(asset_info.get("ref_height") or 0),
-                ),
-            )
-            conn.commit()
-            stats[map_id] = len(rows)
-            print(f"  Stored {len(rows)} markers for {map_id}")
-            time.sleep(0.1)
-
+        loot_index: dict = {}
         if fetch_loot_areas:
-            print("Fetching Metaforge item index (all items, incl. no loot tags)...")
-            try:
-                loot_index = fetch_item_index(session=sess)
-                conn.execute("DELETE FROM item_loot_areas")
-                conn.executemany(
-                    "INSERT INTO item_loot_areas (name, loot_areas, item_id) "
-                    "VALUES (?, ?, ?)",
-                    [
-                        (name, meta["loot_areas"], meta["item_id"])
-                        for name, meta in loot_index.items()
-                    ],
-                )
-                conn.commit()
-                tagged = sum(1 for m in loot_index.values() if m.get("loot_areas"))
-                print(
-                    f"  Stored {len(loot_index)} items ({tagged} with loot-area tags)"
-                )
-                stats["_loot_areas"] = len(loot_index)
-            except Exception as e:  # ruff: ignore[blind-except]
-                print(f"  Item index fetch failed: {e}")
-                stats["_loot_areas"] = 0
-                loot_index = {}
-        else:
-            loot_index = {}
+            loot_index = _fetch_and_store_loot_index(conn, sess, stats)
 
         if fetch_loose_spots and loot_index:
-            # Prefetch only loot-tagged items; others warm lazily on search.
-            bulk = {
-                n: m
-                for n, m in loot_index.items()
-                if (m.get("loot_areas") or "").strip()
-            }
-            print(
-                "Fetching Metaforge loose item spots "
-                f"({len(bulk)} loot-tagged items × {len(map_ids)} maps)..."
-            )
-            try:
-                n_clusters = _store_loose_spot_clusters(
-                    conn,
-                    loot_index=bulk,
-                    map_ids=list(map_ids),
-                    session=sess,
-                )
-                stats["_loose_clusters"] = n_clusters
-                print(f"  Stored {n_clusters} loose-spot clusters")
-            except Exception as e:  # ruff: ignore[blind-except]
-                print(f"  Loose-spot fetch failed: {e}")
-                stats["_loose_clusters"] = 0
+            _fetch_and_store_loose_spots(conn, sess, loot_index, list(map_ids), stats)
     finally:
         conn.close()
 

@@ -98,13 +98,112 @@ def _scrub_ocr_query(name: str) -> str:
     # OCR often mangles RECYCLE to CYCLE/RECYC or leaves a lone leading E
     # glued onto DEPRECATED… titles ("EDEPRECATEDANVILS").
     text = re.sub(
-        r"^(?:recycl(?:e)?|cycle|keep|sell)(?:\s+|(?=[A-Za-z]))",
+        # [a-z] only: IGNORECASE already folds case (avoids duplicate class ranges).
+        r"^(?:recycl(?:e)?|cycle|keep|sell)(?:\s+|(?=[a-z]))",
         "",
         text,
         flags=re.IGNORECASE,
     )
     text = re.sub(r"^e(?=deprecated)", "", text, flags=re.IGNORECASE)
     return " ".join(text.split())
+
+
+def _is_prefix_hit(target: str, ck: str) -> bool:
+    """True when ``target`` is a valid stem prefix of catalog key ``ck``."""
+    return (
+        len(target) >= _MIN_STEM_LEN
+        and ck.startswith(target)
+        and 0 < len(ck) - len(target) <= _MAX_PREFIX_EXTRA
+    )
+
+
+def _is_suffix_hit(target: str, ck: str) -> bool:
+    """True when ``target`` is a valid trailing suffix of catalog key ``ck``."""
+    return (
+        len(target) >= _MIN_STEM_LEN
+        and ck.endswith(target)
+        and 0 < len(ck) - len(target) <= _MAX_SUFFIX_EXTRA
+    )
+
+
+def _is_contained_hit(target: str, ck: str) -> bool:
+    """True when ``target`` sits inside ``ck`` with a short prefix/suffix gap,
+    or when ``ck`` is a long enough stem sitting inside a UI-prefixed ``target``."""
+    if len(target) < _NAME_KEY_LEN or target == ck:
+        return False
+    idx = ck.find(target)
+    if idx >= 0 and idx <= _MAX_CONTAINED_PREFIX:
+        return len(ck) - idx - len(target) <= _MAX_CONTAINED_SUFFIX
+    # Catalog key contained in a UI-prefixed query (``CYCLEARPEGGIOI`` → ``Arpeggio I``).
+    qidx = target.find(ck)
+    return (
+        len(ck) >= _MIN_CATALOG_STEM_LEN
+        and len(ck) * 2 >= len(target)
+        and qidx >= 0
+        and qidx <= _MAX_UI_PREFIX
+        and len(target) - qidx - len(ck) <= _MAX_UI_SUFFIX
+    )
+
+
+def _classify_ocr_row(
+    row: sqlite3.Row,
+    target: str,
+    folded: str,
+    exact: list,
+    folded_hits: list,
+    prefix_hits: list,
+    suffix_hits: list,
+    contained_hits: list,
+) -> None:
+    """Bucket one catalog row into the appropriate hit list."""
+    ck = _match_key(row["name"])
+    if not ck:
+        return
+    if ck == target:
+        exact.append(row)
+        return
+    if _ocr_fold_key(row["name"]) == folded:
+        folded_hits.append(row)
+        return
+    if _is_prefix_hit(target, ck):
+        prefix_hits.append(row)
+    if _is_suffix_hit(target, ck):
+        suffix_hits.append(row)
+    if _is_contained_hit(target, ck):
+        contained_hits.append(row)
+
+
+def _fuzzy_best(
+    rows: list[sqlite3.Row], target: str, folded: str
+) -> sqlite3.Row | None:
+    """Return the highest-similarity row that isn't a bare prefix pair."""
+    best: sqlite3.Row | None = None
+    best_ratio = 0.0
+    for row in rows:
+        ck = _match_key(row["name"])
+        if not ck:
+            continue
+        if (ck.startswith(target) or target.startswith(ck)) and ck != target:
+            continue
+        ratio = max(
+            difflib.SequenceMatcher(None, target, ck).ratio(),
+            difflib.SequenceMatcher(None, folded, _ocr_fold_key(row["name"])).ratio(),
+        )
+        if ratio > best_ratio:
+            best_ratio = ratio
+            best = row
+    if best is None:
+        return None
+    best_len = len(_match_key(best["name"]))
+    cutoff = 0.82 if min(len(target), best_len) >= _LONG_KEY_MIN_LEN else 0.9
+    return best if best_ratio >= cutoff else None
+
+
+def _shortest_in_group(group: list[sqlite3.Row]) -> sqlite3.Row | None:
+    if not group:
+        return None
+    group.sort(key=lambda r: (len(_match_key(r["name"])), len(r["name"]), r["name"]))
+    return group[0]
 
 
 def _pick_row_by_single_ocr_key(
@@ -123,57 +222,16 @@ def _pick_row_by_single_ocr_key(
     contained_hits: list[sqlite3.Row] = []
 
     for row in rows:
-        ck = _match_key(row["name"])
-        if not ck:
-            continue
-        if ck == target:
-            exact.append(row)
-            continue
-        if _ocr_fold_key(row["name"]) == folded:
-            folded_hits.append(row)
-            continue
-        if (
-            len(target) >= _MIN_STEM_LEN
-            and ck.startswith(target)
-            and 0 < len(ck) - len(target) <= _MAX_PREFIX_EXTRA
-        ):
-            # Query is a stem of the catalog name (tier/variant OCR-dropped).
-            # Require length ≥5 so scrubbed fragments like ``ADVA`` do not
-            # prefix-match ``Advanced …``.
-            prefix_hits.append(row)
-        # OCR dropped a leading chunk (``CHERIII`` → ``Stitcher III``,
-        # ``TIONBOX`` → ``Frequency Modulation Box``). Cap is generous because
-        # uniqueness is required before we accept a suffix hit.
-        if (
-            len(target) >= _MIN_STEM_LEN
-            and ck.endswith(target)
-            and 0 < len(ck) - len(target) <= _MAX_SUFFIX_EXTRA
-        ):
-            suffix_hits.append(row)
-        # Query sits inside the catalog key with a short OCR prefix/suffix gap
-        # (``TINGMKSURVIVOR`` → ``Looting Mk. 3 (Survivor)``).
-        if len(target) >= _NAME_KEY_LEN and target != ck:
-            idx = ck.find(target)
-            if (
-                idx >= 0
-                and idx <= _MAX_CONTAINED_PREFIX
-                and len(ck) - idx - len(target) <= _MAX_CONTAINED_SUFFIX
-            ):
-                contained_hits.append(row)
-            else:
-                # Catalog key contained in a UI-prefixed query
-                # (``CYCLEARPEGGIOI`` → ``Arpeggio I``). Require the catalog
-                # stem to cover most of the query so ``Magnet`` cannot win
-                # inside ``JSTRIALMAGNET``.
-                qidx = target.find(ck)
-                if (
-                    len(ck) >= _MIN_CATALOG_STEM_LEN
-                    and len(ck) * 2 >= len(target)
-                    and qidx >= 0
-                    and qidx <= _MAX_UI_PREFIX
-                    and len(target) - qidx - len(ck) <= _MAX_UI_SUFFIX
-                ):
-                    contained_hits.append(row)
+        _classify_ocr_row(
+            row,
+            target,
+            folded,
+            exact,
+            folded_hits,
+            prefix_hits,
+            suffix_hits,
+            contained_hits,
+        )
 
     if len(exact) == 1:
         return exact[0]
@@ -185,39 +243,15 @@ def _pick_row_by_single_ocr_key(
         return contained_hits[0]
 
     # Fuzzy on keys (not raw display strings — those fail when spaces drop)
-    best: sqlite3.Row | None = None
-    best_ratio = 0.0
-    for row in rows:
-        ck = _match_key(row["name"])
-        if not ck:
-            continue
-        if (ck.startswith(target) or target.startswith(ck)) and ck != target:
-            continue
-        ratio = max(
-            difflib.SequenceMatcher(None, target, ck).ratio(),
-            difflib.SequenceMatcher(None, folded, _ocr_fold_key(row["name"])).ratio(),
-        )
-        if ratio > best_ratio:
-            best_ratio = ratio
-            best = row
-    # Long keys: allow slightly more OCR damage (Industrial←Jstrial, …)
+    best = _fuzzy_best(rows, target, folded)
     if best is not None:
-        best_len = len(_match_key(best["name"]))
-        cutoff = 0.82 if min(len(target), best_len) >= _LONG_KEY_MIN_LEN else 0.9
-        if best_ratio >= cutoff:
-            return best
+        return best
 
     # Truncated stem with several tiered variants → prefer shortest catalog name
     for group in (prefix_hits, suffix_hits, contained_hits):
-        if group:
-            group.sort(
-                key=lambda r: (
-                    len(_match_key(r["name"])),
-                    len(r["name"]),
-                    r["name"],
-                )
-            )
-            return group[0]
+        result = _shortest_in_group(group)
+        if result is not None:
+            return result
     return None
 
 

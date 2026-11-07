@@ -146,13 +146,15 @@ def test_write_and_query_projects(tmp_path: Path):
         "Wasp Driver",
         project_items={"trophy display": {"wasp-driver": "IN_PROGRESS"}},
     )
-    assert len(rem) == 1 and rem[0].quantity == 20
+    assert len(rem) == 1
+    assert rem[0].quantity == 20
     # Later-stage item with no mappedProgress row yet — still remaining
     rem = catalog.remaining_for_item(
         "Wasp Driver",
         project_items={"trophy display": {"tick-pod": "COMPLETED"}},
     )
-    assert len(rem) == 1 and rem[0].quantity == 20
+    assert len(rem) == 1
+    assert rem[0].quantity == 20
 
 
 def test_write_and_query_traders(tmp_path: Path):

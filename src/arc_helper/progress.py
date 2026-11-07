@@ -60,6 +60,10 @@ class ProgressProfile(BaseModel):
 # ---------------------------------------------------------------------------
 
 _NON_ALNUM = re.compile(r"[^a-z0-9]+")
+_NON_ALNUM_CHARS = re.compile(r"[^a-z0-9]")
+_SECTION_LOOKAHEAD = r"(?=Workshop:|Quests:|Projects:|Research:|Crafting:|Amplify:)"
+_TRAILING_TIER_RE = re.compile(r" \d+$")
+_DOUBLE_SEMI_RE = re.compile(r"; *;")
 _MIN_PROJECT_KEY_PARTS = 2
 
 
@@ -99,7 +103,7 @@ _WORKSHOP_KEY_TO_DISPLAY: dict[str, str] = {
 
 
 def _workshop_display_key(raw_key: str) -> str:
-    compact = re.sub(r"[^a-z0-9]", "", raw_key.lower())
+    compact = _NON_ALNUM_CHARS.sub("", raw_key.lower())
     if compact in _WORKSHOP_KEY_TO_DISPLAY:
         return _WORKSHOP_KEY_TO_DISPLAY[compact]
     # camelCase → spaced words: medicalLab → medical lab
@@ -110,6 +114,68 @@ def _workshop_display_key(raw_key: str) -> str:
 # ---------------------------------------------------------------------------
 # Import MetaForge account-sync
 # ---------------------------------------------------------------------------
+
+
+def _import_quests(profile: ProgressProfile, resources: dict) -> None:
+    """Add completed quest ids from the quests resource block."""
+    quests_block = (resources.get("quests") or {}).get("data") or {}
+    for quest in quests_block.get("user_quests") or []:
+        if not isinstance(quest, dict):
+            continue
+        if str(quest.get("status", "")).upper() != "COMPLETED":
+            continue
+        qid = quest.get("quest_id") or ""
+        if qid:
+            profile.completed_quests.add(slugify(str(qid)))
+
+
+def _import_workshop(profile: ProgressProfile, resources: dict) -> None:
+    """Populate workshop_levels from levels + outpost.rooms counts."""
+    workshop_block = (resources.get("workshop") or {}).get("data") or {}
+    for key, level in (workshop_block.get("levels") or {}).items():
+        try:
+            lvl = int(level)
+        except (TypeError, ValueError):
+            continue
+        profile.workshop_levels[_workshop_display_key(str(key))] = lvl
+    # Outpost room expansions (Chalet, etc.) — not the same as levels.outpost.
+    outpost_block = workshop_block.get("outpost") or {}
+    rooms = outpost_block.get("rooms") if isinstance(outpost_block, dict) else None
+    if isinstance(rooms, list):
+        profile.workshop_levels["outpost room"] = len(rooms)
+
+
+def _import_projects(profile: ProgressProfile, resources: dict) -> None:
+    """Populate project_items from projects.mappedProgress."""
+    projects_block = (resources.get("projects") or {}).get("data") or {}
+    for key, entry in (projects_block.get("mappedProgress") or {}).items():
+        if not isinstance(entry, dict):
+            continue
+        parts = str(key).split("::")
+        if len(parts) < _MIN_PROJECT_KEY_PARTS:
+            continue
+        project_name = _norm_name(parts[0])
+        item_slug = slugify(parts[-1])
+        state = str(entry.get("state") or "").upper() or "UNKNOWN"
+        bucket = profile.project_items.setdefault(project_name, {})
+        bucket[item_slug] = _merge_project_item_state(bucket.get(item_slug, ""), state)
+
+
+def _add_blueprint_ids(out: set[str], items: list, key: str) -> None:
+    """Append the ``key`` field of each dict entry in ``items`` to ``out``."""
+    for item in items or []:
+        if isinstance(item, dict) and item.get(key):
+            out.add(str(item[key]))
+
+
+def _import_blueprints(profile: ProgressProfile, resources: dict) -> None:
+    """Add owned blueprint / design / stencil ids from blueprints block."""
+    bp_block = (resources.get("blueprints") or {}).get("data") or {}
+    _add_blueprint_ids(
+        profile.owned_blueprints, bp_block.get("blueprints"), "blueprintId"
+    )
+    _add_blueprint_ids(profile.owned_blueprints, bp_block.get("designs"), "itemId")
+    _add_blueprint_ids(profile.owned_blueprints, bp_block.get("stencils"), "itemId")
 
 
 def import_account_sync(raw: dict[str, Any] | str | Path) -> ProgressProfile:
@@ -129,66 +195,10 @@ def import_account_sync(raw: dict[str, Any] | str | Path) -> ProgressProfile:
         metaforge_synced_at=str(synced_raw) if synced_raw else None,
     )
 
-    # Quests ---------------------------------------------------------------
-    quests_block = (resources.get("quests") or {}).get("data") or {}
-    for quest in quests_block.get("user_quests") or []:
-        if not isinstance(quest, dict):
-            continue
-        if str(quest.get("status", "")).upper() != "COMPLETED":
-            continue
-        qid = quest.get("quest_id") or ""
-        if qid:
-            profile.completed_quests.add(slugify(str(qid)))
-
-    # Workshop levels ------------------------------------------------------
-    workshop_block = (resources.get("workshop") or {}).get("data") or {}
-    levels = workshop_block.get("levels") or {}
-    for key, level in levels.items():
-        try:
-            lvl = int(level)
-        except (TypeError, ValueError):
-            continue
-        profile.workshop_levels[_workshop_display_key(str(key))] = lvl
-
-    # Outpost room expansions (Chalet, etc.) — not the same as levels.outpost.
-    # MetaForge lists unlocked modules under workshop.outpost.rooms; keep_for
-    # uses ``Outpost Room N`` so progress filters completed expansions.
-    outpost_block = workshop_block.get("outpost") or {}
-    rooms = outpost_block.get("rooms") if isinstance(outpost_block, dict) else None
-    if isinstance(rooms, list):
-        profile.workshop_levels["outpost room"] = len(rooms)
-
-    # Projects / mappedProgress --------------------------------------------
-    # Keys look like ``Soul's Offering::Phase 2/4::dead-flowers`` or flat
-    # ``Soul's Offering::arc-alloy``. Same item can be COMPLETED in an early
-    # phase and still IN_PROGRESS later — prefer still-needed over COMPLETED.
-    projects_block = (resources.get("projects") or {}).get("data") or {}
-    mapped = projects_block.get("mappedProgress") or {}
-    for key, entry in mapped.items():
-        if not isinstance(entry, dict):
-            continue
-        parts = str(key).split("::")
-        if len(parts) < _MIN_PROJECT_KEY_PARTS:
-            continue
-        project_name = _norm_name(parts[0])
-        item_slug = slugify(parts[-1])
-        state = str(entry.get("state") or "").upper() or "UNKNOWN"
-        bucket = profile.project_items.setdefault(project_name, {})
-        prev = bucket.get(item_slug, "")
-        bucket[item_slug] = _merge_project_item_state(prev, state)
-
-    # Blueprints / designs / stencils already unlocked --------------------
-    bp_block = (resources.get("blueprints") or {}).get("data") or {}
-    for bp in bp_block.get("blueprints") or []:
-        if isinstance(bp, dict) and bp.get("blueprintId"):
-            profile.owned_blueprints.add(str(bp["blueprintId"]))
-    for design in bp_block.get("designs") or []:
-        if isinstance(design, dict) and design.get("itemId"):
-            profile.owned_blueprints.add(str(design["itemId"]))
-    for stencil in bp_block.get("stencils") or []:
-        if isinstance(stencil, dict) and stencil.get("itemId"):
-            profile.owned_blueprints.add(str(stencil["itemId"]))
-
+    _import_quests(profile, resources)
+    _import_workshop(profile, resources)
+    _import_projects(profile, resources)
+    _import_blueprints(profile, resources)
     return profile
 
 
@@ -252,28 +262,30 @@ def save_progress(profile: ProgressProfile, path: Path | None = None) -> Path:
 # ---------------------------------------------------------------------------
 
 _SECTION_SPLIT = re.compile(
-    r"(?=(?:Workshop|Quests|Projects|Research|Crafting|Amplify):)",
+    _SECTION_LOOKAHEAD,
     re.IGNORECASE,
 )
 _SECTION_HEAD = re.compile(
-    r"^(Workshop|Quests|Projects|Research|Crafting|Amplify):\s*(.*)$",
+    r"^(Workshop|Quests|Projects|Research|Crafting|Amplify):(.*)$",
     re.IGNORECASE | re.DOTALL,
 )
 # "Medical Lab 3 (8x)" / "Doctor's Orders (2x)" / "Trophy Display (10x)"
+# Use [^(]+ (not .+?) to avoid reluctant-quantifier backtracking (S8786).
 _ENTRY_RE = re.compile(
-    r"(.+?)\s*\((\d+)x\)",
+    r"([^(]+)\((\d+)x\)",
 )
 # Workshop entries always end with a tier digit before (Nx)
 _WORKSHOP_ENTRY_RE = re.compile(
-    r"^(.+?)\s+(\d+)$",
+    r"^(.+) (\d+)$",
 )
 
 _PROGRESS_KEEP_RE = re.compile(
     r"quests?|projects?|workshop|upgrade|expedition|scrappy|"
-    r"research\s*:|research\s+station|crafting\s*:|amplify\s*:|"
-    r"flickering\s+flames|\bstage\b",
+    r"research *:|research +station|crafting *:|amplify *:|"
+    r"flickering +flames|\bstage\b",
     re.IGNORECASE,
 )
+_BLUEPRINT_SUFFIX_RE = re.compile(r" blueprint *$", re.IGNORECASE)
 
 # Trailing Research Item study note (must survive Workshop section filtering)
 _RP_CONVERT_NOTE_RE = re.compile(
@@ -317,6 +329,24 @@ def _unlock_item_kind(item_name: str) -> str | None:
     return None
 
 
+def _blueprint_candidates(base: str, full: str) -> frozenset[str]:
+    return frozenset(
+        {
+            full,
+            base,
+            f"{base}-recipe",
+            f"{base}-blueprint",
+            f"{base}-design",
+            f"{base}-stencil",
+        }
+    )
+
+
+def _owned_matches_base(o: str, base: str) -> bool:
+    stem = re.sub(r"-(recipe|blueprint|design|stencil)$", "", o)
+    return stem == base or stem.startswith(base + "-") or base.startswith(stem + "-")
+
+
 def _blueprint_owned(profile: ProgressProfile, blueprint_label: str) -> bool:
     """True when ``owned_blueprints`` already includes this unlock.
 
@@ -332,29 +362,22 @@ def _blueprint_owned(profile: ProgressProfile, blueprint_label: str) -> bool:
         return False
     kind = _unlock_item_kind(label)
     if kind:
-        base = slugify(re.sub(rf"\s*{kind}\s*$", "", label, flags=re.IGNORECASE))
+        kind_suffix = re.compile(rf" {re.escape(kind)} *$", re.IGNORECASE)
+        base = slugify(kind_suffix.sub("", label))
     else:
         # Research: clause labels are usually ``Anvil Blueprint``
-        base = slugify(re.sub(r"\s*blueprint\s*$", "", label, flags=re.IGNORECASE))
+        base = slugify(_BLUEPRINT_SUFFIX_RE.sub("", label))
     full = slugify(label)
     if not base and not full:
         return False
-    candidates = {
-        full,
-        base,
-        f"{base}-recipe",
-        f"{base}-blueprint",
-        f"{base}-design",
-        f"{base}-stencil",
-    }
+    candidates = _blueprint_candidates(base, full)
     for owned in profile.owned_blueprints:
         o = (owned or "").strip().lower()
         if not o:
             continue
         if o in candidates:
             return True
-        stem = re.sub(r"-(recipe|blueprint|design|stencil)$", "", o)
-        if stem == base or stem.startswith(base + "-") or base.startswith(stem + "-"):
+        if _owned_matches_base(o, base):
             return True
     return False
 
@@ -395,9 +418,9 @@ def _workshop_done(profile: ProgressProfile, label: str) -> bool:
     current = profile.workshop_levels.get(station)
     if current is None:
         # try compact match (gearbench vs gear bench)
-        compact = re.sub(r"[^a-z0-9]", "", station)
+        compact = _NON_ALNUM_CHARS.sub("", station)
         for key, lvl in profile.workshop_levels.items():
-            if re.sub(r"[^a-z0-9]", "", key) == compact:
+            if _NON_ALNUM_CHARS.sub("", key) == compact:
                 current = lvl
                 break
     if current is None:
@@ -451,7 +474,7 @@ _SHELTERED_PROJECT_RE = re.compile(r"^sheltered retreat(?:\s+(\d+))?$", re.IGNOR
 def _project_lookup_keys(project_label: str) -> list[str]:
     """Normalized project keys including Outpost / Sheltered Retreat aliases."""
     project = _norm_name(project_label)
-    base = re.sub(r"\s+\d+$", "", project).strip()
+    base = _TRAILING_TIER_RE.sub("", project).strip()
     keys: list[str] = []
     for cand in (project, base):
         if not cand:
@@ -491,6 +514,39 @@ def _outpost_workshop_stage_done(
     return current >= stage
 
 
+def _find_project_bucket(
+    profile: ProgressProfile, project_label: str
+) -> dict[str, str] | None:
+    """Return the mapped-progress bucket for ``project_label``, or None."""
+    for key in _project_lookup_keys(project_label):
+        found = profile.project_items.get(key)
+        if found:
+            return found
+    # Match tiered labels ("Expedition 1") against bare buckets and vice-versa.
+    candidates = set(_project_lookup_keys(project_label))
+    for key, value in profile.project_items.items():
+        if key in candidates:
+            return value
+        for cand in candidates:
+            if key.startswith(cand + " ") or cand.startswith(key + " "):
+                return value
+    return None
+
+
+def _catalog_still_requires(
+    project_label: str,
+    item_name: str,
+    project_catalog: ProjectCatalog | None,
+) -> bool:
+    """True when the catalog explicitly lists ``item_name`` for this project."""
+    if project_catalog is None or not project_catalog.available:
+        return False
+    return any(
+        _project_names_match(project_label, req.project_name)
+        for req in project_catalog.requirements_for_item(item_name)
+    )
+
+
 def _project_clause_done(
     profile: ProgressProfile,
     project_label: str,
@@ -499,28 +555,9 @@ def _project_clause_done(
     project_catalog: ProjectCatalog | None = None,
 ) -> bool:
     """True when this project clause no longer applies for ``item_name``."""
-    bucket: dict[str, str] | None = None
-    for key in _project_lookup_keys(project_label):
-        found = profile.project_items.get(key)
-        if found:
-            bucket = found
-            break
-    if not bucket:
-        # Match "Expedition 1" / "Trophy Display 2" labels to a bare project
-        # bucket ("expedition" / "trophy display") and the reverse.
-        candidates = set(_project_lookup_keys(project_label))
-        for key, value in profile.project_items.items():
-            if key in candidates:
-                bucket = value
-                break
-            for cand in candidates:
-                if key.startswith(cand + " ") or cand.startswith(key + " "):
-                    bucket = value
-                    break
-            if bucket:
-                break
-
+    bucket = _find_project_bucket(profile, project_label)
     item_slug = slugify(item_name)
+
     if bucket and item_slug in bucket:
         state = bucket[item_slug]
         if state == "COMPLETED":
@@ -542,14 +579,35 @@ def _project_clause_done(
     # Future stages often have no mappedProgress row yet (e.g. Mask Fragment
     # on Soul's Offering part 3 while parts 1–2 are done). If the catalog still
     # lists this item for the project, keep it.
-    if project_catalog is not None and project_catalog.available:
-        for req in project_catalog.requirements_for_item(item_name):
-            if _project_names_match(project_label, req.project_name):
-                return False
+    if _catalog_still_requires(project_label, item_name, project_catalog):
+        return False
 
     # No item row and not a known catalog requirement: drop when every tracked
     # requirement is done (fully finished projects / wiki leftovers).
     return bool(bucket) and all(state == "COMPLETED" for state in bucket.values())
+
+
+def _catalog_quest_kept(
+    entries: list[tuple[str, int]],
+    profile: ProgressProfile,
+    catalog: QuestCatalog,
+    catalog_all: list,
+    remaining: list,
+) -> tuple[list[tuple[str, int]], int]:
+    """Merge catalog-remaining quests with wiki-only extras not in the catalog."""
+    kept = [(r.quest_name, r.quantity) for r in remaining]
+    covered_ids = {r.quest_id for r in catalog_all}
+    covered_names = {r.quest_name.lower() for r in catalog_all}
+    for label, qty in entries:
+        if _quest_done(profile, label):
+            continue
+        if slugify(label) in covered_ids or label.lower() in covered_names:
+            continue
+        if catalog.has_quest(label) or catalog.has_quest(slugify(label)):
+            continue  # Known quest but no requirement row for this item — drop
+        kept.append((label, qty))
+    total = sum(r.quantity for r in remaining)
+    return kept, total
 
 
 def _filter_quest_entries(
@@ -569,20 +627,9 @@ def _filter_quest_entries(
         remaining = catalog.remaining_for_item(item_name, profile.completed_quests)
         catalog_all = catalog.requirements_for_item(item_name)
         if catalog_all:
-            kept = [(r.quest_name, r.quantity) for r in remaining]
-            covered_ids = {r.quest_id for r in catalog_all}
-            covered_names = {r.quest_name.lower() for r in catalog_all}
-            # Preserve wiki-only extras that the API catalog doesn't list
-            for label, qty in entries:
-                if _quest_done(profile, label):
-                    continue
-                if slugify(label) in covered_ids or label.lower() in covered_names:
-                    continue
-                if catalog.has_quest(label) or catalog.has_quest(slugify(label)):
-                    # Known quest but no requirement row for this item — drop
-                    continue
-                kept.append((label, qty))
-            total = sum(r.quantity for r in remaining)
+            kept, total = _catalog_quest_kept(
+                entries, profile, catalog, catalog_all, remaining
+            )
             return kept, total
 
     kept = [(label, qty) for label, qty in entries if not _quest_done(profile, label)]
@@ -607,6 +654,129 @@ def _extract_rp_convert_notes(text: str) -> list[str]:
     return [m.group(0).strip() for m in _RP_CONVERT_NOTE_RE.finditer(text or "")]
 
 
+_SECTION_KIND_MAP: dict[str, str] = {
+    "quests": "Quests",
+    "workshop": "Workshop",
+    "projects": "Projects",
+    "research": "Research",
+    "crafting": "Crafting",
+    "amplify": "Amplify",
+}
+
+
+def _entry_done(
+    kind: str,
+    label: str,
+    profile: ProgressProfile,
+    item_name: str,
+    project_catalog: ProjectCatalog | None,
+) -> bool:
+    """Return True when this keep_for entry can be dropped as already done."""
+    if kind == "Workshop":
+        return _workshop_done(profile, label)
+    if kind == "Research":
+        return _blueprint_owned(profile, label)
+    if kind == "Projects":
+        if (
+            project_catalog is not None
+            and project_catalog.available
+            and not project_catalog.is_active(label)
+        ):
+            return True
+        return _project_clause_done(
+            profile, label, item_name=item_name, project_catalog=project_catalog
+        )
+    return False  # Crafting / Amplify: fail open
+
+
+def _filter_non_quest_entries(
+    kind: str,
+    entries: list[tuple[str, int]],
+    profile: ProgressProfile,
+    item_name: str,
+    project_catalog: ProjectCatalog | None,
+) -> list[tuple[str, int]]:
+    """Filter Workshop / Projects / Research / Crafting / Amplify entries."""
+    return [
+        (label, qty)
+        for label, qty in entries
+        if not _entry_done(kind, label, profile, item_name, project_catalog)
+    ]
+
+
+def _process_keep_for_chunk(
+    chunk: str,
+    profile: ProgressProfile,
+    item_name: str,
+    catalog: QuestCatalog | None,
+    project_catalog: ProjectCatalog | None,
+    preamble: list[str],
+    kept_by_kind: dict[str, list[tuple[str, int]]],
+    saw_quests: list[bool],
+) -> None:
+    """Parse one keep_for section chunk and update preamble / kept_by_kind."""
+    head = _SECTION_HEAD.match(chunk.strip().strip(";").strip())
+    if not head:
+        bit = chunk.strip().strip(";").strip()
+        if bit:
+            preamble.append(bit)
+        return
+    kind = _SECTION_KIND_MAP.get(head.group(1).lower())
+    if kind is None:
+        return
+    entries = _parse_entries(head.group(2))
+    if kind == "Quests":
+        saw_quests[0] = True
+        kept, _ = _filter_quest_entries(
+            entries, profile, item_name=item_name, catalog=catalog
+        )
+    else:
+        kept = _filter_non_quest_entries(
+            kind, entries, profile, item_name, project_catalog
+        )
+    if kept:
+        kept_by_kind.setdefault(kind, []).extend(kept)
+
+
+def _inject_catalog_quests_if_missing(
+    *,
+    saw_quests: bool,
+    catalog: QuestCatalog | None,
+    profile: ProgressProfile,
+    item_name: str,
+    kept_by_kind: dict[str, list[tuple[str, int]]],
+) -> None:
+    """Add catalog quest requirements when keep_for had no Quests: section."""
+    if saw_quests or catalog is None or not catalog.available:
+        return
+    if not catalog.requirements_for_item(item_name):
+        return
+    kept, _ = _filter_quest_entries([], profile, item_name=item_name, catalog=catalog)
+    if kept:
+        kept_by_kind["Quests"] = kept + kept_by_kind.get("Quests", [])
+
+
+def _rebuild_keep_for(
+    preamble: list[str],
+    kept_by_kind: dict[str, list[tuple[str, int]]],
+    rp_notes: list[str],
+) -> str:
+    rebuilt = [
+        f"{kind}: {_format_entries(kept_by_kind[kind])}"
+        for kind in (
+            "Quests",
+            "Workshop",
+            "Projects",
+            "Research",
+            "Crafting",
+            "Amplify",
+        )
+        if kept_by_kind.get(kind)
+    ]
+    parts = [p for p in (*preamble, *rebuilt, *rp_notes) if p]
+    return "; ".join(parts)
+
+
 def _filter_keep_for(
     keep_for: str,
     profile: ProgressProfile,
@@ -622,105 +792,44 @@ def _filter_keep_for(
     rp_notes = _extract_rp_convert_notes(text)
     # Strip RP notes so they are not lost inside Workshop: body parsing
     text_wo_rp = _RP_CONVERT_NOTE_RE.sub(" ", text)
-    text_wo_rp = re.sub(r"\s*;\s*;\s*", "; ", text_wo_rp)
-    text_wo_rp = text_wo_rp.strip(" ;")
+    text_wo_rp = _DOUBLE_SEMI_RE.sub(";", text_wo_rp).strip(" ;")
 
-    chunks = [c for c in _SECTION_SPLIT.split(text_wo_rp) if c.strip()]
     preamble: list[str] = []
     kept_by_kind: dict[str, list[tuple[str, int]]] = {}
-    saw_quests = False
+    saw_quests = [False]  # mutable flag passed into helper
 
-    for chunk in chunks:
-        head = _SECTION_HEAD.match(chunk.strip().strip(";").strip())
-        if not head:
-            bit = chunk.strip().strip(";").strip()
-            if bit:
-                preamble.append(bit)
-            continue
-        kind_l = head.group(1).lower()
-        if kind_l == "quests":
-            kind = "Quests"
-        elif kind_l == "workshop":
-            kind = "Workshop"
-        elif kind_l == "projects":
-            kind = "Projects"
-        elif kind_l == "research":
-            kind = "Research"
-        elif kind_l == "crafting":
-            kind = "Crafting"
-        elif kind_l == "amplify":
-            kind = "Amplify"
-        else:
-            continue
-
-        entries = _parse_entries(head.group(2))
-        if kind == "Quests":
-            saw_quests = True
-            kept, _catalog_total = _filter_quest_entries(
-                entries,
-                profile,
-                item_name=item_name,
-                catalog=catalog,
-            )
-        else:
-            kept = []
-            for label, qty in entries:
-                if kind == "Workshop" and _workshop_done(profile, label):
-                    continue
-                if kind == "Research" and _blueprint_owned(profile, label):
-                    continue
-                if kind == "Projects":
-                    if (
-                        project_catalog is not None
-                        and project_catalog.available
-                        and not project_catalog.is_active(label)
-                    ):
-                        continue
-                    if _project_clause_done(
-                        profile,
-                        label,
-                        item_name=item_name,
-                        project_catalog=project_catalog,
-                    ):
-                        continue
-                # Crafting / Amplify: fail open (no sync for craft counts / amp nodes)
-                kept.append((label, qty))
-        if kept:
-            kept_by_kind.setdefault(kind, []).extend(kept)
-
-    # Item may have catalog requirements even when keep_for had no Quests: section
-    if (
-        not saw_quests
-        and catalog is not None
-        and catalog.available
-        and catalog.requirements_for_item(item_name)
-    ):
-        kept, _catalog_total = _filter_quest_entries(
-            [],
+    for chunk in [c for c in _SECTION_SPLIT.split(text_wo_rp) if c.strip()]:
+        _process_keep_for_chunk(
+            chunk,
             profile,
-            item_name=item_name,
-            catalog=catalog,
+            item_name,
+            catalog,
+            project_catalog,
+            preamble,
+            kept_by_kind,
+            saw_quests,
         )
-        if kept:
-            kept_by_kind["Quests"] = kept + kept_by_kind.get("Quests", [])
 
-    rebuilt: list[str] = []
-    for kind in (
-        "Quests",
-        "Workshop",
-        "Projects",
-        "Research",
-        "Crafting",
-        "Amplify",
-    ):
-        entries = kept_by_kind.get(kind)
-        if entries:
-            rebuilt.append(f"{kind}: {_format_entries(entries)}")
+    _inject_catalog_quests_if_missing(
+        saw_quests=saw_quests[0],
+        catalog=catalog,
+        profile=profile,
+        item_name=item_name,
+        kept_by_kind=kept_by_kind,
+    )
 
-    # Progression sections first; RP convert note last
-    parts = [p for p in (*preamble, *rebuilt, *rp_notes) if p]
+    result = _rebuild_keep_for(preamble, kept_by_kind, rp_notes)
     quest_needed, other_needed = _needed_from_entries(kept_by_kind)
-    return "; ".join(parts), quest_needed, other_needed
+    return result, quest_needed, other_needed
+
+
+def _is_rp_convert(action_lower: str, keep_lower: str) -> bool:
+    """True when the action or keep_for indicates research-point conversion."""
+    if "convert to research" in action_lower or "convert to rp" in action_lower:
+        return True
+    return "converts to" in keep_lower and (
+        "research points" in keep_lower or bool(re.search(r"\brp\b", keep_lower))
+    )
 
 
 def _rewrite_action(action: str, recycle_for: str | None, keep_for: str) -> str:
@@ -734,17 +843,8 @@ def _rewrite_action(action: str, recycle_for: str | None, keep_for: str) -> str:
         return action
     al = (action or "").lower().strip()
     keep_l = (keep_for or "").lower()
-    # Research Items still convert to RP after station upgrades are done
-    if (
-        "convert to research" in al
-        or "convert to rp" in al
-        or (
-            "converts to" in keep_l
-            and ("research points" in keep_l or re.search(r"\brp\b", keep_l))
-        )
-    ):
+    if _is_rp_convert(al, keep_l):
         return "Convert to research points"
-    sells = "sell after" in al or "sell once" in al
     recycles = (
         "recycle after" in al
         or "recycle once" in al
@@ -754,13 +854,64 @@ def _rewrite_action(action: str, recycle_for: str | None, keep_for: str) -> str:
     # Keep / keep-until-recycle with a recycle yield → crafting feedstock
     if recycles or (al == "keep" and (recycle_for or "").strip()):
         return "Crafting item"
-    if al == "keep":
-        return "Sell"
-    if sells and not recycles:
-        return "Sell"
-    if sells:
+    if al == "keep" or "sell after" in al or "sell once" in al:
         return "Sell"
     return action
+
+
+def _fallback_catalog_totals(
+    item: Item,
+    profile: ProgressProfile | None,
+    catalog: QuestCatalog | None,
+    project_catalog: ProjectCatalog | None,
+    quest_needed: int | None,
+    project_needed: int | None,
+) -> tuple[int | None, int | None]:
+    """When keep_for is empty, derive quest/project totals from structured catalogs."""
+    if quest_needed is None and catalog is not None and catalog.available:
+        done = profile.completed_quests if profile is not None else set()
+        total = catalog.total_needed(item.name, done)
+        if total > 0:
+            quest_needed = total
+    if (
+        project_needed is None
+        and project_catalog is not None
+        and project_catalog.available
+    ):
+        items = profile.project_items if profile is not None else {}
+        pt = project_catalog.total_needed(item.name, project_items=items)
+        if pt > 0:
+            project_needed = pt
+    return quest_needed, project_needed
+
+
+def _build_keep_for_updates(
+    item: Item,
+    filtered: str,
+    quest_needed: int | None,
+    project_needed: int | None,
+    catalog: QuestCatalog | None,
+    project_catalog: ProjectCatalog | None,
+) -> dict[str, object]:
+    """Assemble the ``keep_for`` / action / need fields for model_copy."""
+    updates: dict[str, object] = {}
+    if filtered != (item.keep_for or "").strip():
+        updates["keep_for"] = filtered or None
+        updates["action"] = _rewrite_action(item.action, item.recycle_for, filtered)
+    has_keep = bool((item.keep_for or "").strip())
+    if quest_needed is not None:
+        updates["quest_needed"] = quest_needed
+    elif has_keep or (
+        catalog is not None
+        and catalog.available
+        and catalog.requirements_for_item(item.name)
+    ):
+        updates["quest_needed"] = None
+    if project_needed is not None:
+        updates["project_needed"] = project_needed
+    elif has_keep or (project_catalog is not None and project_catalog.available):
+        updates["project_needed"] = None
+    return updates
 
 
 def apply_progress(
@@ -794,39 +945,13 @@ def apply_progress(
 
     # No keep_for sections: fall back to structured catalog totals
     if not (item.keep_for or "").strip():
-        if quest_needed is None and catalog is not None and catalog.available:
-            done = profile.completed_quests if profile is not None else set()
-            total = catalog.total_needed(item.name, done)
-            if total > 0:
-                quest_needed = total
-        if (
-            project_needed is None
-            and project_catalog is not None
-            and project_catalog.available
-        ):
-            items = profile.project_items if profile is not None else {}
-            pt = project_catalog.total_needed(item.name, project_items=items)
-            if pt > 0:
-                project_needed = pt
+        quest_needed, project_needed = _fallback_catalog_totals(
+            item, profile, catalog, project_catalog, quest_needed, project_needed
+        )
 
-    updates: dict[str, object] = {}
-    if filtered != (item.keep_for or "").strip():
-        updates["keep_for"] = filtered or None
-        updates["action"] = _rewrite_action(item.action, item.recycle_for, filtered)
-    if quest_needed is not None:
-        updates["quest_needed"] = quest_needed
-    elif (item.keep_for or "").strip() or (
-        catalog is not None
-        and catalog.available
-        and catalog.requirements_for_item(item.name)
-    ):
-        updates["quest_needed"] = None
-    if project_needed is not None:
-        updates["project_needed"] = project_needed
-    elif (item.keep_for or "").strip() or (
-        project_catalog is not None and project_catalog.available
-    ):
-        updates["project_needed"] = None
+    updates = _build_keep_for_updates(
+        item, filtered, quest_needed, project_needed, catalog, project_catalog
+    )
     if buy_from:
         updates["buy_from"] = buy_from
 

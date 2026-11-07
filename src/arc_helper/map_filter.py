@@ -48,6 +48,52 @@ def _sample(markers: list[MapMarker], limit: int) -> list[MapMarker]:
     return [markers[int(i * (len(markers) - 1) / (limit - 1))] for i in range(limit)]
 
 
+def _on_basemap_filter(
+    markers: list[MapMarker], meta: MapMeta | None
+) -> list[MapMarker]:
+    """Keep only markers that project onto the stitched basemap CRS."""
+    if meta is None:
+        return markers
+    return [m for m in markers if latlng_on_reference(m.lat, m.lng, meta, margin=0.35)]
+
+
+def _resolve_search_markers(
+    catalog: MapCatalog,
+    map_id: str,
+    needle: str,
+    search: str | None,
+    origin: tuple[float, float] | None,
+    *,
+    locked_only: bool,
+) -> list[MapMarker]:
+    """Resolve item + free-text markers for a non-empty search/item query."""
+    ref = (
+        catalog.resolve_item_ref(needle, network=False)
+        if hasattr(catalog, "resolve_item_ref")
+        else None
+    )
+    item_needle = ref[1] if ref else needle
+    markers = catalog.markers_for_item(map_id, item_needle, origin=origin, limit=None)
+    seen = {m.id for m in markers}
+
+    if search:
+        for m in catalog.query_markers(
+            map_id,
+            categories=None,
+            search=search,
+            behind_locked_only=False,
+            origin=origin,
+            limit=None,
+        ):
+            if m.id not in seen:
+                seen.add(m.id)
+                markers.append(m)
+
+    if locked_only:
+        markers = [m for m in markers if m.behind_locked_door]
+    return markers
+
+
 def resolve_markers(
     catalog: MapCatalog,
     state: MapFilterState,
@@ -69,17 +115,6 @@ def resolve_markers(
     search = (state.search or "").strip() or None
     item = (state.item_filter or "").strip() or None
 
-    def _on_basemap(markers: list[MapMarker]) -> list[MapMarker]:
-        if meta is None:
-            return markers
-        # Category browsing: sample pins that project onto the painted basemap
-        # CRS (after content-crop). Never edge-clamp — that invents positions.
-        # Search/item paths below keep every hit; map_window still only draws
-        # markers inside 0..1 of the reference image.
-        return [
-            m for m in markers if latlng_on_reference(m.lat, m.lng, meta, margin=0.35)
-        ]
-
     if not search and not item:
         markers = catalog.query_markers(
             map_id,
@@ -88,32 +123,15 @@ def resolve_markers(
             origin=origin,
             limit=None,
         )
-        return _sample(_on_basemap(markers), limit)
+        return _sample(_on_basemap_filter(markers, meta), limit)
 
     needle = item or search
     assert needle is not None
-    # Canonicalize against the full Metaforge item index (loot tags optional).
-    ref = None
-    if hasattr(catalog, "resolve_item_ref"):
-        ref = catalog.resolve_item_ref(needle, network=False)
-    item_needle = ref[1] if ref else needle
-    markers = catalog.markers_for_item(map_id, item_needle, origin=origin, limit=None)
-    seen = {m.id for m in markers}
-
-    # Free-text: also match marker names / ARC aliases that aren't item-loot.
-    if search:
-        for m in catalog.query_markers(
-            map_id,
-            categories=None,
-            search=search,
-            behind_locked_only=False,
-            origin=origin,
-            limit=None,
-        ):
-            if m.id not in seen:
-                seen.add(m.id)
-                markers.append(m)
-
-    if state.locked_only:
-        markers = [m for m in markers if m.behind_locked_door]
-    return markers[:limit]
+    return _resolve_search_markers(
+        catalog,
+        map_id,
+        needle,
+        search,
+        origin,
+        locked_only=state.locked_only,
+    )[:limit]

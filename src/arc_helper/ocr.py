@@ -34,6 +34,8 @@ _DARK_PIXEL_MAX = 100
 _MIN_NAME_LINE_LEN = 2
 _MIN_UPPER_RATIO = 0.6
 _MIN_ITEM_NAME_LEN = 3
+_TESSERACT_PSM_BLOCK = "--psm 6"
+_TESSERACT_PSM_LINE = "--psm 7"
 
 
 def grab_screen(bbox: tuple[int, int, int, int]) -> Image.Image:
@@ -111,17 +113,6 @@ class OCREngine:
 
         cursor = get_cursor_position()
         screen_width, screen_height = get_screen_resolution()
-
-        # TODO: flipping the tooltip region on the right side of screen
-        # to be implemented properly
-        # # Check if cursor is in right 30% of screen
-        # right_threshold = screen_width * 0.7
-
-        # if cursor.x > right_threshold:
-        #     # Flip X offset (and account for capture width)
-        #     offset_x = -self.tooltip_offset_x - self.tooltip_width
-        # else:
-        #     offset_x = self.tooltip_offset_x
         offset_x = self.tooltip_offset_x
 
         # Calculate capture region around cursor
@@ -227,8 +218,8 @@ class OCREngine:
         col_cream_percentage = np.sum(mask, axis=0) / mask.shape[0]
 
         # Find first/last row with significant cream
-        cream_rows = np.where(row_cream_percentage > _CREAM_ROW_FRAC)[0]
-        cream_cols = np.where(col_cream_percentage > _CREAM_COL_FRAC)[0]
+        cream_rows = np.nonzero(row_cream_percentage > _CREAM_ROW_FRAC)[0]
+        cream_cols = np.nonzero(col_cream_percentage > _CREAM_COL_FRAC)[0]
 
         if len(cream_rows) == 0 or len(cream_cols) == 0:
             return Image.new("L", (image.width * 2, image.height * 2), 255)
@@ -245,7 +236,7 @@ class OCREngine:
         if n_rows == 0 or n_cols == 0:
             return Image.new("L", (image.width * 2, image.height * 2), 255)
         col_cream_pct = np.sum(cropped_mask, axis=0) / n_rows
-        tight_cols = np.where(col_cream_pct > _CREAM_ROW_FRAC)[0]
+        tight_cols = np.nonzero(col_cream_pct > _CREAM_ROW_FRAC)[0]
 
         if len(tight_cols) == 0:
             return Image.new("L", (image.width * 2, image.height * 2), 255)
@@ -342,9 +333,9 @@ class OCREngine:
 
         # Page segmentation mode
         if single_line:
-            config_parts.append("--psm 7")  # Single line
+            config_parts.append(_TESSERACT_PSM_LINE)
         else:
-            config_parts.append("--psm 6")  # Block of text
+            config_parts.append(_TESSERACT_PSM_BLOCK)
 
         # Character whitelist
         if whitelist:
@@ -483,7 +474,9 @@ class OCREngine:
         intact - a plain pass reads "II" as "Il" or drops it to "I", which
         silently selects the wrong item tier.
         """
-        plain = str(pytesseract.image_to_string(processed, config="--psm 6") or "")
+        plain = str(
+            pytesseract.image_to_string(processed, config=_TESSERACT_PSM_BLOCK) or ""
+        )
         logger.debug(f"Raw tooltip OCR:\n{plain}")
 
         line_count = self._count_name_lines(plain)
@@ -493,7 +486,10 @@ class OCREngine:
         whitelisted = str(
             pytesseract.image_to_string(
                 processed,
-                config=f"--psm 6 -c tessedit_char_whitelist={self.NAME_WHITELIST}",
+                config=(
+                    f"{_TESSERACT_PSM_BLOCK} "
+                    f"-c tessedit_char_whitelist={self.NAME_WHITELIST}"
+                ),
             )
             or ""
         )
@@ -585,7 +581,10 @@ class OCREngine:
             processed.save(self.debug_dir / "tooltip_processed.png")
 
         try:
-            text = str(pytesseract.image_to_string(processed, config="--psm 6") or "")
+            text = str(
+                pytesseract.image_to_string(processed, config=_TESSERACT_PSM_BLOCK)
+                or ""
+            )
             return self.parse_item_name_from_tooltip(text)
         except pytesseract.TesseractError as e:
             logger.error(f"OCR Error: {e}")

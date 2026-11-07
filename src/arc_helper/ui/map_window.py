@@ -510,6 +510,54 @@ class MapWindow(QWidget):
         if self.on_sync_request:
             self.on_sync_request()
 
+    def _draw_pins(self, iw: int, ih: int) -> None:
+        """Add marker ellipses to the scene up to DRAW_PIN_CAP."""
+        r = 4.0
+        drawn = 0
+        for m in self._markers:
+            if not self._meta or drawn >= DRAW_PIN_CAP:
+                break
+            nx, ny = latlng_to_norm(m.lat, m.lng, self._meta)
+            # True CRS only — never clamp. Markers past the painted reference
+            # (content-cropped worldExtent) are omitted, not dragged to the edge.
+            if not (0.0 <= nx <= 1.0 and 0.0 <= ny <= 1.0):
+                continue
+            x, y = nx * iw, ny * ih
+            color = QColor(CATEGORY_COLORS.get(m.category, "#ffffff"))
+            ell = self._scene.addEllipse(
+                x - r, y - r, r * 2, r * 2, QPen(Qt.PenStyle.NoPen), color
+            )
+            self._pin_items.append(ell)
+            drawn += 1
+
+    def _draw_player(self, iw: int, ih: int) -> None:
+        """Draw the player chevron if position is known and on-basemap."""
+        if not self._player or not self._meta:
+            return
+        nx, ny = latlng_to_norm(self._player[0], self._player[1], self._meta)
+        if not (0.0 <= nx <= 1.0 and 0.0 <= ny <= 1.0):
+            return
+        x, y = nx * iw, ny * ih
+        pr = 8.0
+        self._player_item = self._scene.addEllipse(
+            x - pr,
+            y - pr,
+            pr * 2,
+            pr * 2,
+            QPen(QColor("white"), 2),
+            QColor(PLAYER_COLOR),
+        )
+        facing = self._player[2]
+        if facing is not None:
+            tip = 14.0
+            self._scene.addLine(
+                x,
+                y,
+                x + tip * math.cos(facing),
+                y - tip * math.sin(facing),
+                QPen(QColor(PLAYER_COLOR), 2),
+            )
+
     def _redraw(self) -> None:
         for item in self._pin_items:
             self._scene.removeItem(item)
@@ -537,44 +585,5 @@ class MapWindow(QWidget):
         self._scene.setSceneRect(self._basemap_item.boundingRect())
 
         iw, ih = self._base_image.size
-        r = 4.0
-        drawn = 0
-        for m in self._markers:
-            if not self._meta or drawn >= DRAW_PIN_CAP:
-                break
-            nx, ny = latlng_to_norm(m.lat, m.lng, self._meta)
-            # True CRS only — never clamp. Markers past the painted reference
-            # (content-cropped worldExtent) are omitted, not dragged to the edge.
-            if not (0.0 <= nx <= 1.0 and 0.0 <= ny <= 1.0):
-                continue
-            x, y = nx * iw, ny * ih
-            color = QColor(CATEGORY_COLORS.get(m.category, "#ffffff"))
-            ell = self._scene.addEllipse(
-                x - r, y - r, r * 2, r * 2, QPen(Qt.PenStyle.NoPen), color
-            )
-            self._pin_items.append(ell)
-            drawn += 1
-
-        if self._player and self._meta:
-            nx, ny = latlng_to_norm(self._player[0], self._player[1], self._meta)
-            if 0.0 <= nx <= 1.0 and 0.0 <= ny <= 1.0:
-                x, y = nx * iw, ny * ih
-                pr = 8.0
-                self._player_item = self._scene.addEllipse(
-                    x - pr,
-                    y - pr,
-                    pr * 2,
-                    pr * 2,
-                    QPen(QColor("white"), 2),
-                    QColor(PLAYER_COLOR),
-                )
-                facing = self._player[2]
-                if facing is not None:
-                    tip = 14.0
-                    self._scene.addLine(
-                        x,
-                        y,
-                        x + tip * math.cos(facing),
-                        y - tip * math.sin(facing),
-                        QPen(QColor(PLAYER_COLOR), 2),
-                    )
+        self._draw_pins(iw, ih)
+        self._draw_player(iw, ih)

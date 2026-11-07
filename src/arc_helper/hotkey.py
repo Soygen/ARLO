@@ -46,10 +46,12 @@ class WindowsCtrlShiftMonitor:
     """Ctrl+Shift held, via GetAsyncKeyState."""
 
     def start(self) -> None:
-        pass
+        # Stateless poller — nothing to start.
+        _ = self
 
     def stop(self) -> None:
-        pass
+        # Stateless poller — nothing to stop.
+        _ = self
 
     @staticmethod
     def is_held() -> bool:
@@ -219,10 +221,12 @@ class WindowsVkTapMonitor:
         self._edge = EdgeFromHeld(self._is_held)
 
     def start(self) -> None:
-        pass
+        # Stateless poller — nothing to start.
+        _ = self
 
     def stop(self) -> None:
-        pass
+        # Stateless poller — nothing to stop.
+        _ = self
 
     def _is_held(self) -> bool:
         try:

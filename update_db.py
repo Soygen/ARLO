@@ -98,8 +98,20 @@ USER_AGENT = (
     "ARLO/0.4 (Arc Raiders Loot Overlay - https://github.com/jaredcat/arlo-plus)"
 )
 
-QUICK_USE_CATEGORIES = {"Quick Use", "Shield", "Augment", "Mods", "Ammunition", "Key"}
+_QUICK_USE = "Quick Use"
+_RESEARCH_ITEM = "Research Item"
+QUICK_USE_CATEGORIES = {_QUICK_USE, "Shield", "Augment", "Mods", "Ammunition", "Key"}
 MATERIAL_CATEGORIES = {"Basic Material", "Refined Material", "Topside Material"}
+
+_HTML_PARSER = "html.parser"
+_RECYCLES_TO = "recycles to"
+_MW_CONTENT = "#mw-content-text"
+_WIKI_PREFIX = "/wiki/"
+_SECTION_LOOKAHEAD = r"(?=Workshop:|Quests:|Projects:|Research:|Crafting:|Amplify:)"
+# Space-only class (not \s*) to avoid S8786 super-linear backtracking warnings.
+_QTY_SUFFIX_RE = re.compile(r" \(\d+x\)$")
+_TRAILING_TIER_RE = re.compile(r" \d+$")
+_WIKI_HREF_SELECTOR = f"a[href^='{_WIKI_PREFIX}']"
 
 _MIN_WIDE_TABLE_CELLS = 5
 _REQUIREMENT_TRIPLE_LEN = 3
@@ -202,11 +214,11 @@ def fetch_wiki_recycle_map() -> dict[str, str]:
         print(f"  Wiki recycle fallback also failed ({e})")
         return {}
 
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(html, _HTML_PARSER)
     loot_table = None
     for table in soup.find_all("table"):
         headers = [th.get_text(strip=True).lower() for th in table.find_all("th")]
-        if "item" in headers and "recycles to" in headers:
+        if "item" in headers and _RECYCLES_TO in headers:
             loot_table = table
             break
 
@@ -644,7 +656,7 @@ def _normalize_category(item_type: str) -> str:
         "recyclable": "Recyclable",
         "trinket": "Trinket",
         "nature": "Nature",
-        "quick_use": "Quick Use",
+        "quick_use": _QUICK_USE,
         "key": "Key",
         "ammunition": "Ammunition",
         "ammo": "Ammunition",
@@ -655,8 +667,8 @@ def _normalize_category(item_type: str) -> str:
         "modification": "Mods",
         "weapon": "Weapon",
         "blueprint": "Blueprint",
-        "research_item": "Research Item",
-        "research item": "Research Item",
+        "research_item": _RESEARCH_ITEM,
+        "research item": _RESEARCH_ITEM,
     }
     return mapping.get(
         item_type.lower().strip(), item_type.title() if item_type else ""
@@ -846,7 +858,7 @@ def apply_workshop_keep_map(
         parts: list[str] = []
         if loot:
             for chunk in re.split(
-                r"(?=(?:Workshop|Quests|Projects|Research|Crafting|Amplify):)",
+                _SECTION_LOOKAHEAD,
                 loot,
             ):
                 chunk_stripped = chunk.strip().strip(";").strip()
@@ -871,7 +883,7 @@ def scrape_research_blueprint_keep_map() -> dict[str, list[str]]:
     """
     print("Scraping wiki Research Points blueprint costs...")
     html = fetch_wiki_page("Research_Points")
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(html, _HTML_PARSER)
     table = None
     for candidate in soup.find_all("table"):
         headers = [th.get_text(strip=True).lower() for th in candidate.find_all("th")]
@@ -925,7 +937,7 @@ def apply_research_keep_map(
         parts: list[str] = []
         if existing:
             for chunk in re.split(
-                r"(?=(?:Workshop|Quests|Projects|Research|Crafting|Amplify):)",
+                _SECTION_LOOKAHEAD,
                 existing,
             ):
                 chunk_stripped = chunk.strip().strip(";").strip()
@@ -1011,7 +1023,7 @@ def _weapons_from_amp_stats(stats: str) -> list[str]:
 def scrape_amplification_node_weapons() -> dict[str, list[str]]:
     """Wiki Amplification table: amp node → weapons it can apply to."""
     html = fetch_wiki_page("Amplification")
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(html, _HTML_PARSER)
     table = None
     for candidate in soup.find_all("table"):
         headers = [th.get_text(strip=True).lower() for th in candidate.find_all("th")]
@@ -1036,8 +1048,8 @@ def scrape_amplification_node_weapons() -> dict[str, list[str]]:
 def scrape_amplified_weapons_material_costs() -> list[tuple[str, str, int]]:
     """Wiki Amplified Weapons tables → ``(node_display, material, qty)``."""
     html = fetch_wiki_page("Amplified_Weapons")
-    soup = BeautifulSoup(html, "html.parser")
-    root = soup.select_one("#mw-content-text") or soup
+    soup = BeautifulSoup(html, _HTML_PARSER)
+    root = soup.select_one(_MW_CONTENT) or soup
     rows: list[tuple[str, str, int]] = []
     for table in root.find_all("table"):
         text = table.get_text("\n", strip=True)
@@ -1108,7 +1120,7 @@ def apply_amplify_keep_map(
         parts: list[str] = []
         if existing:
             for chunk in re.split(
-                r"(?=(?:Workshop|Quests|Projects|Research|Crafting|Amplify):)",
+                _SECTION_LOOKAHEAD,
                 existing,
             ):
                 chunk_stripped = chunk.strip().strip(";").strip()
@@ -1149,7 +1161,7 @@ def scrape_crafting_keep_map() -> dict[str, list[str]]:
     recipes_n = 0
     for page in CRAFTING_RECIPE_PAGES:
         html = fetch_wiki_page(page)
-        soup = BeautifulSoup(html, "html.parser")
+        soup = BeautifulSoup(html, _HTML_PARSER)
         for table in soup.find_all("table"):
             headers = [th.get_text(strip=True).lower() for th in table.find_all("th")]
             if "ingredients" not in headers or "result" not in headers:
@@ -1199,7 +1211,7 @@ def apply_crafting_keep_map(
         amplify_parts: list[str] = []
         if existing:
             for chunk in re.split(
-                r"(?=(?:Workshop|Quests|Projects|Research|Crafting|Amplify):)",
+                _SECTION_LOOKAHEAD,
                 existing,
             ):
                 chunk_stripped = chunk.strip().strip(";").strip()
@@ -1241,22 +1253,56 @@ def _slugify(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", cleaned).strip("-")
 
 
-_WIKI_ITEM_QTY_RE = re.compile(
-    r"(\d+)\s*[x×]\s*(.+?)(?=(?:\d+\s*[x×])|$)",
-    re.IGNORECASE | re.DOTALL,
-)
-
-
 def _parse_wiki_item_quantities(text: str) -> list[tuple[str, int]]:
     """Parse ``3× ARC Alloy`` / ``1× Battery 6× Wires`` into (name, qty) pairs."""
     raw = (text or "").replace("\u00d7", "x").strip()
     if not raw or raw in {"—", "-", "–", "N/A", "n/a"}:
         return []
     found: list[tuple[str, int]] = []
-    for qty_s, name in _WIKI_ITEM_QTY_RE.findall(raw):
-        name_cleaned = re.sub(r"\s+", " ", name).strip(" ,;")
+    # Manual scan — no regex (avoids S8786 backtracking on qty markers).
+    lower = raw.lower()
+    n = len(raw)
+    i = 0
+    while i < n:
+        while i < n and not raw[i].isdigit():
+            i += 1
+        if i >= n:
+            break
+        j = i
+        while j < n and raw[j].isdigit():
+            j += 1
+        qty = int(raw[i:j])
+        k = j
+        while k < n and raw[k] == " ":
+            k += 1
+        if k >= n or lower[k] != "x":
+            i = j
+            continue
+        k += 1
+        while k < n and raw[k] == " ":
+            k += 1
+        # Name runs until the next ``<digits> x`` marker (or end).
+        name_start = k
+        name_end = n
+        p = k
+        while p < n:
+            if raw[p].isdigit():
+                q = p
+                while q < n and raw[q].isdigit():
+                    q += 1
+                r = q
+                while r < n and raw[r] == " ":
+                    r += 1
+                if r < n and lower[r] == "x":
+                    name_end = p
+                    break
+                p = q
+            else:
+                p += 1
+        name_cleaned = " ".join(raw[name_start:name_end].split()).strip(" ,;")
         if name_cleaned:
-            found.append((name_cleaned, int(qty_s)))
+            found.append((name_cleaned, qty))
+        i = name_end
     return found
 
 
@@ -1268,7 +1314,7 @@ def scrape_wiki_quests() -> list[dict]:
     """
     print("Scraping wiki Quests page...")
     html = fetch_wiki_page(WIKI_QUESTS_PATH)
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(html, _HTML_PARSER)
 
     by_id: dict[str, dict] = {}
     for table in soup.find_all("table"):
@@ -1395,8 +1441,8 @@ def discover_wiki_directory_links(
     """
     print(f"Discovering links on wiki {path} page...")
     html = fetch_wiki_page(path)
-    soup = BeautifulSoup(html, "html.parser")
-    content = soup.select_one("#mw-content-text") or soup
+    soup = BeautifulSoup(html, _HTML_PARSER)
+    content = soup.select_one(_MW_CONTENT) or soup
     header_key = name_header.strip().lower()
     skip_titles = {
         path.lower(),
@@ -1429,9 +1475,9 @@ def discover_wiki_directory_links(
             fragment = ""
             if "#" in full:
                 fragment = "#" + full.split("#", 1)[1]
-            if not href.startswith("/wiki/"):
+            if not href.startswith(_WIKI_PREFIX):
                 continue
-            href.replace("/wiki/", "").replace("_", " ")
+            href.replace(_WIKI_PREFIX, "").replace("_", " ")
             name = re.sub(r"\s+", " ", link.get_text(strip=True)).strip()
             if not name or name.lower() in skip_titles:
                 continue
@@ -1448,7 +1494,7 @@ def discover_wiki_directory_links(
 def _scope_content(soup: BeautifulSoup, project_name: str, href: str) -> Any:
     """Narrow to a heading section when the directory link targets a fragment
     or a differently-titled page (e.g. Sheltered Retreat → Outpost)."""
-    content = soup.select_one("#mw-content-text") or soup
+    content = soup.select_one(_MW_CONTENT) or soup
     fragment = ""
     if "#" in href:
         fragment = href.split("#", 1)[1].replace("_", " ").rstrip(":")
@@ -1480,7 +1526,7 @@ def _scope_content(soup: BeautifulSoup, project_name: str, href: str) -> Any:
             break
         if sib_name:
             parts.append(str(sib))
-    return BeautifulSoup("".join(parts), "html.parser")
+    return BeautifulSoup("".join(parts), _HTML_PARSER)
 
 
 def _table_requirement_pairs(table: Any) -> list[tuple[str, int]]:
@@ -1526,7 +1572,7 @@ def _requirements_from_tables(root: Any) -> list[tuple[str, int, int | None]]:
     return found
 
 
-_TABBER_STAGE_RE = re.compile(r"^(?P<label>.+?)\s*\((?P<stage>\d+)\)\s*$")
+_TABBER_STAGE_RE = re.compile(r"^(?P<label>[^(]+)\((?P<stage>\d+)\) *$")
 
 
 def _tabber_stage_number(panel: Any) -> int | None:
@@ -1663,7 +1709,7 @@ def project_is_active(
 def _parse_project_infobox(soup: BeautifulSoup) -> dict[str, str]:
     """Read Type / Start / End from the project page infobox table."""
     info = {"project_type": "", "starts_on": "", "ends_on": ""}
-    content = soup.select_one("#mw-content-text") or soup
+    content = soup.select_one(_MW_CONTENT) or soup
     for tr in content.select("tr"):
         cells = [
             c.get_text(" ", strip=True)
@@ -1686,12 +1732,12 @@ def _parse_project_infobox(soup: BeautifulSoup) -> dict[str, str]:
 
 def scrape_wiki_project_page(name: str, href: str) -> dict:
     """Scrape one project page into ``{id, name, schedule, required_items}``."""
-    path = href.split("#", 1)[0].replace("/wiki/", "")
+    path = href.split("#", 1)[0].replace(_WIKI_PREFIX, "")
     url = wiki_url(path)
     print(f"  Project: {name}")
     resp = requests.get(url, timeout=30, headers={"User-Agent": USER_AGENT})
     resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, "html.parser")
+    soup = BeautifulSoup(resp.text, _HTML_PARSER)
     root = _scope_content(soup, name, href)
     schedule = _parse_project_infobox(soup)
 
@@ -1750,19 +1796,19 @@ def scrape_wiki_projects() -> list[dict]:
 
 def scrape_wiki_trader_page(name: str, href: str) -> dict:
     """Scrape one trader page's ``.ic-card`` shop / barter grid."""
-    path = href.split("#", 1)[0].replace("/wiki/", "")
+    path = href.split("#", 1)[0].replace(_WIKI_PREFIX, "")
     url = wiki_url(path)
     print(f"  Trader: {name}")
     resp = requests.get(url, timeout=30, headers={"User-Agent": USER_AGENT})
     resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, "html.parser")
-    content = soup.select_one("#mw-content-text") or soup
+    soup = BeautifulSoup(resp.text, _HTML_PARSER)
+    content = soup.select_one(_MW_CONTENT) or soup
 
     items: list[dict[str, str]] = []
     seen: set[str] = set()
     for card in content.select(".ic-card"):
         name_el = card.select_one(".ic-fname-text") or card.select_one(".ic-fname")
-        link = card.select_one("a[href^='/wiki/']")
+        link = card.select_one(_WIKI_HREF_SELECTOR)
         item_name = ""
         if name_el:
             item_name = name_el.get_text(strip=True)
@@ -2157,12 +2203,12 @@ def scrape_wiki_uses() -> dict[str, str]:
     """
     print("Scraping wiki for workshop/project/expedition data...")
     html = fetch_wiki_page()
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(html, _HTML_PARSER)
 
     loot_table = None
     for table in soup.find_all("table"):
         headers = [th.get_text(strip=True).lower() for th in table.find_all("th")]
-        if "item" in headers and "rarity" in headers and "recycles to" in headers:
+        if "item" in headers and "rarity" in headers and _RECYCLES_TO in headers:
             loot_table = table
             break
 
@@ -2234,12 +2280,12 @@ def scrape_wiki_uses() -> dict[str, str]:
 def fetch_items_from_wiki() -> list[GameItem]:
     """Full wiki scrape - used as complete fallback."""
     html = fetch_wiki_page()
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(html, _HTML_PARSER)
 
     loot_table = None
     for table in soup.find_all("table"):
         headers = [th.get_text(strip=True).lower() for th in table.find_all("th")]
-        if "item" in headers and "rarity" in headers and "recycles to" in headers:
+        if "item" in headers and "rarity" in headers and _RECYCLES_TO in headers:
             loot_table = table
             break
 
@@ -2403,7 +2449,7 @@ def normalize_keep_labels(keep_for: str) -> str:
     return re.sub(r"\bAmplify(?!:)\s+", "Amplify: ", text)
 
 
-_KEEP_ENTRY_RE = re.compile(r"(.+?)\s*\((\d+)x\)")
+_KEEP_ENTRY_RE = re.compile(r"([^(]+)\((\d+)x\)")
 
 
 def _dedupe_keep_entries(entries: list[str]) -> list[str]:
@@ -2411,11 +2457,11 @@ def _dedupe_keep_entries(entries: list[str]) -> list[str]:
     best: dict[str, tuple[str, int]] = {}
     order: list[str] = []
     for entry in entries:
-        name = re.sub(r"\s*\(\d+x\)\s*$", "", entry).strip()
+        name = _QTY_SUFFIX_RE.sub("", entry).strip()
         if not name:
             continue
         key = name.lower()
-        m = re.search(r"\((\d+)x\)\s*$", entry)
+        m = re.search(r"\((\d+)x\)$", entry)
         qty = int(m.group(1)) if m else 0
         if key not in best:
             order.append(key)
@@ -2451,13 +2497,13 @@ def format_keep_for(
     }
 
     def _project_active(entry: str) -> bool:
-        pname = re.sub(r"\s*\(\d+x\)\s*$", "", entry).strip().lower()
+        pname = _QTY_SUFFIX_RE.sub("", entry).strip().lower()
         # Staged labels ("Trophy Display 2") — expire check uses the base name.
-        base = re.sub(r"\s+\d+$", "", pname).strip()
+        base = _TRAILING_TIER_RE.sub("", pname).strip()
         return bool(pname) and pname not in inactive and base not in inactive
 
     def _entry_label(entry: str) -> str:
-        return re.sub(r"\s*\(\d+x\)\s*$", "", entry).strip()
+        return _QTY_SUFFIX_RE.sub("", entry).strip()
 
     # Split wiki into non-Projects preamble vs existing Projects body so we can
     # append catalog projects without a second "Projects:" header.
@@ -2465,7 +2511,7 @@ def format_keep_for(
     project_entries: list[str] = []
     if wiki:
         for chunk in re.split(
-            r"(?=(?:Workshop|Quests|Projects|Research|Crafting|Amplify):)",
+            _SECTION_LOOKAHEAD,
             wiki,
         ):
             chunk_stripped = chunk.strip().strip(";").strip()
@@ -2487,7 +2533,7 @@ def format_keep_for(
     quests = quest_uses or []
     quest_entries: list[str] = []
     for entry in quests:
-        quest_name = re.sub(r"\s*\(\d+x\)\s*$", "", entry).strip()
+        quest_name = _QTY_SUFFIX_RE.sub("", entry).strip()
         if quest_name and quest_name.lower() not in wiki_lower:
             quest_entries.append(entry)
 
@@ -2507,9 +2553,9 @@ def format_keep_for(
     # Prefer staged catalog labels ("Trophy Display 2") over bare wiki
     # "Trophy Display" for the same project.
     staged_bases = {
-        re.sub(r"\s+\d+$", "", _entry_label(e)).strip().lower()
+        _TRAILING_TIER_RE.sub("", _entry_label(e)).strip().lower()
         for e in project_entries
-        if re.search(r"\s+\d+$", _entry_label(e))
+        if _TRAILING_TIER_RE.search(_entry_label(e))
     }
     if staged_bases:
         project_entries = [
@@ -2614,7 +2660,7 @@ def generate_action(item: GameItem) -> tuple[str, str, str]:  # ruff: ignore[too
         action = "Sell or keep for user trading"
     elif category == "Key":
         action, recycle_for, keep_for = "Keep", "", "Unlocks locked areas"
-    elif category == "Quick Use":
+    elif category == _QUICK_USE:
         if has_uses:
             action = "Keep"
         else:
@@ -2625,7 +2671,7 @@ def generate_action(item: GameItem) -> tuple[str, str, str]:  # ruff: ignore[too
         action, keep_for = "Keep", f"Equippable {category}"
     elif category == "Blueprint":
         action, keep_for = "Keep", "Learn, sell, or trade to other players"
-    elif category == "Research Item" or item.name.strip().lower() in _RESEARCH_ITEM_RP:
+    elif category == _RESEARCH_ITEM or item.name.strip().lower() in _RESEARCH_ITEM_RP:
         rp_note = research_item_rp_note(item.name)
         # Preserve workshop/research-station upgrade keeps; always note RP convert
         if keep_for and rp_note.lower() not in keep_for.lower():

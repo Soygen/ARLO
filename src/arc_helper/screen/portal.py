@@ -205,7 +205,8 @@ class ScreenCastSession:
                     None,
                     None,
                 )
-            except BaseException as e:  # ruff: ignore[blind-except] - propagate to open()
+            except Exception as e:  # ruff: ignore[blind-except]
+                # Stash for open(); KeyboardInterrupt still propagates.
                 self._bus_error = e
                 self._bus_ready.set()
                 return
@@ -230,7 +231,8 @@ class ScreenCastSession:
         def idle() -> bool:
             try:
                 box["value"] = func()
-            except BaseException as e:  # ruff: ignore[blind-except]
+            except Exception as e:  # ruff: ignore[blind-except]
+                # Stash for caller; KeyboardInterrupt still propagates.
                 box["error"] = e
             done.set()
             return GLib.SOURCE_REMOVE

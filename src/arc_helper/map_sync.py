@@ -43,6 +43,8 @@ _MIN_SCALE_POINTS = 2
 _MIN_RANSAC_SCALE = 0.05
 _MAX_RANSAC_SCALE = 40.0
 _MIN_INLIER_RATIO = 0.15
+# Fixed seed keeps RANSAC reproducible across runs (S6709).
+_RANSAC_RNG_SEED = 0xA910_57C
 _VIEWPORT_MARGIN_PX = 20
 _NORM_LOOSE_MIN = -0.2
 _NORM_LOOSE_MAX = 1.2
@@ -77,7 +79,8 @@ class PlayerFix:
     map_id: str
     lat: float
     lng: float
-    facing: float | None = None  # radians, 0=east, CCW
+    # Facing angle in radians (0 = east, increasing counter-clockwise).
+    facing: float | None = None
     confidence: float = 0.0
     timestamp: float = 0.0
 
@@ -195,6 +198,47 @@ def _fit_positive_scale_translation(
     return scale, float(translation[0]), float(translation[1])
 
 
+def _ransac_reprojection_error(
+    src_pts: np.ndarray, dst_pts: np.ndarray, scale: float, tx: float, ty: float
+) -> np.ndarray:
+    return np.hypot(
+        scale * src_pts[:, 0] + tx - dst_pts[:, 0],
+        scale * src_pts[:, 1] + ty - dst_pts[:, 1],
+    )
+
+
+def _ransac_iterate(
+    src_pts: np.ndarray,
+    dst_pts: np.ndarray,
+    rng: np.random.Generator,
+    count: int,
+    reproj_thresh: float,
+    max_iters: int,
+    early: int,
+) -> np.ndarray | None:
+    """Run RANSAC iterations; return best inlier mask or None."""
+    best_mask: np.ndarray | None = None
+    best_count = 0
+    for _ in range(max_iters):
+        i, j = rng.choice(count, size=_MIN_SCALE_POINTS, replace=False)
+        sample = _fit_positive_scale_translation(src_pts[[i, j]], dst_pts[[i, j]])
+        if sample is None:
+            continue
+        scale, tx, ty = sample
+        if scale < _MIN_RANSAC_SCALE or scale > _MAX_RANSAC_SCALE:
+            continue
+        mask = (
+            _ransac_reprojection_error(src_pts, dst_pts, scale, tx, ty) <= reproj_thresh
+        )
+        hits = int(mask.sum())
+        if hits > best_count:
+            best_count = hits
+            best_mask = mask
+            if hits >= early:
+                break
+    return best_mask if best_count > 0 else None
+
+
 def estimate_upright_scale_translation(
     src: np.ndarray,
     dst: np.ndarray,
@@ -214,41 +258,23 @@ def estimate_upright_scale_translation(
     if count < _MIN_SCALE_POINTS or dst_pts.shape[0] != count:
         return None
 
-    rng = np.random.default_rng()
-    best_mask: np.ndarray | None = None
-    best_count = 0
+    rng = np.random.default_rng(_RANSAC_RNG_SEED)
     early = int(count * 0.85)
-    for _ in range(max_iters):
-        i, j = rng.choice(count, size=_MIN_SCALE_POINTS, replace=False)
-        sample = _fit_positive_scale_translation(src_pts[[i, j]], dst_pts[[i, j]])
-        if sample is None:
-            continue
-        scale, tx, ty = sample
-        if scale < _MIN_RANSAC_SCALE or scale > _MAX_RANSAC_SCALE:
-            continue
-        err = np.hypot(
-            scale * src_pts[:, 0] + tx - dst_pts[:, 0],
-            scale * src_pts[:, 1] + ty - dst_pts[:, 1],
-        )
-        mask = err <= reproj_thresh
-        hits = int(mask.sum())
-        if hits > best_count:
-            best_count = hits
-            best_mask = mask
-            if hits >= early:
-                break
-    if best_mask is None or best_count < min_inliers:
+    best_mask = _ransac_iterate(
+        src_pts, dst_pts, rng, count, reproj_thresh, max_iters, early
+    )
+    if best_mask is None or int(best_mask.sum()) < min_inliers:
         return None
 
     fitted = _fit_positive_scale_translation(src_pts[best_mask], dst_pts[best_mask])
     if fitted is None:
         return None
     scale, tx, ty = fitted
-    err = np.hypot(
-        scale * src_pts[:, 0] + tx - dst_pts[:, 0],
-        scale * src_pts[:, 1] + ty - dst_pts[:, 1],
+    inliers = int(
+        (
+            _ransac_reprojection_error(src_pts, dst_pts, scale, tx, ty) <= reproj_thresh
+        ).sum()
     )
-    inliers = int((err <= reproj_thresh).sum())
     if inliers < min_inliers:
         return None
     affine = np.array([[scale, 0.0, tx], [0.0, scale, ty]], dtype=np.float64)
@@ -634,6 +660,46 @@ class MapSyncEngine:
         left, top, _r, _b = bbox
         return ((px - left, py - top), facing, score)
 
+    def _build_player_fix(
+        self,
+        full: Image.Image,
+        viewport: Image.Image,
+        bbox: tuple[int, int, int, int],
+        affine: np.ndarray,
+        *,
+        ratio: float,
+        rw: int,
+        rh: int,
+        map_id: str,
+        meta: object,
+    ) -> PlayerFix | None:
+        """Detect player arrow and return a PlayerFix if on-basemap."""
+        found = self._find_player_in_viewport(full, viewport, bbox)
+        if found is None or rw <= 0 or rh <= 0:
+            return None
+        (px, py), facing, pscore = found
+        rx, ry = apply_affine(affine, px, py)
+        nx, ny = rx / rw, ry / rh
+        if not (
+            _NORM_TIGHT_MIN <= nx <= _NORM_TIGHT_MAX
+            and _NORM_TIGHT_MIN <= ny <= _NORM_TIGHT_MAX
+        ):
+            return None
+        nx = min(1.0, max(0.0, nx))
+        ny = min(1.0, max(0.0, ny))
+        lat, lng = norm_to_latlng(nx, ny, meta)
+        conf = min(1.0, 0.5 * ratio + 0.5 * min(pscore / 500.0, 1.0))
+        fix = PlayerFix(
+            map_id=map_id,
+            lat=lat,
+            lng=lng,
+            facing=facing,
+            confidence=conf,
+            timestamp=time.time(),
+        )
+        self._last_fix = fix
+        return fix
+
     def register_once(
         self,
         *,
@@ -689,30 +755,17 @@ class MapSyncEngine:
         rw, rh = reference.size
         player_fix: PlayerFix | None = None
         if detect_player:
-            found = self._find_player_in_viewport(full, viewport, bbox)
-            if found is not None:
-                (px, py), facing, pscore = found
-                rx, ry = apply_affine(affine, px, py)
-                if rw > 0 and rh > 0:
-                    nx = rx / rw
-                    ny = ry / rh
-                    if (
-                        _NORM_TIGHT_MIN <= nx <= _NORM_TIGHT_MAX
-                        and _NORM_TIGHT_MIN <= ny <= _NORM_TIGHT_MAX
-                    ):
-                        nx = min(1.0, max(0.0, nx))
-                        ny = min(1.0, max(0.0, ny))
-                        lat, lng = norm_to_latlng(nx, ny, meta)
-                        conf = min(1.0, 0.5 * ratio + 0.5 * min(pscore / 500.0, 1.0))
-                        player_fix = PlayerFix(
-                            map_id=map_id,
-                            lat=lat,
-                            lng=lng,
-                            facing=facing,
-                            confidence=conf,
-                            timestamp=time.time(),
-                        )
-                        self._last_fix = player_fix
+            player_fix = self._build_player_fix(
+                full,
+                viewport,
+                bbox,
+                affine,
+                ratio=ratio,
+                rw=rw,
+                rh=rh,
+                map_id=map_id,
+                meta=meta,
+            )
 
         result = ViewportRegistration(
             map_id=map_id,
@@ -726,11 +779,7 @@ class MapSyncEngine:
             player=player_fix,
         )
         self._last_reg = result
-        logger.info(
-            "Map register OK: %s conf=%.2f",
-            map_id,
-            ratio,
-        )
+        logger.info("Map register OK: %s conf=%.2f", map_id, ratio)
         return result
 
     def sync_once(self, *, map_id_hint: str | None = None) -> PlayerFix | None:

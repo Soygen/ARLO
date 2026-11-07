@@ -30,7 +30,8 @@ def test_preprocess_tooltip_narrow_cream_region():
     arr[0:8, 0:2] = cream
 
     out = _ocr_engine().preprocess_tooltip(Image.fromarray(arr))
-    assert out.width > 0 and out.height > 0
+    assert out.width > 0
+    assert out.height > 0
 
 
 def test_upper_ratio():

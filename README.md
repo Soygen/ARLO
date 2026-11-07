@@ -1,6 +1,6 @@
 # ARLO - Arc Raiders Loot Overlay
 
-> Fork of [Soygen/ARLO](https://github.com/Soygen/ARLO), which builds on [Pabosik/PabsArcTooltip](https://github.com/Pabosik/PabsArcTooltip). The OCR tooltip overlay idea is Pabosik’s; Soygen named and packaged ARLO. This repo ([jaredcat/arlo-plus](https://github.com/jaredcat/arlo-plus)) is the actively maintained line — Qt UI and map pins are in progress on `feat/map-overlay` for a future 1.0.0.
+> Fork of [Soygen/ARLO](https://github.com/Soygen/ARLO), which builds on [Pabosik/PabsArcTooltip](https://github.com/Pabosik/PabsArcTooltip). The OCR tooltip overlay idea is Pabosik’s; Soygen named and packaged ARLO. This repo ([jaredcat/arlo-plus](https://github.com/jaredcat/arlo-plus)) is the actively maintained line — 1.0.0 ships a Qt (PySide6) UI and in-game map pins.
 
 A screen overlay tool for [Arc Raiders](https://store.steampowered.com/app/2073750/ARC_Raiders/) that detects items in your inventory and displays recommended actions (**keep**, **recycle**, **sell**) along with stack sizes, crafting details, and (in raid) sell prices. The item database auto-syncs from the [MetaForge API](https://metaforge.app/arc-raiders) on every launch.
 
@@ -17,8 +17,9 @@ A screen overlay tool for [Arc Raiders](https://store.steampowered.com/app/20737
 - **Merge mode** - New items are added without overwriting your manual action overrides
 - **Hybrid catalog sync** - MetaForge for items/quests; wiki for workshop/projects/traders (see docs/ITEMS.md)
 - **Player progress import** - One-click MetaForge bookmarklet filters finished quests / workshop / projects from keep recommendations
+- **Qt overlay** - Tooltip, status pill, F8 map UI, and calibration run on PySide6 (replacing Tk)
 - **In-game map pins** - Open the raid MAP and ARLO draws filtered Metaforge pins over the terrain (click-through); **F8** opens search/filters, **F9** filters to the last hovered item
-- **Linux X11 / Wayland** - Screen capture backends for both sessions
+- **Linux X11 / Wayland** - Screen capture backends for both sessions; Wayland overlays use XWayland (`xcb`)
 - **GitHub Actions** - Weekly catalog sync; `main` = stable releases, `dev` = beta
 
 Map data and basemap tiles are cached locally from Metaforge (attribution: [metaforge.app/arc-raiders](https://metaforge.app/arc-raiders)). See [docs/MAP.md](docs/MAP.md).
@@ -283,8 +284,9 @@ All settings live in the `.env` file. See [docs/CONFIGURATION.md](docs/CONFIGURA
 ```
 ARLO/
 ├── update_db.py                    # MetaForge API updater (with wiki fallback)
-├── arlo.db                         # SQLite catalog (items, quests, projects, traders)
-├── data/                           # Readable catalog CSVs (items, quests, projects, traders)
+├── arlo.db                         # SQLite catalog (items, quests, projects, traders, maps)
+├── data/                           # Readable catalog CSVs + cached map assets
+│   └── maps/                       # Metaforge basemaps / markers (see docs/MAP.md)
 ├── pyproject.toml                  # Package config & dependencies
 ├── makefile                        # Convenience targets
 ├── build.py                        # PyInstaller build script
@@ -296,13 +298,15 @@ ARLO/
 │   ├── config.py                   # Settings & logging
 │   ├── database.py                 # SQLite + CSV import + fuzzy matching
 │   ├── ocr.py                      # Screen capture & Tesseract OCR
-│   ├── overlay.py                  # Tkinter overlay (action + price + stack)
-│   ├── calibrate.py                # GUI calibration tool
+│   ├── map_*.py                    # Map ingest, sync, filter, and viewport registration
+│   ├── ui/                         # Qt (PySide6) windows: overlay, status, map, calibrate
+│   ├── calibrate.py                # Calibration entry (UI in ui/calibrate.py)
 │   ├── resolution_profiles.py      # Resolution presets
 │   ├── resolutions.json            # Pre-configured resolution profiles
 │   └── screen/                     # Screen capture backends (mss / Wayland portal)
 ├── docs/
 │   ├── ITEMS.md                    # Item database & updater docs
+│   ├── MAP.md                      # In-game map pins & Metaforge cache
 │   ├── CALIBRATION.md              # Calibration guide
 │   ├── CONFIGURATION.md            # Settings reference
 │   ├── BUILD.md                    # Build instructions

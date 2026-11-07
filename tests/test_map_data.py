@@ -321,13 +321,15 @@ def test_crop_reference_allows_sparse_content_and_south_up():
             im.putpixel((x, y), (80, 80, 80))
     bounds = (0.0, 1000.0, 0.0, 1000.0)
     cropped, new_bounds = crop_reference_to_content(im, bounds, south_up=True)
-    assert cropped.size[0] < 1000 and cropped.size[1] < 1000
+    assert cropped.size[0] < 1000
+    assert cropped.size[1] < 1000
     lat_min, lat_max, lng_min, _lng_max = new_bounds
     # south_up: top of crop is higher lat than bottom; bbox uses a probe resize.
     assert lat_max > lat_min
     assert 850.0 <= lat_max <= 950.0
     assert 150.0 <= lng_min <= 250.0
-    assert cropped.size[0] < 1000 and cropped.size[1] < 500
+    assert cropped.size[0] < 1000
+    assert cropped.size[1] < 500
 
 
 def test_world_extent_bounds_and_tile_fmt_order():
