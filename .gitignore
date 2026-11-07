@@ -4,6 +4,7 @@ __pycache__/
 *.py[oc]
 debug
 .env*
+.scannerwork/
 
 .claude
 .vscode
